@@ -1,0 +1,73 @@
+{
+  "expo": {
+    "name": "OfflineMate",
+    "slug": "offlinemate",
+    "scheme": "offlinemate",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "jsEngine": "hermes",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-sqlite",
+        {
+          "withSQLiteVecExtension": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1d4ed8"
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "OfflineMate uses your calendar to answer scheduling requests.",
+          "remindersPermission": "OfflineMate uses reminders to help with tasks."
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "OfflineMate needs contacts access for contact-related commands."
+        }
+      ],
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.offlinemate.app",
+      "permissions": [
+        "RECORD_AUDIO",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR",
+        "READ_CONTACTS",
+        "POST_NOTIFICATIONS",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.offlinemate.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "OfflineMate uses microphone access for voice assistant features."
+      }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fb401217-1019-4b74-b72d-18b4574b8595"
+      }
+    },
+    "owner": "razasaleemi"
+  }
+}

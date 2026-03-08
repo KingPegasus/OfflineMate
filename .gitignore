@@ -1,0 +1,23 @@
+node_modules/
+.expo/
+.expo-shared/
+dist/
+build/
+coverage/
+.DS_Store
+*.log
+
+# Native build outputs
+android/
+ios/
+
+# Models and generated assets
+assets/models/
+*.bin
+*.pte
+*.gguf
+
+# Environment files
+.env
+.env.*
+
