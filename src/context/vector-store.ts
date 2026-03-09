@@ -1,5 +1,5 @@
-import { getDb } from "@/db/database";
-import { generateEmbedding } from "@/context/embeddings";
+import { getDb, isSqliteVecReady } from "@/db/database";
+import { generateEmbedding, toSqlVector } from "@/context/embeddings";
 
 function cosineSimilarity(a: number[], b: number[]) {
   let dot = 0;
@@ -14,15 +14,35 @@ function cosineSimilarity(a: number[], b: number[]) {
   return dot / (Math.sqrt(normA) * Math.sqrt(normB) + 1e-10);
 }
 
-export function upsertVectorChunk(sourceType: string, sourceId: string, textChunk: string) {
+export async function upsertVectorChunk(
+  sourceType: string,
+  sourceId: string,
+  textChunk: string,
+  chunkOrder = 0,
+) {
   const db = getDb();
-  const embedding = JSON.stringify(generateEmbedding(textChunk));
-  const id = `${sourceType}:${sourceId}:${textChunk.slice(0, 24)}`;
+  const embedding = await generateEmbedding(textChunk);
+  const embeddingJson = JSON.stringify(embedding);
+  const embeddingSqlVec = toSqlVector(embedding);
+  const id = `${sourceType}:${sourceId}:${chunkOrder}:${textChunk.slice(0, 24)}`;
   db.runSync(
-    `INSERT OR REPLACE INTO vectors (id, source_type, source_id, text_chunk, embedding)
-     VALUES (?, ?, ?, ?, ?)`,
-    [id, sourceType, sourceId, textChunk, embedding],
+    `INSERT OR REPLACE INTO vectors (id, source_type, source_id, chunk_order, text_chunk, embedding)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [id, sourceType, sourceId, chunkOrder, textChunk, embeddingJson],
   );
+
+  if (isSqliteVecReady()) {
+    try {
+      db.runSync("DELETE FROM vectors_idx WHERE chunk_id = ?", [id]);
+      db.runSync(
+        `INSERT INTO vectors_idx (chunk_id, source_type, source_id, chunk_order, embedding, text_chunk)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [id, sourceType, sourceId, chunkOrder, embeddingSqlVec, textChunk],
+      );
+    } catch {
+      // Fall back to legacy vectors table if vec0 write fails.
+    }
+  }
 }
 
 export async function searchRelevantContext(
@@ -31,9 +51,36 @@ export async function searchRelevantContext(
   minSimilarity = 0.45,
 ): Promise<string[]> {
   const db = getDb();
-  const queryEmbedding = generateEmbedding(query);
+  const queryEmbedding = await generateEmbedding(query);
+
+  if (isSqliteVecReady()) {
+    try {
+      const queryVector = toSqlVector(queryEmbedding);
+      const rows = db.getAllSync<{ text_chunk: string; distance: number }>(
+        `SELECT text_chunk, distance
+         FROM vectors_idx
+         WHERE embedding MATCH ?
+           AND k = ?
+         ORDER BY distance ASC`,
+        [queryVector, Math.max(topK * 3, topK)],
+      );
+
+      return rows
+        .map((row) => ({
+          text: row.text_chunk,
+          // For cosine distance, score ~ 1 - distance.
+          score: 1 - Number(row.distance),
+        }))
+        .filter((it) => Number.isFinite(it.score) && it.score >= minSimilarity)
+        .slice(0, topK)
+        .map((it) => it.text);
+    } catch {
+      // Continue to legacy fallback scan.
+    }
+  }
+
   const rows = db.getAllSync<{ text_chunk: string; embedding: string }>(
-    "SELECT text_chunk, embedding FROM vectors LIMIT 500",
+    "SELECT text_chunk, embedding FROM vectors LIMIT 2000",
   );
 
   return rows

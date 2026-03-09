@@ -1,4 +1,5 @@
 import { getSlidingWindow } from "@/context/memory-manager";
+import { getImportantMemories } from "@/context/long-term-memory";
 import { approximateTokenCount } from "@/utils/tokenizer";
 import type { ChatMessage, ModelTier } from "@/types/assistant";
 
@@ -26,7 +27,12 @@ export function buildPrompt(input: PromptBuildInput): ChatMessage[] {
   }
   const contextText = selectedContext.length > 0 ? `Context:\n${selectedContext.join("\n")}` : "";
   const toolText = toolResult ? `Tool output:\n${toolResult}` : "";
-  const systemPrompt = [systemBase, contextText, toolText].filter(Boolean).join("\n\n");
+  const memories = getImportantMemories(5);
+  const memoryText =
+    memories.length > 0
+      ? `User asked to remember:\n${memories.map((m) => `- ${m.content}`).join("\n")}`
+      : "";
+  const systemPrompt = [systemBase, memoryText, contextText, toolText].filter(Boolean).join("\n\n");
 
   return [
     {

@@ -5,6 +5,7 @@ export interface ChatMessage {
   role: Role;
   content: string;
   createdAt: number;
+  thinking?: string[];
 }
 
 export type ModelTier = "lite" | "standard" | "full";

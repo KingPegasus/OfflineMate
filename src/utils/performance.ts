@@ -1,10 +1,31 @@
-import { AppState } from "react-native";
+import { AppState, type AppStateStatus } from "react-native";
 import DeviceInfo from "react-native-device-info";
 
+const BACKGROUND_UNLOAD_DELAY_MS = 2000;
+
 export function registerBackgroundUnload(onUnload: () => void) {
-  return AppState.addEventListener("change", (state) => {
-    if (state !== "active") {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const scheduleUnload = () => {
+    if (timeoutId) return;
+    timeoutId = setTimeout(() => {
+      timeoutId = null;
       onUnload();
+    }, BACKGROUND_UNLOAD_DELAY_MS);
+  };
+
+  const cancelUnload = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  };
+
+  return AppState.addEventListener("change", (state: AppStateStatus) => {
+    if (state === "active") {
+      cancelUnload();
+    } else {
+      scheduleUnload();
     }
   });
 }

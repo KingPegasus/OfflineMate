@@ -34,6 +34,22 @@ This document tracks model families, target tiers, and migration strategy.
   - temperature/top-p bounds
   - tool-routing strategy per tier
 
+## Response Quality Guards (Loop/Repeat Protection)
+
+Small on-device models can get stuck in local loops (sentence repetition) when temperature/sampling
+are not constrained enough, or when prompt context is noisy. To reduce that:
+
+- Runtime generation is configured per tier using `temperature` + `top-p`:
+  - Lite: lower randomness for stability
+  - Standard/Full: slightly higher creativity while staying bounded
+- Token streaming path includes a repetition detector that interrupts generation when repeated sentence
+  patterns are detected several times in the recent output window.
+- A final output cleanup guard removes excessive duplicate lines/sentence tails before the response is
+  persisted and spoken.
+
+These guards are intentionally lightweight and deterministic to avoid heavy post-processing overhead on
+low-end devices.
+
 ## Fallback and Recovery
 
 - If model fails to load:
@@ -50,6 +66,7 @@ This document tracks model families, target tiers, and migration strategy.
 
 - Qwen organization: [https://github.com/QwenLM](https://github.com/QwenLM)
 - React Native ExecuTorch docs: [https://docs.swmansion.com/react-native-executorch/docs](https://docs.swmansion.com/react-native-executorch/docs)
+- ExecuTorch LLM config (`GenerationConfig`): [https://docs.swmansion.com/react-native-executorch/docs/typescript-api/natural-language-processing/LLMModule](https://docs.swmansion.com/react-native-executorch/docs/typescript-api/natural-language-processing/LLMModule)
 - ExecuTorch repository: [https://github.com/pytorch/executorch](https://github.com/pytorch/executorch)
 - Llama model family: [https://huggingface.co/meta-llama](https://huggingface.co/meta-llama)
 - HuggingFace SmolLM family: [https://huggingface.co/HuggingFaceTB](https://huggingface.co/HuggingFaceTB)

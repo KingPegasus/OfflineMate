@@ -5,6 +5,7 @@ export const searchContactsTool: Tool = {
   name: "contacts.search",
   description: "Search local contacts by name",
   keywords: ["contact", "call", "phone"],
+  params: { required: ["query"] },
   execute: async (params) => {
     const query = params.query ?? "";
     const perm = await Contacts.requestPermissionsAsync();

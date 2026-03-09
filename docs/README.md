@@ -26,6 +26,13 @@ technical decisions.
 - `tech/rag.md`
 - `tech/speech.md`
 - `tech/vector-store.md`
+- `tech/embeddings-and-indexing.md`
+- `tech/agent-planning-and-execution.md`
+
+## Planning and Analysis
+
+- `ROADMAP_AND_GAPS.md` — Feature status vs goals, gaps, and prioritized roadmap
+- `TECHNICAL_ANALYSIS.md` — Technical review and improvement suggestions
 
 ## How to Use This Docs Set
 

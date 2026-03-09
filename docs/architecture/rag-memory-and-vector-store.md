@@ -6,22 +6,26 @@ OfflineMate uses local retrieval to make responses context-aware without shippin
 
 ```mermaid
 graph TD
-    dataSources[LocalDataSources_NotesCalendarDocs] --> chunking[ChunkingAndNormalization]
-    chunking --> embeddingIndex[EmbeddingGeneration]
-    embeddingIndex --> vectorStore[VectorStore_sqlite_vec]
+    dataSources[LocalDataSources] --> chunking[ChunkingWithOverlap]
+    chunking --> embedIndex[ExecuTorchEmbeddings384]
+    embedIndex --> vecStore[Vec0SqliteVecIndex]
+    embedIndex --> legacyStore[LegacyJsonVectorStore]
     queryInput[UserQuery] --> queryEmbed[QueryEmbedding]
-    queryEmbed --> similaritySearch[TopKSimilaritySearch]
-    vectorStore --> similaritySearch
-    similaritySearch --> promptContext[ContextForPrompt]
+    queryEmbed --> knnSearch[NativeKnnSearch]
+    vecStore --> knnSearch
+    knnSearch --> dedupe[DedupAndThreshold]
+    legacyStore --> fallbackScan[FallbackCosineScan]
+    fallbackScan --> dedupe
+    dedupe --> promptContext[ContextForPrompt]
     promptContext --> llm[LocalLLMInference]
 ```
 
 ## Why This Was Chosen
 
 - Context retrieval scales better than full-history prompt replay.
-- SQLite-based vector search keeps storage local and operationally simple.
-- A local-first pattern supports privacy and offline reliability.
-- Incremental indexing supports evolving personal data over time.
+- sqlite-vec KNN search reduces JS compute and memory overhead at query time.
+- Fallback cosine scan path preserves reliability if vector extension is unavailable.
+- Chunk-overlap indexing improves recall for long notes.
 
 ## Memory Strategy
 
@@ -34,10 +38,10 @@ graph TD
 
 ## Indexing and Retrieval Rules
 
-- Chunk source documents into bounded token windows
-- Store metadata with vectors (source type, timestamp, priority)
-- Retrieve top-k chunks and apply relevance threshold
-- Merge with short conversation memory before prompt build
+- Chunk source documents into bounded windows with overlap
+- Store vectors in `vec0` index and legacy JSON-vector table
+- Retrieve top-k + threshold + dedupe in query path
+- Merge retrieval context with memory and tool output before prompt build
 
 ## Data Boundaries and Safety
 

@@ -5,6 +5,7 @@ export const setReminderTool: Tool = {
   name: "reminders.set",
   description: "Set a local reminder notification",
   keywords: ["remind", "reminder"],
+  params: { optional: ["text", "seconds"] },
   execute: async (params) => {
     const text = params.text ?? "Reminder";
     const seconds = Number(params.seconds ?? "60");

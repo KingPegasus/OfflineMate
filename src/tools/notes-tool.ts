@@ -6,6 +6,7 @@ export const createNoteTool: Tool = {
   name: "notes.create",
   description: "Create a note in local SQLite",
   keywords: ["note", "write down", "remember this"],
+  params: { optional: ["title", "content"] },
   execute: async (params) => {
     const title = params.title ?? "Untitled note";
     const content = params.content ?? "";
@@ -24,6 +25,7 @@ export const searchNotesTool: Tool = {
   name: "notes.search",
   description: "Search notes by title/content text matching",
   keywords: ["find note", "search note"],
+  params: { required: ["query"] },
   execute: async (params) => {
     const query = `%${params.query ?? ""}%`;
     const db = getDb();

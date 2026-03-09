@@ -1,9 +1,10 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { MarkdownText } from "@/components/MarkdownText";
 
 export function StreamingText({ text }: { text: string }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>{text}</Text>
+      <MarkdownText text={text} style={styles.text} boldStyle={styles.boldText} />
     </View>
   );
 }
@@ -17,6 +18,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 8,
   },
-  text: { color: "#93c5fd", fontStyle: "italic" },
+  text: { color: "#e5e7eb", lineHeight: 24 },
+  boldText: { fontWeight: "700", color: "#f8fafc" },
 });
 

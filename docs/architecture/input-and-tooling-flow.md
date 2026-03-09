@@ -2,30 +2,30 @@
 
 This document defines how OfflineMate processes user input efficiently on-device.
 
-## Core Processing Flow
+## Core Processing Flow (Implemented)
 
 ```mermaid
 flowchart TD
-    userInput[UserInput] --> inputNorm[InputNormalization]
-    inputNorm --> intentRoute[IntentRouting]
-    intentRoute -->|Direct| promptBase[PromptBuild]
-    intentRoute -->|ContextNeeded| retrieveCtx[RetrieveContext]
-    intentRoute -->|ActionNeeded| executeTool[ExecuteTool]
-    retrieveCtx --> promptAug[PromptAugment]
-    executeTool --> promptAug
-    promptBase --> inferLLM[LLMInference]
-    promptAug --> inferLLM
-    inferLLM --> streamOut[TokenStreamingOutput]
-    streamOut --> uiText[UIText]
-    streamOut --> ttsOut[TTSOutput]
+    userInput[UserInput] --> intentGate[IntentGate]
+    intentGate -->|contextOrMixed| embedQuery[EmbedQuery384]
+    embedQuery --> vecKnn[SqliteVecKnnSearch]
+    vecKnn --> promptBuild[PromptBuilder]
+    intentGate -->|toolOrMultiStep| planner[PlannerLLMJsonPlan]
+    planner --> validate[SchemaPolicyValidation]
+    validate --> executor[DeterministicToolExecutor]
+    executor --> promptBuild
+    promptBuild --> mainLlm[MainLLMGenerate]
+    mainLlm --> response[AssistantResponse]
+    response --> uiText[UIText]
+    response --> ttsOut[TTSOutput]
 ```
 
 ## Why This Flow Was Chosen
 
-- Avoids repeatedly sending full chat history.
-- Separates routing, retrieval, and generation for performance control.
-- Enables deterministic tool behavior in early versions.
-- Keeps pipeline debuggable and testable in isolated modules.
+- Separates intent gating, retrieval, planning, and generation for lower latency and better debuggability.
+- Uses native vector KNN (`sqlite-vec`) to reduce JS-side scan overhead.
+- Uses planner schema validation to avoid malformed tool execution.
+- Preserves deterministic fallback paths when planner/vector capabilities are unavailable.
 
 ## Input Modes
 
@@ -40,9 +40,11 @@ Early phase:
 - Rule-based classification (keywords, command patterns)
 - No extra LLM call for routing on weaker devices
 
-Later phase:
+Current phase:
 
-- Optional LLM-assisted planner for multi-step task orchestration
+- LLM-assisted JSON planner for tool/multi-step flows
+- deterministic validation + executor
+- fallback deterministic plan when planner output is invalid
 
 ## Tooling Design
 

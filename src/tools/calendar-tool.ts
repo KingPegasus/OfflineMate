@@ -12,6 +12,7 @@ export const getCalendarEventsTool: Tool = {
   name: "calendar.getEvents",
   description: "Fetch events from device calendar for a date range",
   keywords: ["calendar", "event", "meeting", "schedule"],
+  params: { optional: ["query"] },
   execute: async () => {
     const granted = await ensureCalendarPermissions();
     if (!granted) return { ok: false, message: "Calendar permission denied." };
@@ -28,6 +29,7 @@ export const createCalendarTool: Tool = {
   name: "calendar.createEvent",
   description: "Create an event in the default calendar",
   keywords: ["create event", "add event", "schedule meeting"],
+  params: { optional: ["title", "start", "end", "location", "notes"] },
   execute: async () => ({ ok: true, message: "Event creation flow placeholder." }),
 };
 

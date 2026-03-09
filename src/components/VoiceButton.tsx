@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useVoice } from "@/hooks/useVoice";
 
 interface VoiceButtonProps {
@@ -12,7 +13,7 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
 
   return (
     <TouchableOpacity
-      style={styles.button}
+      style={[styles.button, busy && styles.buttonBusy]}
       onPress={async () => {
         setBusy(true);
         try {
@@ -24,8 +25,11 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
           setBusy(false);
         }
       }}
+      disabled={busy}
     >
-      <Text style={styles.label}>{busy ? "..." : "Mic"}</Text>
+      <View style={styles.content}>
+        <Ionicons name={busy ? "hourglass-outline" : "mic-outline"} size={18} color="#e5e7eb" />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -33,10 +37,18 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
 const styles = StyleSheet.create({
   button: {
     backgroundColor: "#1f2937",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    borderRadius: 12,
+    width: 44,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  label: { color: "#e5e7eb", fontWeight: "700" },
+  buttonBusy: {
+    opacity: 0.75,
+  },
+  content: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
 

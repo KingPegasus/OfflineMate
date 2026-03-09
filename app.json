@@ -44,6 +44,7 @@
     ],
     "android": {
       "package": "com.offlinemate.app",
+      "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "RECORD_AUDIO",
         "READ_CALENDAR",

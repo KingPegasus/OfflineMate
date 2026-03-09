@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { createNote, listNotes } from "@/db/notes-repository";
 
 export default function NotesScreen() {
