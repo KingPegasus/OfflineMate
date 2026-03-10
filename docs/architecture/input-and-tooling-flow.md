@@ -8,7 +8,7 @@ When the user sends a message (text or voice), the following happens in order:
 
 1. **Input**
    - Text: message is used as-is.
-   - Voice: the mic records while the user holds the button; on release, Whisper (STT) transcribes to text. That text becomes the message.
+   - Voice: the mic records while the user holds the button; on release, Whisper `RealtimeTranscriber` (with Silero VAD when available) transcribes to text. That text becomes the message.
 
 2. **Intent routing** (`intent-router`)
    - The message is classified as **direct**, **context**, or **tool** using keyword rules (no LLM).

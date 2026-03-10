@@ -16,23 +16,25 @@ This document describes, in one place, how OfflineMate processes user input end-
 
 1. User **press-and-holds** the mic button → `startListeningSession(modelSize)` runs.
 2. **Permission:** On Android, `RECORD_AUDIO` is requested at runtime; without it the native session fails.
-3. **Load:** `initWhisper({ filePath, isBundleAsset: false, useGpu })` loads the `.bin` model from app storage.
-4. **Stream:** `context.transcribeRealtime(options)` starts the native realtime pipeline: mic → buffer → encoder/decoder → text events.
-5. **Events:** JS subscribes to events. Each event can have `data.result` (transcript) and `isCapturing` (true while recording, false on final).
-6. User **releases** the button → `session.stop()` is called; we wait for the final event (or 2.5 s), then release the context and return the transcript.
+3. **Load contexts:** `initWhisper({ filePath, isBundleAsset: false, useGpu })` loads the Whisper model. App also tries `initWhisperVad({ filePath: ggml-silero-v6.2.0.bin, ... })` for VAD.
+4. **Start transcriber:** `new RealtimeTranscriber({ whisperContext, vadContext, audioStream })` with `AudioPcmStreamAdapter`, then `transcriber.start()`.
+5. **Callbacks:** JS receives `onTranscribe` events (`data.result`) and merges partials with a non-regression merge strategy.
+6. User **releases** the button → `transcriber.stop()` is called; we wait for final/quiet settle, then release transcriber + contexts and return normalized transcript.
 
 ### Parameters (and how to tune)
 
 | Parameter | Where | Effect |
 |-----------|--------|--------|
-| **language** | `transcribeRealtime({ language: "en" })` | Restricts decoding to English; improves accuracy for English-only models. |
-| **realtimeAudioSec** | Same | Max total recording length (seconds) the native side will process. We use 60. |
-| **realtimeAudioSliceSec** | Same | Length of each audio slice sent to the model (e.g. 10 s). Larger = more context per chunk but higher latency. |
-| **realtimeAudioMinSec** | Same | Minimum audio duration before first transcription (e.g. 0.5 s). Avoids empty or garbage output. |
-| **useGpu** | `initWhisper({ useGpu })` | We set `false` on Android (CPU only) to avoid blank/weird results on some devices; iOS can use `true`. |
-| **filePath** | `initWhisper({ filePath })` | Path to `whisper-tiny.en.bin` or `whisper-base.en.bin` under `FileSystem.documentDirectory/models/`. |
+| **language** | `transcribeOptions.language` | Restricts decoding to English; improves accuracy for English-only models. |
+| **temperature / bestOf / beamSize** | `transcribeOptions` | Accuracy-focused decode controls for short commands; lower temperature reduces random substitutions. |
+| **audioSliceSec** | `RealtimeOptions.audioSliceSec` | Slice duration before transcription chunking (we use 8s). |
+| **audioMinSec** | `RealtimeOptions.audioMinSec` | Minimum audio before processing starts (we use 1s). |
+| **vadPreset** | `RealtimeOptions.vadPreset` | VAD tuning preset (`default` baseline). |
+| **autoSliceOnSpeechEnd** | `RealtimeOptions.autoSliceOnSpeechEnd` | Ends slices based on speech-end events for better turn boundaries. |
+| **useGpu** | `initWhisper({ useGpu })` | We set `false` on Android (CPU-only stability), allow GPU on iOS. |
+| **model paths** | `initWhisper` / `initWhisperVad` | Whisper: `whisper-tiny.en.bin` / `whisper-base.en.bin`; VAD: `ggml-silero-v6.2.0.bin`. |
 
-Optimization tips: For clearer speech, use `base` when device allows. If you see `[BLANK_AUDIO]` often, ensure the mic is active, try `realtimeAudioMinSec` ≥ 1, or switch to the RealtimeTranscriber + VAD path when available.
+Optimization tips: For clearer speech, use `base` when device allows. If you see `[BLANK_AUDIO]` often, ensure the mic is active and verify VAD model availability; if VAD fails to initialize, the app continues without VAD but segmentation quality can drop.
 
 **Voice misrecognition:** STT can mishear words (e.g. “Set reminder” → “certain minder”, “5 minutes” → “fear”). For precise commands like reminders with times, typing in chat is more reliable. The reminder tool returns a hint when it cannot parse a time, suggesting the user repeat clearly or type.
 

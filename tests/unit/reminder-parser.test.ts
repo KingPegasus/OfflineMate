@@ -9,8 +9,20 @@ describe("reminder parser", () => {
     expect(resolveReminderSeconds(undefined, "Remind me in 10 minutes to drink water")).toBe(600);
   });
 
+  it("infers minutes from number words in natural language", () => {
+    expect(resolveReminderSeconds(undefined, "remind me in two minutes to drink water")).toBe(120);
+    expect(resolveReminderSeconds(undefined, "remind me after fifteen minutes to stretch")).toBe(900);
+  });
+
+  it("uses chrono fallback for more complex duration phrases", () => {
+    const seconds = resolveReminderSeconds(undefined, "remind me in half an hour to stretch");
+    expect(seconds).toBeGreaterThan(20 * 60);
+    expect(seconds).toBeLessThanOrEqual(40 * 60);
+  });
+
   it("extracts concise reminder text", () => {
     expect(resolveReminderText("Remind me in 10 minutes to drink water")).toBe("drink water");
+    expect(resolveReminderText("Remind me in two minutes to drink water")).toBe("drink water");
   });
 
   it("falls back to query text when explicit text is empty", () => {

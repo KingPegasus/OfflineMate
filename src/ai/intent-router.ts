@@ -1,6 +1,16 @@
 export type IntentType = "direct" | "context" | "tool";
 
-const TOOL_KEYWORDS = ["remind", "schedule", "call", "message", "contact", "event", "note"];
+const TOOL_KEYWORDS = [
+  "remind",
+  "reminder",
+  "set reminder",
+  "schedule",
+  "call",
+  "message",
+  "contact",
+  "event",
+  "note",
+];
 const CONTEXT_KEYWORDS = ["summarize", "what did i", "history", "memory", "notes", "meeting"];
 
 function hasKeywordMatch(input: string, keyword: string): boolean {

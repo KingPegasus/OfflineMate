@@ -13,6 +13,10 @@ describe("routeIntent", () => {
     expect(routeIntent("Remind me about the meeting")).toBe("tool");
   });
 
+  it('routes "set a reminder ..." text to tool intent', () => {
+    expect(routeIntent("set a reminder in 2 minutes to drink water")).toBe("tool");
+  });
+
   it("routes regular prompts to direct intent", () => {
     expect(routeIntent("Explain photosynthesis simply")).toBe("direct");
   });

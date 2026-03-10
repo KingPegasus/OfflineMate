@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AppState } from "react-native";
 import { startListeningSession, transcribeFromMicrophone } from "@/voice/stt-engine";
 import { speak } from "@/voice/tts-engine";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -8,6 +9,7 @@ export function useVoice() {
   const selectedTier = useSettingsStore((s) => s.selectedTier);
   const sttModel = useMemo(() => (selectedTier === "lite" ? "tiny" : "base"), [selectedTier]);
   const sessionRef = useRef<Promise<{ stop: () => Promise<string> }> | null>(null);
+  const stopInFlightRef = useRef<Promise<string> | null>(null);
 
   const startListening = useCallback(() => {
     if (sessionRef.current) return;
@@ -17,20 +19,42 @@ export function useVoice() {
   }, [sttModel]);
 
   const stopListening = useCallback(async (): Promise<string> => {
-    const sessionPromise = sessionRef.current;
-    sessionRef.current = null;
-    setIsRecording(false);
-    if (!sessionPromise) return "No speech captured.";
+    if (stopInFlightRef.current) return stopInFlightRef.current;
+
+    const stopPromise = (async (): Promise<string> => {
+      const sessionPromise = sessionRef.current;
+      sessionRef.current = null;
+      setIsRecording(false);
+      if (!sessionPromise) return "No speech captured.";
+
+      try {
+        const handle = await sessionPromise;
+        const result = await handle.stop();
+        console.log("[OfflineMate] Voice: stopListening result length:", result?.length ?? 0);
+        return result;
+      } catch (e) {
+        console.warn("[OfflineMate] Voice: stopListening error", e);
+        return "STT failed.";
+      }
+    })();
+
+    stopInFlightRef.current = stopPromise;
     try {
-      const handle = await sessionPromise;
-      const result = await handle.stop();
-      console.log("[OfflineMate] Voice: stopListening result length:", result?.length ?? 0);
-      return result;
-    } catch (e) {
-      console.warn("[OfflineMate] Voice: stopListening error", e);
-      return "STT failed.";
+      return await stopPromise;
+    } finally {
+      stopInFlightRef.current = null;
     }
   }, []);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state !== "active" && sessionRef.current) {
+        console.log("[OfflineMate] Voice: app backgrounded, stopping active STT session");
+        void stopListening();
+      }
+    });
+    return () => sub.remove();
+  }, [stopListening]);
 
   async function startVoiceInput() {
     console.log("[OfflineMate] Voice: startVoiceInput (mic), STT model:", sttModel);

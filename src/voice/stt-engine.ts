@@ -1,6 +1,16 @@
-import { Platform, PermissionsAndroid } from "react-native";
+import { Platform, PermissionsAndroid, NativeModules } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
-import { initWhisper, releaseAllWhisper } from "whisper.rn";
+import {
+  initWhisper,
+  initWhisperVad,
+  releaseAllWhisper,
+  releaseAllWhisperVad,
+} from "whisper.rn";
+import {
+  RealtimeTranscriber,
+  type RealtimeTranscribeEvent,
+} from "whisper.rn/src/realtime-transcription";
+import { mergeTranscript, normalizeSttResult } from "@/voice/stt-transcript-utils";
 
 export type STTSize = "tiny" | "base";
 
@@ -8,6 +18,7 @@ const STT_MODEL_PATHS: Record<STTSize, string> = {
   tiny: `${FileSystem.documentDirectory}models/whisper-tiny.en.bin`,
   base: `${FileSystem.documentDirectory}models/whisper-base.en.bin`,
 };
+const VAD_MODEL_PATH = `${FileSystem.documentDirectory}models/ggml-silero-v6.2.0.bin`;
 
 async function modelExists(path: string) {
   const info = await FileSystem.getInfoAsync(path);
@@ -53,41 +64,40 @@ async function requestMicrophonePermission(): Promise<boolean> {
   }
 }
 
-function normalizeResult(transcript: string): string {
-  let result = transcript.trim() || "No speech captured.";
-  if (result === "[BLANK_AUDIO]" || /^\s*\[BLANK_AUDIO\]\s*$/i.test(result)) {
-    result = "No speech detected.";
-  }
-  return result;
-}
-
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Realtime events are not always monotonic (a later event can be shorter than a previous one).
- * Keep the best transcript by preferring expansions and ignoring regressions.
- */
-function mergeTranscript(current: string, incoming: string): string {
-  const next = incoming.replace(/\s+/g, " ").trim();
-  const prev = current.replace(/\s+/g, " ").trim();
-  if (!next) return prev;
-  if (!prev) return next;
-  if (next === prev) return prev;
-  if (next.includes(prev)) return next; // expansion
-  if (prev.includes(next)) return prev; // regression
+function logSttQualityHints(transcript: string, elapsedMs: number) {
+  const lowered = transcript.toLowerCase();
+  const looksLikeReminder = /\b(remind|reminder|set reminder)\b/.test(lowered);
+  const hasDuration = /\b(in|after)\s+\d+\s*(min|mins|minute|minutes|hour|hours|sec|second|seconds)\b/.test(
+    lowered,
+  );
+  console.log("[OfflineMate] STT metrics:", {
+    elapsedMs,
+    length: transcript.length,
+    words: transcript.split(/\s+/).filter(Boolean).length,
+    looksLikeReminder,
+    hasDuration,
+  });
+}
 
-  // Try overlap join: "set reminder in 5" + "5 minutes to sleep"
-  const maxOverlap = Math.min(prev.length, next.length, 32);
-  for (let n = maxOverlap; n >= 4; n -= 1) {
-    if (prev.slice(-n).toLowerCase() === next.slice(0, n).toLowerCase()) {
-      return `${prev}${next.slice(n)}`.trim();
-    }
+function ensureLiveAudioStreamEmitterCompat() {
+  const modules = NativeModules as {
+    RNLiveAudioStream?: {
+      addListener?: (eventName: string) => void;
+      removeListeners?: (count: number) => void;
+    };
+  };
+  const streamModule = modules.RNLiveAudioStream;
+  if (!streamModule) return;
+  if (typeof streamModule.addListener !== "function") {
+    streamModule.addListener = () => {};
   }
-
-  // If they are unrelated fragments, keep the longer one.
-  return next.length >= prev.length ? next : prev;
+  if (typeof streamModule.removeListeners !== "function") {
+    streamModule.removeListeners = () => {};
+  }
 }
 
 /**
@@ -121,63 +131,124 @@ export async function startListeningSession(
   }
 
   const useGpu = Platform.OS !== "android";
-  const context = await initWhisper({
-    filePath,
-    isBundleAsset: false,
-    useGpu,
-  });
+  const context = await initWhisper({ filePath, isBundleAsset: false, useGpu });
 
-  let session: { stop: () => Promise<void>; subscribe: (cb: (evt: unknown) => void) => void };
+  const vadModelExists = await modelExists(VAD_MODEL_PATH);
+  const vadContext = vadModelExists
+    ? await initWhisperVad({
+        filePath: VAD_MODEL_PATH,
+        isBundleAsset: false,
+        useGpu: Platform.OS === "ios",
+        nThreads: Platform.OS === "ios" ? 2 : 4,
+      }).catch((error) => {
+        console.warn("[OfflineMate] STT: initWhisperVad failed, continuing without VAD:", error);
+        return null;
+      })
+    : null;
+  if (!vadModelExists) {
+    console.warn(
+      "[OfflineMate] STT: VAD model missing, continuing without VAD. Download model assets from onboarding.",
+    );
+  }
+
+  ensureLiveAudioStreamEmitterCompat();
+  const { AudioPcmStreamAdapter } = await import(
+    "whisper.rn/src/realtime-transcription/adapters/AudioPcmStreamAdapter"
+  );
+  const audioStream = new AudioPcmStreamAdapter();
+  let transcriber: RealtimeTranscriber;
   try {
-    session = await context.transcribeRealtime({
-      language: "en",
-      // Accuracy-focused decode settings for short voice commands.
-      temperature: 0,
-      bestOf: 3,
-      beamSize: 3,
-      realtimeAudioSec: 90,
-      realtimeAudioSliceSec: 8,
-      realtimeAudioMinSec: 1,
-    });
+    transcriber = new RealtimeTranscriber(
+      {
+        whisperContext: context,
+        vadContext: vadContext ?? undefined,
+        audioStream,
+      },
+      {
+        audioSliceSec: 8,
+        audioMinSec: 1,
+        maxSlicesInMemory: 6,
+        vadPreset: vadContext ? "default" : undefined,
+        autoSliceOnSpeechEnd: !!vadContext,
+        autoSliceThreshold: 300,
+        transcribeOptions: {
+          language: "en",
+          temperature: 0,
+          bestOf: 3,
+          beamSize: 3,
+        },
+      },
+    );
   } catch (e) {
-    console.warn("[OfflineMate] STT: transcribeRealtime failed", e);
+    console.warn("[OfflineMate] STT: RealtimeTranscriber init failed", e);
+    await audioStream.release().catch((releaseError) => {
+      console.warn("[OfflineMate] STT: audioStream.release error (init path)", releaseError);
+    });
     await context.release();
     await releaseAllWhisper();
+    if (vadContext) {
+      await vadContext.release().catch(() => {});
+      await releaseAllWhisperVad().catch(() => {});
+    }
     return { stop: async () => "STT failed to start." };
   }
 
   let transcript = "";
   let lastUpdateAt = Date.now();
   let finalSeen = false;
+  const startAt = Date.now();
   let resolveFinal: (value: void) => void;
   const finalPromise = new Promise<string>((resolve) => {
     resolveFinal = () => resolve("");
   });
 
-  session.subscribe((event: unknown) => {
-    const ev = event as { isCapturing?: boolean; data?: { result?: string }; error?: string };
-    const text = ev.data?.result ?? "";
-    if (text) {
-      const merged = mergeTranscript(transcript, text);
-      if (merged !== transcript) {
-        transcript = merged;
-        lastUpdateAt = Date.now();
-        console.log("[OfflineMate] STT: merged transcript:", transcript.slice(0, 80));
+  transcriber.updateCallbacks({
+    onTranscribe: (event: RealtimeTranscribeEvent) => {
+      const text = event.data?.result ?? "";
+      if (text) {
+        const merged = mergeTranscript(transcript, text);
+        if (merged !== transcript) {
+          transcript = merged;
+          lastUpdateAt = Date.now();
+          console.log("[OfflineMate] STT: merged transcript:", transcript.slice(0, 80));
+        }
       }
-    }
-    if (ev.error) console.warn("[OfflineMate] STT: event error", ev.error);
-    if (ev.isCapturing === false && !finalSeen) {
-      finalSeen = true;
-      resolveFinal();
-    }
+      if ((event.type === "end" || event.isCapturing === false) && !finalSeen) {
+        finalSeen = true;
+        resolveFinal();
+      }
+    },
+    onError: (error) => {
+      console.warn("[OfflineMate] STT: transcriber callback error", error);
+    },
+    onStatusChange: (isActive) => {
+      console.log("[OfflineMate] STT: transcriber status:", isActive ? "ACTIVE" : "INACTIVE");
+    },
   });
+
+  try {
+    await transcriber.start();
+  } catch (error) {
+    console.warn("[OfflineMate] STT: transcriber.start failed", error);
+    await transcriber.release().catch(() => {});
+    await audioStream.release().catch((releaseError) => {
+      console.warn("[OfflineMate] STT: audioStream.release error (start path)", releaseError);
+    });
+    await context.release().catch(() => {});
+    await releaseAllWhisper().catch(() => {});
+    if (vadContext) {
+      await vadContext.release().catch(() => {});
+      await releaseAllWhisperVad().catch(() => {});
+    }
+    return { stop: async () => "STT failed to start." };
+  }
 
   return {
     stop: async (): Promise<string> => {
       try {
-        await session.stop();
+        await transcriber.stop();
       } catch (e) {
-        console.warn("[OfflineMate] STT: session.stop error", e);
+        console.warn("[OfflineMate] STT: transcriber.stop error", e);
       }
       await Promise.race([
         finalPromise,
@@ -191,12 +262,26 @@ export async function startListeningSession(
         await sleep(120);
       }
       try {
+        await transcriber.release();
+      } catch (e) {
+        console.warn("[OfflineMate] STT: transcriber.release error", e);
+      }
+      try {
         await context.release();
         await releaseAllWhisper();
       } catch (e) {
         console.warn("[OfflineMate] STT: release error", e);
       }
-      const normalized = normalizeResult(transcript);
+      if (vadContext) {
+        try {
+          await vadContext.release();
+          await releaseAllWhisperVad();
+        } catch (e) {
+          console.warn("[OfflineMate] STT: releaseAllWhisperVad error", e);
+        }
+      }
+      const normalized = normalizeSttResult(transcript);
+      logSttQualityHints(normalized, Date.now() - startAt);
       console.log("[OfflineMate] STT: done, result:", normalized.slice(0, 80));
       return normalized;
     },

@@ -8,6 +8,8 @@ const WHISPER_TINY_EN_URL =
   "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin";
 const WHISPER_BASE_EN_URL =
   "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin";
+const SILERO_VAD_URL =
+  "https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v6.2.0.bin";
 
 export async function ensureModelsDirectory() {
   const info = await FileSystem.getInfoAsync(MODELS_DIR);
@@ -59,12 +61,19 @@ function getTierAssets(tier: ModelTier): AssetToDownload[] {
     { id: "embedding-model", url: embeddingModel ?? "" },
     { id: "embedding-tokenizer", url: embeddingTokenizer ?? "" },
     { id: "whisper-model", url: sttUrl },
+    { id: "whisper-vad-model", url: SILERO_VAD_URL },
   ].filter((it) => it.url.length > 0);
 
   return urls.map((it) => ({
     id: it.id,
     url: it.url,
-    destination: `${MODELS_DIR}/${it.id.startsWith("whisper") ? sttFile : urlToFilename(it.url)}`,
+    destination: `${MODELS_DIR}/${
+      it.id === "whisper-model"
+        ? sttFile
+        : it.id === "whisper-vad-model"
+          ? "ggml-silero-v6.2.0.bin"
+          : urlToFilename(it.url)
+    }`,
   }));
 }
 

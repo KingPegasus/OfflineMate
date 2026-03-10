@@ -6,12 +6,13 @@ OfflineMate speech mode is designed for local-first operation.
 
 - **Engine:** `whisper.rn` (React Native binding of whisper.cpp)
 - **Tier strategy:** Lite uses tiny.en; Standard/Full can use base or larger models for better accuracy. Model files (e.g. `whisper-tiny.en.bin`, `whisper-base.en.bin`) are stored under the app document directory and loaded by path.
-- **Current API:** The app uses `context.transcribeRealtime()` with a fixed-duration capture (~4s) and subscribes to events. The final transcript is taken from the event where `isCapturing === false` (whisper.rn sends the full result in that event).
-- **Deprecation:** `transcribeRealtime()` is deprecated in whisper.rn. The recommended path is **RealtimeTranscriber**, which provides:
+- **Current API:** The app now uses **RealtimeTranscriber** with press-and-hold UX (`start` on press, `stop` on release), callback-based transcript accumulation, and settle-window finalization to avoid trailing-word truncation.
+- **VAD path:** The app initializes `initWhisperVad()` with `ggml-silero-v6.2.0.bin` when available and uses VAD-aware auto-slicing. If VAD model is missing or init fails, STT continues without VAD (degraded segmentation but still functional).
+- **Deprecation note:** Legacy `transcribeRealtime()` is deprecated in whisper.rn and has been replaced in this codebase by RealtimeTranscriber. RealtimeTranscriber provides:
   - **VAD (Voice Activity Detection)** via Silero VAD for automatic slice boundaries and speech detection
   - **AudioPcmStreamAdapter** for microphone input (requires `@fugood/react-native-audio-pcm-stream`)
   - Optional filesystem adapter (e.g. `react-native-fs`) for WAV output
-  Until migration, the deprecation warning in logcat is expected; behavior is unchanged.
+  Migration is complete for the app STT runtime path.
 
 ## Platform Requirements (whisper.rn)
 
@@ -24,19 +25,18 @@ This section defines what we run now, what we migrate to next, and when we shoul
 
 ### Current Baseline (Now)
 
-- Primary STT runtime: `whisper.rn` with Whisper tiny/base models.
+- Primary STT runtime: `whisper.rn` **RealtimeTranscriber + optional VAD**.
 - Reliability guardrails:
   - runtime mic permission request on Android
   - transcript merge logic for non-monotonic realtime events
   - no-input filtering (`[BLANK_AUDIO]`, empty, startup failures)
 - Accuracy preference: use `base` model when available; fallback to `tiny` only when needed.
 
-### Phase 1 (Near-term): Migrate to RealtimeTranscriber + VAD
+### Phase 1 (Near-term): Harden RealtimeTranscriber + VAD
 
-- Replace deprecated `transcribeRealtime()` path with `RealtimeTranscriber`.
-- Add dependencies:
-  - `@fugood/react-native-audio-pcm-stream` (required audio adapter)
-  - optional fs adapter (e.g. `react-native-fs`) if WAV artifacts are needed
+- Keep dependency stack:
+  - `@fugood/react-native-audio-pcm-stream` (required audio adapter; already integrated)
+  - optional fs adapter (e.g. `react-native-fs`) only if WAV artifacts are needed
 - Enable VAD preset tuning:
   - start with `default`
   - test `sensitive` in low-volume environments
@@ -110,12 +110,12 @@ Suggested target baseline (device QA):
 
 - Request microphone permission before starting realtime STT.
 - On iOS, audio session (e.g. PlayAndRecord, MixWithOthers) can be tuned via whisper.rn options for coexistence with playback.
-- Handle subscription events for both partial and final results; final result is delivered when `isCapturing` is false.
+- Handle callback events for partial/final transcript updates and apply settle-window logic after stop to capture final tail tokens.
 - Keep capture duration and timeouts bounded to avoid battery and UX issues.
 
 ## Future Enhancements
 
-- Migrate to RealtimeTranscriber + AudioPcmStreamAdapter and optional VAD for better turn-taking.
+- Further tune RealtimeTranscriber + VAD presets per device class for better turn-taking.
 - Evaluate offline neural TTS if voice quality becomes a requirement.
 - Add barge-in and end-of-speech detection for more natural dialogue.
 
