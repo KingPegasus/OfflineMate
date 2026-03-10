@@ -16,6 +16,7 @@ export default function ChatScreen() {
   const {
     messages,
     sendMessage,
+    stopGeneration,
     streamingResponse,
     streamingThinking,
     streamingHasThinkTag,
@@ -98,17 +99,23 @@ export default function ChatScreen() {
               setPrompt((prev) => (prev ? `${prev} ${text}` : text));
             }}
           />
-          <TouchableOpacity
-            style={[styles.sendButton, !canSubmit && styles.sendButtonDisabled]}
-            onPress={() => {
-              if (!canSubmit) return;
-              void sendMessage(prompt.trim());
-              setPrompt("");
-            }}
-            disabled={!canSubmit}
-          >
-            <Text style={[styles.sendText, !canSubmit && styles.disabled]}>Send</Text>
-          </TouchableOpacity>
+          {isLoading ? (
+            <TouchableOpacity style={styles.stopButton} onPress={stopGeneration}>
+              <Text style={styles.stopText}>Stop</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.sendButton, !canSubmit && styles.sendButtonDisabled]}
+              onPress={() => {
+                if (!canSubmit) return;
+                void sendMessage(prompt.trim());
+                setPrompt("");
+              }}
+              disabled={!canSubmit}
+            >
+              <Text style={[styles.sendText, !canSubmit && styles.disabled]}>Send</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardStickyView>
     </SafeAreaView>
@@ -193,6 +200,16 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     opacity: 0.6,
   },
+  stopButton: {
+    backgroundColor: "#7f1d1d",
+    borderRadius: 12,
+    minWidth: 56,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  stopText: { color: "#fecaca", fontWeight: "700" },
   sendText: { color: "#60a5fa", fontWeight: "700" },
   disabled: { color: "#6b7280" },
 });

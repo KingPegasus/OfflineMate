@@ -62,11 +62,27 @@ low-end devices.
 - Track Qwen 3.5 export/runtime maturity and stability for mobile runtime path in use
 - Plan migration as a configuration and model-registry update, not a pipeline rewrite
 
+## ExecuTorch Deployment (Best Practices)
+
+- **Export:** Models are exported to `.pte` (ExecuTorch) format; Hugging Face Optimum and native export paths are supported. The runtime loads these files from app storage (e.g. after download from model manager).
+- **Quantization:** 4-bit post-training quantization (e.g. GPTQ) is common for mobile; it enables larger models (e.g. 7B-class) on flagship devices. Our tiers use smaller, quantized variants (e.g. 0.6B–4B) for broader device coverage.
+- **Delegation:** Use backend delegation where available—XNNPack (CPU), Core ML (iOS), MPS (Apple Silicon), Qualcomm AI Stack (Android NPU)—to improve latency and energy use.
+- **Why on-device:** Keeps data local (privacy), avoids network latency, enables offline use, and removes per-request cloud cost. Trade-off: mobile inference is memory- and battery-bound; tier selection and generation guards help stay within device limits.
+
+## On-Device Constraints (Memory, Battery)
+
+- **Memory:** LLM inference is largely memory-bound. Small models (sub‑billion parameters) and quantization reduce RAM pressure; tier fallbacks prevent OOM on low-end devices.
+- **Battery and thermal:** Continuous inference can impact battery and thermal behavior. Interrupt and timeout logic, plus optional background unload, help avoid sustained heavy load.
+- **Accuracy vs. size:** Sub-billion and low-billion models (e.g. MobileLLM, Phi-3-mini) can match or approach larger models when optimized for edge; we rely on tiered model assignment and generation config (temperature, top-p) to balance quality and stability.
+
 ## References
 
-- Qwen organization: [https://github.com/QwenLM](https://github.com/QwenLM)
-- React Native ExecuTorch docs: [https://docs.swmansion.com/react-native-executorch/docs](https://docs.swmansion.com/react-native-executorch/docs)
-- ExecuTorch LLM config (`GenerationConfig`): [https://docs.swmansion.com/react-native-executorch/docs/typescript-api/natural-language-processing/LLMModule](https://docs.swmansion.com/react-native-executorch/docs/typescript-api/natural-language-processing/LLMModule)
-- ExecuTorch repository: [https://github.com/pytorch/executorch](https://github.com/pytorch/executorch)
-- Llama model family: [https://huggingface.co/meta-llama](https://huggingface.co/meta-llama)
-- HuggingFace SmolLM family: [https://huggingface.co/HuggingFaceTB](https://huggingface.co/HuggingFaceTB)
+- [Qwen (Alibaba)](https://github.com/QwenLM)
+- [React Native ExecuTorch](https://docs.swmansion.com/react-native-executorch/docs)
+- [ExecuTorch LLM Deployment](https://docs.pytorch.org/executorch/stable/llm/getting-started.html)
+- [ExecuTorch (executorch.ai)](https://executorch.ai/)
+- [LLMModule / GenerationConfig](https://docs.swmansion.com/react-native-executorch/docs/typescript-api/natural-language-processing/LLMModule)
+- [ExecuTorch repository](https://github.com/pytorch/executorch)
+- [Llama (Meta)](https://huggingface.co/meta-llama)
+- [SmolLM (HuggingFace)](https://huggingface.co/HuggingFaceTB)
+- [MobileLLM (arxiv)](https://arxiv.org/abs/2402.14905)

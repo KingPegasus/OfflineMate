@@ -99,9 +99,15 @@ cd android
 .\gradlew.bat :app:assembleRelease
 ```
 
+Or from repo root in one go (Gradle project dir = `android`):
+
+```powershell
+.\android\gradlew.bat -p android :app:assembleRelease
+```
+
 Notes:
 
-- Run Gradle wrapper from `android` directory.
+- Run the Gradle wrapper from the `android` directory, or use `-p android` when running from repo root.
 - In CMD use `gradlew.bat`; in PowerShell use `.\gradlew.bat`.
 
 ### Self-run command set (CMD)
@@ -156,6 +162,14 @@ If `adb` is not on your `PATH`, use the full path:
 
 Press `Ctrl+C` to stop streaming.
 
+**If you see no logs:** On some devices or builds, JS logs may use different tags. Try unfiltered output and search for app messages:
+
+- **Windows (PowerShell):** `adb logcat | Select-String OfflineMate`
+- **Windows (CMD):** `adb logcat | findstr OfflineMate`
+- **Mac/Linux:** `adb logcat | grep OfflineMate`
+
+The app logs intent, tool execution, reminder scheduling, and voice (STT/TTS) with the `[OfflineMate]` prefix. For voice: look for `Voice: mic button pressed`, `STT: starting` / `STT: done`, and `TTS: speaking` / `Chat: voice on`. Ensure the device is connected (`adb devices`) and the app is in the foreground or background when you trigger the action.
+
 ### If you see "SDK location not found"
 
 Either ensure `ANDROID_HOME` is set correctly, or create `android\local.properties` with:
@@ -199,6 +213,11 @@ Notes:
 
 - Add Android platform-tools to `Path`:
   - `%ANDROID_HOME%\platform-tools`
+
+### `waiting for device` (stuck)
+
+- Shown when running `adb` (e.g. `npm run android:logs`) or `expo run:android` with no device seen.
+- **Fix:** Connect the phone via USB, enable **USB debugging** in Developer options, and accept the “Allow USB debugging?” prompt on the device. Run `adb devices` to confirm the device is listed. If it shows “unauthorized”, revoke USB debugging authorizations on the phone and reconnect. Press `Ctrl+C` to stop the stuck command, then run it again after the device is ready.
 
 ### `SDK location not found`
 

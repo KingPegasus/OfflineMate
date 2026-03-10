@@ -59,8 +59,21 @@ Fallback path:
 - Fallback embeddings are deterministic but lower quality than model-based vectors.
 - Current retrieval dedupe is text-normalization based; source-diversity ranking is future work.
 
+## TextEmbeddingsModule (react-native-executorch)
+
+- **API:** `TextEmbeddingsModule` loaded with a model constant (e.g. `ALL_MINILM_L6_V2`). `forward(text)` returns a promise of a float array (embedding vector).
+- **Model:** ALL_MINILM_L6_V2 produces 384-dimensional vectors; same model used for both indexing and query embedding so distances are comparable.
+- **Usage:** Lazy load on first use; optional in-memory cache (e.g. LRU) to avoid re-embedding repeated queries or chunks. On native failure, a deterministic fallback (e.g. zero or hash-based) keeps the app running with degraded retrieval.
+- **Alternatives:** The library also offers a `useTextEmbeddings` hook for React components; the app uses the module directly for server-like pipeline steps.
+
+## Chunking and RAG
+
+- Chunk size and overlap should align with RAG best practices: e.g. 256–512 tokens, 10–20% overlap. See [RAG Technical Details](./rag.md) for retrieval policy and security notes.
+
 ## References
 
-- [React Native ExecuTorch Text Embeddings](https://docs.swmansion.com/react-native-executorch/docs/hooks/natural-language-processing/useTextEmbeddings)
-- [Expo SQLite Extension Loading](https://docs.expo.dev/versions/latest/sdk/sqlite/)
+- [TextEmbeddingsModule (React Native ExecuTorch)](https://docs.swmansion.com/react-native-executorch/docs/typescript-api/natural-language-processing/TextEmbeddingsModule)
+- [useTextEmbeddings hook](https://docs.swmansion.com/react-native-executorch/docs/hooks/natural-language-processing/useTextEmbeddings)
+- [Expo SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/)
 - [sqlite-vec vec0](https://alexgarcia.xyz/sqlite-vec/features/vec0.html)
+- [RAG best practices (chunking)](https://www.firecrawl.dev/blog/best-chunking-strategies-rag)

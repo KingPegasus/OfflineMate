@@ -21,7 +21,8 @@
     "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:coverage": "vitest run --coverage tests/unit tests/integration tests/e2e",
     "android:logs": "adb logcat -s ReactNativeJS:V ReactNative:V Expo:V",
-    "android:logs:all": "adb logcat"
+    "android:logs:all": "adb logcat",
+    "android:logs:raw": "adb logcat *:V"
   },
   "keywords": [],
   "author": "",

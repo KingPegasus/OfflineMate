@@ -15,9 +15,21 @@ import { cleanModelOutput } from "@/ai/output-guard";
 import { parseThinkTaggedContent, toThinkingLines } from "@/ai/think-parser";
 import type { ChatMessage } from "@/types/assistant";
 
-function withTimeout<T>(promise: Promise<T>, ms: number, timeoutMessage: string): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  timeoutMessage: string,
+  onTimeout?: () => void,
+): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(timeoutMessage)), ms);
+    const timer = setTimeout(() => {
+      try {
+        onTimeout?.();
+      } catch (timeoutError) {
+        console.warn("[OfflineMate] Timeout handler failed:", timeoutError);
+      }
+      reject(new Error(timeoutMessage));
+    }, ms);
     promise
       .then((value) => {
         clearTimeout(timer);
@@ -32,6 +44,39 @@ function withTimeout<T>(promise: Promise<T>, ms: number, timeoutMessage: string)
 
 function createMessage(role: ChatMessage["role"], content: string): ChatMessage {
   return { id: `${role}-${Date.now()}-${Math.random()}`, role, content, createdAt: Date.now() };
+}
+
+function extractPlannerPayload(raw: string): { steps: unknown[] } | null {
+  const fenced = raw.match(/```json\s*([\s\S]*?)```/i);
+  const payload = fenced?.[1] ?? raw;
+  const firstCurly = payload.indexOf("{");
+  const lastCurly = payload.lastIndexOf("}");
+  if (firstCurly === -1 || lastCurly === -1 || lastCurly <= firstCurly) return null;
+  try {
+    const parsed = JSON.parse(payload.slice(firstCurly, lastCurly + 1)) as { steps?: unknown };
+    if (Array.isArray(parsed.steps)) return { steps: parsed.steps };
+  } catch {
+    // ignore parse error
+  }
+  return null;
+}
+
+function isPlannerLeak(text: string): boolean {
+  return extractPlannerPayload(text) !== null;
+}
+
+function summarizeToolResult(toolResult?: string): string | null {
+  if (!toolResult) return null;
+  const firstNonPlan = toolResult
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => line.length > 0 && !line.toLowerCase().startsWith("plan:"));
+  if (!firstNonPlan) return null;
+  const colonIndex = firstNonPlan.indexOf(":");
+  if (colonIndex !== -1 && colonIndex < firstNonPlan.length - 1) {
+    return firstNonPlan.slice(colonIndex + 1).trim();
+  }
+  return firstNonPlan;
 }
 
 export function useLLMChat() {
@@ -53,10 +98,18 @@ export function useLLMChat() {
   const setTier = useSettingsStore((s) => s.setSelectedTier);
   const voiceEnabled = useSettingsStore((s) => s.voiceEnabled);
 
+  const stopGeneration = useCallback(() => {
+    llmEngine.interrupt();
+  }, []);
+
   const sendMessage = useCallback(
     async (content: string) => {
       const cleaned = content.trim();
       if (!cleaned) return;
+      if (isLoading) {
+        setError("The model is currently generating. Please wait for the current response to finish.");
+        return;
+      }
       const userMessage = createMessage("user", cleaned);
       pushMessage(userMessage);
       if (cleaned.toLowerCase().startsWith("remember ")) {
@@ -110,6 +163,7 @@ export function useLLMChat() {
           setTier("standard");
         }
         const intent = routeIntent(cleaned);
+        console.log("[OfflineMate] Intent:", intent, "prompt length:", cleaned.length);
         let contextSnippets: string[] = [];
         let toolResult: string | undefined;
         let planSummary: string | undefined;
@@ -127,6 +181,7 @@ export function useLLMChat() {
             ),
             20000,
             "Planning timed out. Falling back to direct tool execution.",
+            () => llmEngine.interrupt(),
           ).catch(async () => {
             const fallbackTool = selectToolFromInput(cleaned);
             if (!fallbackTool) return [];
@@ -140,9 +195,11 @@ export function useLLMChat() {
             ];
           });
 
+          console.log("[OfflineMate] Executing plan steps:", plannedSteps.length, plannedSteps.map((s) => s.toolName ?? s.description));
           const execution = await executePlanSteps(plannedSteps, async (toolName, args) => {
             const tool = getToolByName(toolName);
             if (!tool) return `Tool ${toolName} is not available.`;
+            console.log("[OfflineMate] Tool execute:", toolName, args);
             const result = await withTimeout(
               tool.execute({ query: cleaned, text: cleaned, ...args }),
               15000,
@@ -152,6 +209,7 @@ export function useLLMChat() {
           });
           planSummary = execution.planSummary;
           toolResult = execution.toolSummary || toolResult;
+          console.log("[OfflineMate] Plan done. Summary:", planSummary ?? "(none)", "toolResult:", (toolResult ?? "").slice(0, 120));
         }
         if (planSummary) {
           toolResult = [toolResult, `Plan: ${planSummary}`].filter(Boolean).join("\n");
@@ -176,19 +234,27 @@ export function useLLMChat() {
           }),
           90000,
           "The model is taking too long to respond. Try Lite tier or ensure model assets are downloaded.",
+          () => llmEngine.interrupt(),
         );
         const parsedOutput = parseThinkTaggedContent(output);
         const cleanedOutput = cleanModelOutput(parsedOutput.response.trimStart());
         const finalThinking = toThinkingLines(parsedOutput.thinking);
+        let finalOutput = cleanedOutput;
+        if (intent === "tool" && isPlannerLeak(cleanedOutput)) {
+          finalOutput =
+            summarizeToolResult(toolResult) ??
+            "Done. I executed your request, but the model returned planner JSON instead of a natural response.";
+        }
         setStreamingHasThinkTag(parsedOutput.hasThinkTag);
         setStreamingThinkClosed(parsedOutput.isClosed);
-        setStreamingResponse(cleanedOutput);
+        setStreamingResponse(finalOutput);
         pushMessage({
-          ...createMessage("assistant", cleanedOutput),
+          ...createMessage("assistant", finalOutput),
           thinking: finalThinking.length > 0 ? finalThinking : undefined,
         });
         if (voiceEnabled) {
-          await speak(cleanedOutput);
+          console.log("[OfflineMate] Chat: voice on, speaking response");
+          await speak(finalOutput);
         }
       } catch (errorValue) {
         const message = errorValue instanceof Error ? errorValue.message : "Unknown chat error";
@@ -213,12 +279,14 @@ export function useLLMChat() {
       setTier,
       tier,
       voiceEnabled,
+      isLoading,
     ],
   );
 
   return {
     messages,
     sendMessage,
+    stopGeneration,
     streamingResponse,
     streamingThinking,
     streamingHasThinkTag,

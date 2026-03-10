@@ -75,7 +75,15 @@ Flow:
 - confidence scoring and step-level retries
 - per-tool policy gating and dry-run mode
 
+## Relation to Plan-and-Execute and ReWOO
+
+- **Plan-and-execute:** The pipeline separates planning (LLM produces a structured plan) from execution (deterministic tool runner). This avoids interleaving tool calls with repeated LLM rounds and keeps execution predictable.
+- **ReWOO (Reasoning WithOut Observation):** ReWOO-style agents decouple reasoning from tool observations: the model emits a full plan (with placeholders for tool results), then the executor runs tools and fills placeholders, and a final step integrates results. Our planner produces a step list with `toolName` and `args`; the executor runs steps serially and passes results into the prompt for the final answer. This can use significantly fewer tokens than ReAct-style (observe–act–observe) loops and can be faster for multi-step workflows.
+- **When to use:** Plan-and-execute fits multi-tool, multi-step requests with relatively predictable dependencies. For highly dynamic or exploratory tasks, iterative (ReAct-style) flows may be more appropriate; our fallback to direct tool selection when planning fails keeps the app usable.
+
 ## References
 
-- [Plan-and-Execute Agent Pattern](https://blog.langchain.com/planning-agents)
-- [ReWOO Planning Concept](https://arxiv.org/abs/2305.18323)
+- [Plan-and-Execute Agents (LangChain)](https://blog.langchain.com/planning-agents)
+- [ReWOO (arxiv)](https://arxiv.org/abs/2305.18323)
+- [ReWOO Agent Pattern (agent-patterns)](https://agent-patterns.readthedocs.io/en/stable/patterns/rewoo.html)
+- [IBM: What is ReWOO?](https://www.ibm.com/think/topics/rewoo)

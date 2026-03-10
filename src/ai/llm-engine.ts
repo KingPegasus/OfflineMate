@@ -169,6 +169,16 @@ export class LLMEngine {
     }
   }
 
+  interrupt() {
+    try {
+      if (this.llm && typeof (this.llm as { interrupt?: () => void }).interrupt === "function") {
+        (this.llm as { interrupt: () => void }).interrupt();
+      }
+    } catch (error) {
+      console.warn("[OfflineMate] LLM interrupt failed:", error);
+    }
+  }
+
   unload() {
     if (!this.llm) {
       this.isLoaded = false;

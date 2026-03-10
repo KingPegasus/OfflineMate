@@ -45,10 +45,19 @@ graph TD
 - Speech: on-device STT and platform/native TTS path
 - Tools: deterministic intent routing in early phases, optional LLM planner in later phase
 
+## On-Device Constraints (Privacy, Memory, Battery)
+
+- **Privacy:** All core assistant flows (LLM, RAG, tools, speech) run on-device; user data need not leave the device for inference or retrieval.
+- **Memory:** LLM inference is memory-bound; tiered model selection and quantization keep RAM within device limits. Fallbacks (e.g. tier downgrade on OOM) preserve availability.
+- **Battery and thermal:** Long or continuous inference can impact battery and thermal behavior. Timeouts, interrupt support, and optional background unload help; small models and delegation (e.g. NPU) reduce energy use where available.
+- **Trade-offs:** On-device avoids cloud cost and latency and improves privacy, at the cost of model size and capability limits; the architecture is designed to scale by tier and to add delegation as runtimes improve.
+
 ## References
 
-- React Native ExecuTorch docs: [https://docs.swmansion.com/react-native-executorch/docs](https://docs.swmansion.com/react-native-executorch/docs)
-- React Native RAG: [https://software-mansion-labs.github.io/react-native-rag/](https://software-mansion-labs.github.io/react-native-rag/)
-- Expo New Architecture: [https://docs.expo.dev/guides/new-architecture/](https://docs.expo.dev/guides/new-architecture/)
-- Private Mind app listing: [https://apps.apple.com/au/app/private-mind/id6746713439](https://apps.apple.com/au/app/private-mind/id6746713439)
-- Private Mind repository: [https://github.com/software-mansion-labs/private-mind](https://github.com/software-mansion-labs/private-mind)
+- [React Native ExecuTorch](https://docs.swmansion.com/react-native-executorch/docs)
+- [ExecuTorch (PyTorch)](https://executorch.ai/)
+- [Expo New Architecture](https://docs.expo.dev/guides/new-architecture/)
+- [Expo EAS / Development Builds](https://docs.expo.dev/develop/development-builds/create-a-build)
+- [Private Mind (App Store)](https://apps.apple.com/au/app/private-mind/id6746713439)
+- [Private Mind (GitHub)](https://github.com/software-mansion-labs/private-mind)
+- [MobileLLM: on-device use cases](https://arxiv.org/abs/2402.14905)
