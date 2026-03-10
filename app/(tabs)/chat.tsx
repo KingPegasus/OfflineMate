@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { ChatBubble } from "@/components/ChatBubble";
@@ -11,7 +11,6 @@ import { useSettingsStore } from "@/stores/settings-store";
 import { getTierSpec } from "@/ai/model-registry";
 
 export default function ChatScreen() {
-  const insets = useSafeAreaInsets();
   const [prompt, setPrompt] = useState("");
   const {
     messages,
@@ -94,11 +93,13 @@ export default function ChatScreen() {
             style={styles.input}
             multiline
           />
-          <VoiceButton
-            onTranscript={(text) => {
-              setPrompt((prev) => (prev ? `${prev} ${text}` : text));
-            }}
-          />
+          <View style={styles.voiceSlot}>
+            <VoiceButton
+              onTranscript={(text) => {
+                setPrompt((prev) => (prev ? `${prev} ${text}` : text));
+              }}
+            />
+          </View>
           {isLoading ? (
             <TouchableOpacity style={styles.stopButton} onPress={stopGeneration}>
               <Text style={styles.stopText}>Stop</Text>
@@ -181,6 +182,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    minWidth: 0,
     color: "#e5e7eb",
     backgroundColor: "#111827",
     borderRadius: 12,
@@ -196,6 +198,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 12,
+  },
+  voiceSlot: {
+    width: 52,
+    minWidth: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
   sendButtonDisabled: {
     opacity: 0.6,

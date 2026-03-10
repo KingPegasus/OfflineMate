@@ -101,12 +101,12 @@ function ensureLiveAudioStreamEmitterCompat() {
 }
 
 /**
- * Start a listening session: press-and-hold to record, then call stop() when the user releases.
- * Returns a handle with stop() that stops recording and resolves with the transcript.
+ * Create a listening session (model load, init). Call start() to begin capturing, stop() when done.
+ * Pre-warm by calling this early; then start() is fast and captures from the beginning of press.
  */
 export async function startListeningSession(
   modelSize: STTSize,
-): Promise<{ stop: () => Promise<string> }> {
+): Promise<{ start: () => Promise<void>; stop: () => Promise<string>; release: () => Promise<void> }> {
   const resolved = await resolveModelPath(modelSize);
   const effectiveModel = resolved.modelSize;
   const filePath = resolved.filePath;
@@ -119,14 +119,20 @@ export async function startListeningSession(
   const exists = await modelExists(filePath);
   if (!exists) {
     const msg = `STT model (${modelSize}) not downloaded yet.`;
-    return { stop: async () => msg };
+    return {
+      start: async () => {},
+      stop: async () => msg,
+      release: async () => {},
+    };
   }
 
   const hasPermission = await requestMicrophonePermission();
   if (!hasPermission) {
     return {
+      start: async () => {},
       stop: async () =>
         "Microphone permission is required for voice input. Please allow it in Settings.",
+      release: async () => {},
     };
   }
 
@@ -166,9 +172,10 @@ export async function startListeningSession(
       },
       {
         audioSliceSec: 8,
-        audioMinSec: 1,
+        audioMinSec: 0.35,
         maxSlicesInMemory: 6,
         vadPreset: vadContext ? "default" : undefined,
+        vadOptions: vadContext ? { speechPadMs: 280 } : undefined,
         autoSliceOnSpeechEnd: !!vadContext,
         autoSliceThreshold: 300,
         transcribeOptions: {
@@ -190,7 +197,11 @@ export async function startListeningSession(
       await vadContext.release().catch(() => {});
       await releaseAllWhisperVad().catch(() => {});
     }
-    return { stop: async () => "STT failed to start." };
+    return {
+      start: async () => {},
+      stop: async () => "STT failed to start.",
+      release: async () => {},
+    };
   }
 
   let transcript = "";
@@ -226,25 +237,41 @@ export async function startListeningSession(
     },
   });
 
-  try {
-    await transcriber.start();
-  } catch (error) {
-    console.warn("[OfflineMate] STT: transcriber.start failed", error);
-    await transcriber.release().catch(() => {});
-    await audioStream.release().catch((releaseError) => {
-      console.warn("[OfflineMate] STT: audioStream.release error (start path)", releaseError);
-    });
-    await context.release().catch(() => {});
-    await releaseAllWhisper().catch(() => {});
-    if (vadContext) {
-      await vadContext.release().catch(() => {});
-      await releaseAllWhisperVad().catch(() => {});
+  async function doRelease() {
+    try {
+      await transcriber.release();
+    } catch (e) {
+      console.warn("[OfflineMate] STT: transcriber.release error", e);
     }
-    return { stop: async () => "STT failed to start." };
+    try {
+      await context.release();
+      await releaseAllWhisper();
+    } catch (e) {
+      console.warn("[OfflineMate] STT: release error", e);
+    }
+    if (vadContext) {
+      try {
+        await vadContext.release();
+        await releaseAllWhisperVad();
+      } catch (e) {
+        console.warn("[OfflineMate] STT: releaseAllWhisperVad error", e);
+      }
+    }
   }
 
   return {
+    start: async (): Promise<void> => {
+      try {
+        await transcriber.start();
+      } catch (error) {
+        console.warn("[OfflineMate] STT: transcriber.start failed", error);
+        await doRelease();
+        throw error;
+      }
+    },
     stop: async (): Promise<string> => {
+      // Keep capturing a bit longer so the end of the utterance isn't cut off.
+      await sleep(450);
       try {
         await transcriber.stop();
       } catch (e) {
@@ -256,41 +283,25 @@ export async function startListeningSession(
       ]);
       // Wait for a quiet period after stop/final so tail tokens can land.
       const settleStart = Date.now();
-      while (Date.now() - settleStart < 2000) {
+      while (Date.now() - settleStart < 2500) {
         const quietMs = Date.now() - lastUpdateAt;
-        if ((finalSeen && quietMs >= 300) || quietMs >= 800) break;
-        await sleep(120);
+        if ((finalSeen && quietMs >= 450) || quietMs >= 900) break;
+        await sleep(100);
       }
-      try {
-        await transcriber.release();
-      } catch (e) {
-        console.warn("[OfflineMate] STT: transcriber.release error", e);
-      }
-      try {
-        await context.release();
-        await releaseAllWhisper();
-      } catch (e) {
-        console.warn("[OfflineMate] STT: release error", e);
-      }
-      if (vadContext) {
-        try {
-          await vadContext.release();
-          await releaseAllWhisperVad();
-        } catch (e) {
-          console.warn("[OfflineMate] STT: releaseAllWhisperVad error", e);
-        }
-      }
+      await doRelease();
       const normalized = normalizeSttResult(transcript);
       logSttQualityHints(normalized, Date.now() - startAt);
       console.log("[OfflineMate] STT: done, result:", normalized.slice(0, 80));
       return normalized;
     },
+    release: doRelease,
   };
 }
 
 /** One-shot: listen for a fixed duration (legacy). Prefer startListeningSession + press-and-hold. */
 export async function transcribeFromMicrophone(modelSize: STTSize) {
   const handle = await startListeningSession(modelSize);
+  await handle.start();
   await new Promise((resolve) => setTimeout(resolve, 6000));
   return handle.stop();
 }

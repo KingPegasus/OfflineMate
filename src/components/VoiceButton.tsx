@@ -46,50 +46,82 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
   };
 
   return (
-    <View style={[styles.wrapper, isRecording && styles.wrapperGlow]}>
-      <TouchableOpacity
-        style={[styles.button, isRecording && styles.buttonRecording]}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        activeOpacity={1}
-      >
-        <View style={styles.content}>
-          <Ionicons
-            name={isRecording ? "mic" : "mic-outline"}
-            size={20}
-            color={isRecording ? "#f87171" : "#e5e7eb"}
-          />
-        </View>
-      </TouchableOpacity>
+    <View style={styles.container}>
+      {isRecording && <View style={styles.glowUnderlay} pointerEvents="none" />}
+      <View style={styles.wrapper}>
+        <TouchableOpacity
+          style={[styles.button, isRecording && styles.buttonRecording]}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          activeOpacity={1}
+        >
+          <View style={styles.content}>
+            <Ionicons
+              name={isRecording ? "mic" : "mic-outline"}
+              size={20}
+              color={isRecording ? "#f87171" : "#e5e7eb"}
+            />
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
+export const VOICE_BUTTON_LAYOUT = {
+  BUTTON_SIZE: 44,
+  WRAPPER_SIZE: 44 + 4 * 2,
+} as const;
+
+const BUTTON_SIZE = VOICE_BUTTON_LAYOUT.BUTTON_SIZE;
+const BUTTON_RADIUS = BUTTON_SIZE / 2;
+const WRAPPER_PADDING = 4;
+const WRAPPER_SIZE = VOICE_BUTTON_LAYOUT.WRAPPER_SIZE;
+const WRAPPER_RADIUS = WRAPPER_SIZE / 2;
+
 const styles = StyleSheet.create({
-  wrapper: {
-    borderRadius: 28,
-    padding: 4,
+  container: {
+    width: WRAPPER_SIZE,
+    height: WRAPPER_SIZE,
+    minWidth: WRAPPER_SIZE,
+    minHeight: WRAPPER_SIZE,
+    flexShrink: 0,
+    flexGrow: 0,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  wrapperGlow: {
-    backgroundColor: "rgba(239, 68, 68, 0.25)",
+  glowUnderlay: {
+    position: "absolute",
+    width: WRAPPER_SIZE,
+    height: WRAPPER_SIZE,
+    borderRadius: WRAPPER_RADIUS,
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
     borderWidth: 2,
-    borderColor: "rgba(248, 113, 113, 0.7)",
-    shadowColor: "#ef4444",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-    elevation: 8,
+    borderColor: "rgba(248, 113, 113, 0.6)",
+  },
+  wrapper: {
+    width: WRAPPER_SIZE,
+    height: WRAPPER_SIZE,
+    minWidth: WRAPPER_SIZE,
+    minHeight: WRAPPER_SIZE,
+    borderRadius: WRAPPER_RADIUS,
+    padding: WRAPPER_PADDING,
+    alignItems: "center",
+    justifyContent: "center",
   },
   button: {
     backgroundColor: "#1f2937",
-    borderRadius: 24,
-    width: 44,
-    height: 44,
+    borderRadius: BUTTON_RADIUS,
+    width: BUTTON_SIZE,
+    height: BUTTON_SIZE,
+    minWidth: BUTTON_SIZE,
+    minHeight: BUTTON_SIZE,
     alignItems: "center",
     justifyContent: "center",
   },
   buttonRecording: {
     backgroundColor: "rgba(239, 68, 68, 0.2)",
+    borderRadius: BUTTON_RADIUS,
   },
   content: {
     alignItems: "center",
