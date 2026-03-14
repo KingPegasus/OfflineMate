@@ -2,9 +2,10 @@ import type { ChatMessage } from "@/types/assistant";
 import { vi } from "vitest";
 
 vi.mock("@/tools/tool-registry", () => ({
-  getToolByName: (name: string) => (name === "notes.search" ? { name } : undefined),
+  getToolByName: (name: string) => (name === "notes.search" ? { name, params: {} } : undefined),
   listToolDescriptors: () => [{ name: "notes.search", description: "Search notes", params: {} }],
   selectToolFromInput: () => ({ name: "notes.search" }),
+  filterArgsForTool: (tool: { name: string }, args: Record<string, string>) => args,
 }));
 
 describe("agent planner", () => {

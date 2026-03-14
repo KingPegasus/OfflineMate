@@ -1,6 +1,6 @@
 # Model Strategy Technical Notes
 
-This document tracks model families, target tiers, and migration strategy.
+This document tracks model families, target tiers, and migration strategy. For user-facing model options and pros per tier, see [architecture/model-comparison-and-selection.md](../architecture/model-comparison-and-selection.md).
 
 ## Goals
 
@@ -60,6 +60,7 @@ low-end devices.
 ## Qwen 3.5 Path
 
 - Track Qwen 3.5 export/runtime maturity and stability for mobile runtime path in use
+- **Detailed research:** See [qwen35-compatibility-research.md](./qwen35-compatibility-research.md) for architecture analysis, ExecuTorch status, and migration blockers
 - Plan migration as a configuration and model-registry update, not a pipeline rewrite
 
 ## ExecuTorch Deployment (Best Practices)

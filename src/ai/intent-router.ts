@@ -1,15 +1,35 @@
 export type IntentType = "direct" | "context" | "tool";
 
+/** Multi-word matches first (higher priority), then single words. */
 const TOOL_KEYWORDS = [
+  "set reminder",
+  "set alarm",
+  "set an alarm",
+  "search the",
+  "search for",
+  "search online",
+  "look up",
+  "look up online",
+  "find out",
+  "check from the internet",
+  "from the internet",
+  "check online",
+  "add event",
+  "create event",
+  "schedule meeting",
   "remind",
   "reminder",
-  "set reminder",
+  "alarm",
   "schedule",
   "call",
   "message",
   "contact",
   "event",
+  "calendar",
   "note",
+  "search",
+  "what is",
+  "when is",
 ];
 const CONTEXT_KEYWORDS = ["summarize", "what did i", "history", "memory", "notes", "meeting"];
 

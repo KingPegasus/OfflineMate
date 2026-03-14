@@ -3,17 +3,23 @@ import * as Notifications from "expo-notifications";
 import type { Tool } from "@/tools/tool-registry";
 import { resolveReminderSeconds, resolveReminderText } from "@/tools/reminder-parser";
 
-const REMINDER_CHANNEL_ID = "offlinemate-reminders";
+const REMINDER_CHANNEL_ID = "offlinemate-reminders-v2";
+const REMINDER_CHANNEL_LEGACY = "offlinemate-reminders";
 
 async function ensureReminderChannel(): Promise<void> {
   if (Platform.OS !== "android") return;
   try {
+    try {
+      await Notifications.deleteNotificationChannelAsync(REMINDER_CHANNEL_LEGACY);
+    } catch {
+      // Old channel may not exist; ignore.
+    }
     await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
       name: "Reminders",
-      importance: Notifications.AndroidImportance.HIGH,
-      sound: "default",
+      importance: Notifications.AndroidImportance.MAX,
+      sound: "reminder-tone.wav",
     });
-    console.log("[OfflineMate] Reminder notification channel ready:", REMINDER_CHANNEL_ID);
+    console.log("[OfflineMate] Reminder channel ready:", REMINDER_CHANNEL_ID);
   } catch (e) {
     console.warn("[OfflineMate] Could not create reminder channel:", e);
   }
@@ -41,7 +47,12 @@ export const setReminderTool: Tool = {
     const perm = await Notifications.requestPermissionsAsync();
     console.log("[OfflineMate] Notification permission:", perm.status, perm.granted);
     if (!perm.granted) {
-      return { ok: false, message: "Notification permission denied." };
+      return {
+        ok: false,
+        message: "Notification permission denied.",
+        errorCode: "PERMISSION_DENIED",
+        retryable: true,
+      };
     }
     const content: Notifications.NotificationContentInput = {
       title: "OfflineMate Reminder",

@@ -26,7 +26,9 @@ export function buildPrompt(input: PromptBuildInput): ChatMessage[] {
     usedBudget += tokens;
   }
   const contextText = selectedContext.length > 0 ? `Context:\n${selectedContext.join("\n")}` : "";
-  const toolText = toolResult ? `Tool output:\n${toolResult}` : "";
+  const toolText = toolResult
+    ? `Tool output:\n${toolResult}\n\nIMPORTANT: You MUST reply to the user with a brief natural confirmation. Never skip the response or return raw JSON.`
+    : "";
   const memories = getImportantMemories(5);
   const memoryText =
     memories.length > 0

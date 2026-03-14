@@ -46,6 +46,8 @@ Full tier (strong devices): maximize reasoning and richer context usage
 - Full:
   - longer context windows and advanced planner capabilities
 
+For detailed model options, pros, and tier-wise selection, see [model-comparison-and-selection.md](./model-comparison-and-selection.md).
+
 ## References
 
 - React Native ExecuTorch model docs: [https://docs.swmansion.com/react-native-executorch/docs/0.1.x/guides/running-llms](https://docs.swmansion.com/react-native-executorch/docs/0.1.x/guides/running-llms)

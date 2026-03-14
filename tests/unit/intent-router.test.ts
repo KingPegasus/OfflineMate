@@ -20,4 +20,14 @@ describe("routeIntent", () => {
   it("routes regular prompts to direct intent", () => {
     expect(routeIntent("Explain photosynthesis simply")).toBe("direct");
   });
+
+  it("routes set alarm to tool intent", () => {
+    expect(routeIntent("set alarm for 7am")).toBe("tool");
+  });
+
+  it("routes search queries to tool intent", () => {
+    expect(routeIntent("search for population of Tokyo")).toBe("tool");
+    expect(routeIntent("what is the capital of France")).toBe("tool");
+    expect(routeIntent("current date. Kindly check from the internet.")).toBe("tool");
+  });
 });

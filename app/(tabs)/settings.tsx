@@ -10,6 +10,8 @@ export default function SettingsScreen() {
   const setTier = useSettingsStore((s) => s.setSelectedTier);
   const voiceEnabled = useSettingsStore((s) => s.voiceEnabled);
   const setVoiceEnabled = useSettingsStore((s) => s.setVoiceEnabled);
+  const webSearchEnabled = useSettingsStore((s) => s.webSearchEnabled);
+  const setWebSearchEnabled = useSettingsStore((s) => s.setWebSearchEnabled);
   const tierSpec = getTierSpec(selectedTier);
 
   return (
@@ -37,6 +39,9 @@ export default function SettingsScreen() {
       </Text>
       <Text style={styles.link} onPress={() => setVoiceEnabled(!voiceEnabled)}>
         Voice replies: {voiceEnabled ? "On" : "Off"}
+      </Text>
+      <Text style={styles.link} onPress={() => setWebSearchEnabled(!webSearchEnabled)}>
+        Web search: {webSearchEnabled ? "On" : "Off"}
       </Text>
     </SafeAreaView>
   );

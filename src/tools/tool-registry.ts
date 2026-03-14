@@ -1,13 +1,19 @@
+import { useSettingsStore } from "@/stores/settings-store";
+import { setAlarmTool } from "@/tools/alarm-tool";
 import { createCalendarTool, getCalendarEventsTool } from "@/tools/calendar-tool";
 import { searchContactsTool } from "@/tools/contacts-tool";
 import { createNoteTool, searchNotesTool } from "@/tools/notes-tool";
 import { setReminderTool } from "@/tools/reminders-tool";
+import { webSearchTool } from "@/tools/search-tool";
 import type { ToolResult } from "@/types/assistant";
 
 export interface ToolParamSpec {
   required?: string[];
   optional?: string[];
 }
+
+/** Allowed args: query, text (always), plus tool's required/optional params. */
+const GLOBAL_ALLOWED_ARGS = ["query", "text"];
 
 export interface Tool {
   name: string;
@@ -20,17 +26,59 @@ export interface Tool {
 export const TOOL_REGISTRY: Tool[] = [
   getCalendarEventsTool,
   createCalendarTool,
+  setAlarmTool,
+  webSearchTool,
   searchContactsTool,
   createNoteTool,
   searchNotesTool,
   setReminderTool,
 ];
 
-export function selectToolFromInput(input: string) {
+function scoreToolMatch(input: string, tool: Tool): number {
   const normalized = input.toLowerCase();
-  return TOOL_REGISTRY.find((tool) =>
-    tool.keywords.some((keyword) => normalized.includes(keyword)),
-  );
+  let best = 0;
+  for (const keyword of tool.keywords) {
+    if (!keyword || keyword.length === 0) continue;
+    const k = keyword.toLowerCase();
+    if (normalized.includes(k)) {
+      // Prefer longer, more specific matches
+      best = Math.max(best, k.length + (k.includes(" ") ? 2 : 0));
+    }
+  }
+  return best;
+}
+
+/** Ranked selection: highest-scoring tool wins. Deterministic for ambiguous prompts. */
+export function selectToolFromInput(input: string): Tool | undefined {
+  const webSearchEnabled = useSettingsStore.getState().webSearchEnabled;
+  const tools = webSearchEnabled
+    ? TOOL_REGISTRY
+    : TOOL_REGISTRY.filter((t) => t.name !== "search.web");
+  let best: Tool | undefined;
+  let bestScore = 0;
+  for (const tool of tools) {
+    const score = scoreToolMatch(input, tool);
+    if (score > bestScore) {
+      bestScore = score;
+      best = tool;
+    }
+  }
+  return best;
+}
+
+/** Filter args to only allowed keys per tool schema. */
+export function filterArgsForTool(tool: Tool, args: Record<string, string>): Record<string, string> {
+  const allowed = new Set(GLOBAL_ALLOWED_ARGS);
+  const spec = tool.params;
+  if (spec?.required) for (const k of spec.required) allowed.add(k);
+  if (spec?.optional) for (const k of spec.optional) allowed.add(k);
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(args)) {
+    if (allowed.has(k) && (typeof v === "string" || typeof v === "number")) {
+      out[k] = String(v);
+    }
+  }
+  return out;
 }
 
 export function getToolByName(name: string) {
@@ -38,7 +86,11 @@ export function getToolByName(name: string) {
 }
 
 export function listToolDescriptors() {
-  return TOOL_REGISTRY.map((tool) => ({
+  const webSearchEnabled = useSettingsStore.getState().webSearchEnabled;
+  const tools = webSearchEnabled
+    ? TOOL_REGISTRY
+    : TOOL_REGISTRY.filter((t) => t.name !== "search.web");
+  return tools.map((tool) => ({
     name: tool.name,
     description: tool.description,
     params: tool.params ?? {},

@@ -4,7 +4,7 @@ import { getFallbackTier } from "@/ai/model-registry";
 import { routeIntent } from "@/ai/intent-router";
 import { retrieveContextForQuery } from "@/ai/rag-pipeline";
 import { buildPrompt } from "@/ai/prompt-builder";
-import { getToolByName, selectToolFromInput } from "@/tools/tool-registry";
+import { filterArgsForTool, getToolByName, selectToolFromInput } from "@/tools/tool-registry";
 import { useChatStore } from "@/stores/chat-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { speak } from "@/voice/tts-engine";
@@ -195,21 +195,41 @@ export function useLLMChat() {
             ];
           });
 
-          console.log("[OfflineMate] Executing plan steps:", plannedSteps.length, plannedSteps.map((s) => s.toolName ?? s.description));
+          const correlationId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          console.log("[OfflineMate] Executing plan steps:", correlationId, plannedSteps.length, plannedSteps.map((s) => s.toolName ?? s.description));
           const execution = await executePlanSteps(plannedSteps, async (toolName, args) => {
             const tool = getToolByName(toolName);
             if (!tool) return `Tool ${toolName} is not available.`;
-            console.log("[OfflineMate] Tool execute:", toolName, args);
-            const result = await withTimeout(
-              tool.execute({ query: cleaned, text: cleaned, ...args }),
-              15000,
-              `Tool ${tool.name} timed out. Please try a simpler request.`,
-            );
-            return result.message;
+            const filtered = filterArgsForTool(tool, { query: cleaned, text: cleaned, ...args });
+            console.log("[OfflineMate] Tool execute:", correlationId, toolName);
+            let result;
+            try {
+              result = await withTimeout(
+                tool.execute(filtered),
+                15000,
+                `Tool ${tool.name} timed out. Please try a simpler request.`,
+              );
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : "Tool execution failed.";
+              console.warn("[OfflineMate] Tool failed:", correlationId, toolName, msg);
+              return msg;
+            }
+            const payloadText =
+              result.payload && Object.keys(result.payload).length > 0
+                ? `\nPayload: ${JSON.stringify(result.payload)}`
+                : "";
+            return result.message + payloadText;
           });
           planSummary = execution.planSummary;
           toolResult = execution.toolSummary || toolResult;
-          console.log("[OfflineMate] Plan done. Summary:", planSummary ?? "(none)", "toolResult:", (toolResult ?? "").slice(0, 120));
+          console.log(
+            "[OfflineMate] Plan done. Summary:",
+            planSummary ?? "(none)",
+            "toolResult len:",
+            (toolResult ?? "").length,
+            "preview:",
+            (toolResult ?? "").slice(0, 100),
+          );
         }
         if (planSummary) {
           toolResult = [toolResult, `Plan: ${planSummary}`].filter(Boolean).join("\n");
@@ -230,7 +250,11 @@ export function useLLMChat() {
             setStreamingHasThinkTag(parsed.hasThinkTag);
             setStreamingThinkClosed(parsed.isClosed);
             setStreamingThinking(toThinkingLines(parsed.thinking));
-            setStreamingResponse(parsed.response.trimStart());
+            // When model uses <think>, only show response after </think> so thinking appears first.
+            // (Models sometimes output reply before <think>, which would show reply before thinking.)
+            if (!parsed.hasThinkTag || parsed.isClosed) {
+              setStreamingResponse(parsed.response.trimStart());
+            }
           }),
           90000,
           "The model is taking too long to respond. Try Lite tier or ensure model assets are downloaded.",
@@ -239,11 +263,28 @@ export function useLLMChat() {
         const parsedOutput = parseThinkTaggedContent(output);
         const cleanedOutput = cleanModelOutput(parsedOutput.response.trimStart());
         const finalThinking = toThinkingLines(parsedOutput.thinking);
+        if (intent === "tool" && toolResult) {
+          console.log(
+            "[OfflineMate] Tool reply: rawLen=",
+            output.length,
+            "cleanedLen=",
+            cleanedOutput.length,
+            "cleanedPreview=",
+            cleanedOutput.slice(0, 60),
+          );
+        }
         let finalOutput = cleanedOutput;
-        if (intent === "tool" && isPlannerLeak(cleanedOutput)) {
-          finalOutput =
-            summarizeToolResult(toolResult) ??
-            "Done. I executed your request, but the model returned planner JSON instead of a natural response.";
+        if (intent === "tool") {
+          if (isPlannerLeak(cleanedOutput)) {
+            finalOutput =
+              summarizeToolResult(toolResult) ??
+              "Done. I executed your request, but the model returned planner JSON instead of a natural response.";
+          } else if (!cleanedOutput || cleanedOutput.trim().length < 3) {
+            const fallback = summarizeToolResult(toolResult);
+            finalOutput =
+              (fallback ?? (toolResult ? toolResult.split("\n")[0]?.replace(/^[^:]+:\s*/, "").trim() : "")) || "Done.";
+            console.log("[OfflineMate] Tool: empty model output, using fallback:", (finalOutput ?? "").slice(0, 80));
+          }
         }
         setStreamingHasThinkTag(parsedOutput.hasThinkTag);
         setStreamingThinkClosed(parsedOutput.isClosed);

@@ -1,5 +1,5 @@
 import type { ChatMessage } from "@/types/assistant";
-import { getToolByName, listToolDescriptors, selectToolFromInput } from "@/tools/tool-registry";
+import { filterArgsForTool, getToolByName, listToolDescriptors, selectToolFromInput } from "@/tools/tool-registry";
 
 export interface PlannedStep {
   id: string;
@@ -53,12 +53,15 @@ function validatePlan(payload: PlannedPayload | null, maxSteps: number): Planned
       typeof candidate.description === "string" && candidate.description.trim().length > 0
         ? candidate.description.trim()
         : `Step ${index + 1}`;
-    if (toolName && !getToolByName(toolName)) continue;
+    const tool = toolName ? getToolByName(toolName) : undefined;
+    if (toolName && !tool) continue;
+    const rawArgs = sanitizeArgs(candidate.args);
+    const args = tool ? filterArgsForTool(tool, rawArgs) : rawArgs;
     valid.push({
       id: typeof candidate.id === "string" ? candidate.id : String(index + 1),
       description,
       toolName,
-      args: sanitizeArgs(candidate.args),
+      args,
       dependsOn: Array.isArray(candidate.dependsOn)
         ? candidate.dependsOn.filter((dep): dep is string => typeof dep === "string")
         : undefined,
