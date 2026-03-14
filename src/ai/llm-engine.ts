@@ -1,4 +1,5 @@
 import { getTierSpec } from "@/ai/model-registry";
+import { parseToolActionDecision } from "@/ai/tool-action-schema";
 import type { ChatMessage, ModelTier } from "@/types/assistant";
 import { LLMModule } from "react-native-executorch";
 import type { Message } from "react-native-executorch";
@@ -133,6 +134,49 @@ export class LLMEngine {
 
     this.initializedTier = tier;
     return getTierSpec(tier).primary;
+  }
+
+  /**
+   * Generate with a soft token cap. Uses onToken to accumulate output and interrupts
+   * when we hit maxNewTokens (approximate) or when we have parseable JSON.
+   * If the run is interrupted, returns the accumulated buffer so the caller can parse it.
+   */
+  async generateWithMaxTokens(
+    messages: ChatMessage[],
+    maxNewTokens: number,
+    onToken?: (token: string) => void,
+  ): Promise<string> {
+    if (!this.llm || !this.isLoaded) {
+      const lastUser = [...messages].reverse().find((m) => m.role === "user");
+      return `OfflineMate fallback response: ${lastUser?.content ?? "hello"}`;
+    }
+    const mapped: Message[] = messages.map((m) => ({ role: m.role, content: m.content }));
+    let buffer = "";
+    const charLimit = Math.max(maxNewTokens * 3, 100);
+    let interruptedForCap = false;
+    this.streamCallback = (token: string) => {
+      buffer += token;
+      onToken?.(token);
+      if (interruptedForCap) return;
+      // Only strict JSON parse for early-stop; lenient parser is for complete output in agentic-search-flow
+      const decision = parseToolActionDecision(buffer);
+      if (decision || buffer.length >= charLimit) {
+        interruptedForCap = true;
+        try {
+          this.interrupt();
+        } catch (e) {
+          console.warn("[OfflineMate] generateWithMaxTokens interrupt failed:", e);
+        }
+      }
+    };
+    try {
+      return await this.llm.generate(mapped);
+    } catch (e) {
+      if (buffer.length > 0) return buffer;
+      throw e;
+    } finally {
+      this.streamCallback = null;
+    }
   }
 
   async generate(

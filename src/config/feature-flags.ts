@@ -6,6 +6,7 @@ export const FEATURE_FLAGS = {
   calendarReadWriteV1: true,
   androidAlarmV1: true,
   webSearchV1: true,
+  agenticSearchEnabled: true,
 } as const;
 
 export function isEnabled(flag: keyof typeof FEATURE_FLAGS): boolean {
