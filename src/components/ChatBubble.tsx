@@ -66,8 +66,14 @@ const styles = StyleSheet.create({
   assistantRow: { alignItems: "flex-start" },
   bubble: { maxWidth: "85%", borderRadius: 12, padding: 10 },
   user: { backgroundColor: "#2563eb" },
-  assistant: { backgroundColor: "#111827", borderWidth: 1, borderColor: "#1f2937" },
-  text: { color: "#e5e7eb" },
+  assistant: {
+    backgroundColor: "#111827",
+    borderWidth: 1,
+    borderColor: "#1f2937",
+    maxWidth: "100%",
+    alignSelf: "stretch",
+  },
+  text: { color: "#e5e7eb", lineHeight: 24 },
   textBold: { fontWeight: "700", color: "#f3f4f6" },
   thinkingWrap: {
     marginBottom: 8,

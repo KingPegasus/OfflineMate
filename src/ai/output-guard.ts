@@ -3,17 +3,15 @@ function normalizeWhitespace(value: string): string {
 }
 
 export function collapseRepeatedLines(text: string): string {
-  const lines = text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const lines = text.split(/\r?\n/).map((line) => line.trim());
   if (lines.length === 0) return "";
+  // Preserve blank lines (paragraph breaks); filter(Boolean) was stripping them
 
   const deduped: string[] = [];
   let lastLine = "";
   let repeatedCount = 0;
   for (const line of lines) {
-    const normalized = normalizeWhitespace(line.toLowerCase());
+    const normalized = line ? normalizeWhitespace(line.toLowerCase()) : "";
     if (normalized === lastLine) {
       repeatedCount += 1;
       if (repeatedCount >= 2) {
@@ -36,7 +34,7 @@ export function trimRepeatingSentenceTail(text: string): string {
     .split(/(?<=[.!?])\s+/)
     .map((sentence) => sentence.trim())
     .filter(Boolean);
-  if (sentences.length < 3) return normalized;
+  if (sentences.length < 3) return text;
 
   const out: string[] = [];
   const seen = new Map<string, number>();
@@ -49,6 +47,8 @@ export function trimRepeatingSentenceTail(text: string): string {
       out.push(sentence);
     }
   }
+  // If no repetition was removed, return original to preserve newlines/formatting
+  if (out.length === sentences.length) return text;
   return out.join(" ");
 }
 
