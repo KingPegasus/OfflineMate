@@ -1,0 +1,2 @@
+# patch-package parses unified diffs strictly; CRLF breaks hunk counts on Linux/CI.
+patches/**/*.patch text eol=lf

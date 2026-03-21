@@ -8,6 +8,11 @@ This document defines the planned CI/CD checks and release gates for OfflineMate
 - Model-tier behavior and permission handling require repeatable checks.
 - Security and dependency checks should block risky releases.
 
+## GitHub Actions runner
+
+- Workflow: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
+- Uses **`actions/checkout@v6`** and **`actions/setup-node@v6`** (Node **24** for the job) so action runtimes stay on supported Node versions ([deprecation of Node 20 on Actions](https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/)).
+
 ## CI Stages
 
 1. Install dependencies

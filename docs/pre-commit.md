@@ -55,6 +55,7 @@ Use sparingly; prefer fixing validate failures so CI stays green.
 - **Slow commits:** The full suite can take ~10–20s+ depending on machine; that is expected for “full CI parity.”
 - **`npm audit` fails:** Resolve or bump vulnerable deps; CI will fail the same way on `main` / PRs.
 - **Hook not running:** Run `npm install` (with scripts enabled) and check `git config core.hooksPath` is `.husky` (relative to repo root).
+- **`patch-package` / “could not be parsed”:** Unified diff hunks must match line counts in the `@@` header (extra blank lines after `@@` break `patch-package` 8.x). Patch files are forced to **LF** via `.gitattributes` so CI on Linux matches local parses.
 
 ## Related docs
 
