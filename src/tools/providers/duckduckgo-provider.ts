@@ -23,16 +23,17 @@ function cleanText(input: string): string {
 
 export function parseDuckHtmlResults(html: string): { title?: string; snippet?: string; url?: string }[] {
   const results: { title?: string; snippet?: string; url?: string }[] = [];
-  const blockRegex = /<div class="result__body">([\s\S]*?)<\/div>\s*<\/div>/g;
+  // DuckDuckGo uses multiple classes, e.g. class="links_main links_deep result__body"
+  const blockRegex = /<div[^>]*class="[^"]*result__body[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/g;
   let blockMatch: RegExpExecArray | null;
 
   while ((blockMatch = blockRegex.exec(html)) && results.length < 5) {
     const block = blockMatch[1] ?? "";
     const linkMatch = block.match(
-      /<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/,
+      /<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/,
     );
     const snippetMatch = block.match(
-      /<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>|<div[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/div>/,
+      /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>|<div[^>]*class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/div>/,
     );
 
     const rawUrl = linkMatch?.[1]?.trim();

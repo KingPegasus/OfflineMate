@@ -5,6 +5,7 @@ import { routeIntent } from "@/ai/intent-router";
 import { retrieveContextForQuery } from "@/ai/rag-pipeline";
 import { buildPrompt } from "@/ai/prompt-builder";
 import { filterArgsForTool, getToolByName, selectToolFromInput } from "@/tools/tool-registry";
+import { WEB_SEARCH_NO_RESULTS_PREFIX } from "@/tools/search-tool";
 import { useChatStore } from "@/stores/chat-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { speak } from "@/voice/tts-engine";
@@ -66,6 +67,15 @@ function extractPlannerPayload(raw: string): { steps: unknown[] } | null {
 
 function isPlannerLeak(text: string): boolean {
   return extractPlannerPayload(text) !== null;
+}
+
+/** Model echoed agentic search decision (JSON or key:value) instead of natural language. */
+function looksLikeAgenticDecisionLeak(text: string): boolean {
+  const t = text.trim();
+  if (parseToolActionDecision(t) !== null) return true;
+  if (/\bdecision\s*:\s*["']?(use_tool|answer_direct)/i.test(text) && /\btoolname\s*:/i.test(text)) return true;
+  if (/\bdecision\s*:\s*["']?(use_tool|answer_direct)/i.test(text) && /\bquery\s*:/i.test(text)) return true;
+  return false;
 }
 
 function summarizeToolResult(toolResult?: string): string | null {
@@ -373,9 +383,30 @@ export function useLLMChat() {
           return;
         }
 
-        if (needsPostInterruptDelay) {
-          await new Promise((r) => setTimeout(r, 500));
+        if (needsPostInterruptDelay || (intent === "tool" && toolResult)) {
+          await new Promise((r) => setTimeout(r, needsPostInterruptDelay ? 500 : 400));
         }
+
+        // Deterministic empty-SERP copy is already a full UX message; synthesis often collapses it to an example fragment.
+        const searchToolBody = summarizeToolResult(toolResult ?? "");
+        if (
+          intent === "tool" &&
+          toolResult?.startsWith("search.web:") &&
+          searchToolBody &&
+          searchToolBody.startsWith(WEB_SEARCH_NO_RESULTS_PREFIX)
+        ) {
+          const directNoResults = cleanModelOutput(searchToolBody);
+          setStreamingHasThinkTag(false);
+          setStreamingThinkClosed(true);
+          setStreamingThinking([]);
+          setStreamingResponse(directNoResults);
+          pushMessage(createMessage("assistant", directNoResults));
+          if (voiceEnabled) {
+            await speak(directNoResults);
+          }
+          return;
+        }
+
         const promptMessages =
           intent === "tool" && toolResult?.startsWith("search.web:")
             ? buildSearchSynthesisMessages(cleaned, toolResult)
@@ -435,7 +466,11 @@ export function useLLMChat() {
         }
         let finalOutput = cleanedOutput;
         if (intent === "tool") {
-          if (isPlannerLeak(cleanedOutput) || parseToolActionDecision(cleanedOutput) !== null) {
+          if (
+            isPlannerLeak(cleanedOutput) ||
+            parseToolActionDecision(cleanedOutput) !== null ||
+            looksLikeAgenticDecisionLeak(cleanedOutput)
+          ) {
             finalOutput =
               summarizeToolResult(toolResult) ??
               "Done. I executed your request, but the model returned planner JSON instead of a natural response.";
@@ -445,6 +480,10 @@ export function useLLMChat() {
               (fallback ?? (toolResult ? toolResult.split("\n")[0]?.replace(/^[^:]+:\s*/, "").trim() : "")) || "Done.";
             console.log("[OfflineMate] Tool: empty model output, using fallback:", (finalOutput ?? "").slice(0, 80));
           }
+        } else if (looksLikeAgenticDecisionLeak(cleanedOutput)) {
+          finalOutput =
+            "That reply was internal routing text, not an answer. For a reminder in about a minute, try: \"Remind me in 1 minute to get up.\"";
+          console.log("[OfflineMate] Direct/context: stripped agentic decision leak from model output");
         }
         setStreamingHasThinkTag(parsedOutput.hasThinkTag);
         setStreamingThinkClosed(parsedOutput.isClosed);

@@ -25,4 +25,20 @@ describe("duckduckgo html parser", () => {
   it("returns empty array when no result blocks are found", () => {
     expect(parseDuckHtmlResults("<html><body>No results</body></html>")).toEqual([]);
   });
+
+  it("parses DuckDuckGo multi-class markup (links_main links_deep result__body)", () => {
+    const html = `
+      <div class="links_main links_deep result__body">
+        <h2 class="result__title">
+          <a rel="nofollow" class="result__a" href="https://example.com/coffee">Best Coffee Near Me</a>
+        </h2>
+        <a class="result__snippet">Find nearby coffee shops.</a>
+      </div>
+    </div>
+    `;
+    const parsed = parseDuckHtmlResults(html);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0]?.title).toBe("Best Coffee Near Me");
+    expect(parsed[0]?.url).toContain("example.com");
+  });
 });

@@ -5,6 +5,9 @@ import { createDuckDuckGoProvider } from "@/tools/providers/duckduckgo-provider"
 const provider = createDuckDuckGoProvider();
 const MAX_OUTPUT_CHARS = 2000;
 
+/** Empty-SERP UX prefix; chat skips LLM synthesis so this full string is shown verbatim. */
+export const WEB_SEARCH_NO_RESULTS_PREFIX = "No web results found for that query.";
+
 function isDateQuery(lower: string): boolean {
   return /\b(today('| i)?s date|date today|current date|what('?s| is) the date|what day is it)\b/.test(lower);
 }
@@ -90,18 +93,47 @@ export const webSearchTool: Tool = {
   name: "search.web",
   description: "Search the web for current information. Requires internet.",
   keywords: [
+    // Explicit search / lookup
+    "search the web",
+    "search the internet",
+    "search the net",
+    "search for",
+    "search online",
+    "search",
+    "look up online",
+    "look it up",
+    "look something up",
+    "look up",
+    "check online",
+    "check the web",
+    "check the internet",
     "check from the internet",
     "from the internet",
-    "search online",
-    "look up online",
-    "search",
-    "look up",
-    "what is",
-    "find out",
-    "when is",
-    "who is",
+    "from the web",
+    "find out online",
+    "find online",
+    "get information from",
+    "get info from the web",
+    // Question / factual intent (omit bare "what is" — definitional Qs handled on-device)
+    "what's the current",
+    "what is the current",
+    // Current / latest
+    "latest on",
+    "latest news",
+    "latest about",
+    "current information",
     "current date",
     "today's date",
+    "up to date on",
+    // Verification / fact-check
+    "is it true that",
+    "verify online",
+    "fact check",
+    // Weather (implies live/search)
+    "today's weather",
+    "current weather",
+    "weather now",
+    "near me",
   ],
   params: { optional: ["query"] },
   execute: async (params) => {
@@ -132,9 +164,13 @@ export const webSearchTool: Tool = {
       const result = await provider.search(query, { timeoutMs: 5000 });
       const summary = buildSearchSummary(result);
       if (!summary) {
+        const nearMe = /\bnear\s+me\b/i.test(query);
+        const message = nearMe
+          ? `${WEB_SEARCH_NO_RESULTS_PREFIX} Try adding a city or place (e.g. 'coffee near Seattle').`
+          : `${WEB_SEARCH_NO_RESULTS_PREFIX} Try a more specific phrase.`;
         return {
           ok: true,
-          message: "No web results found for that query. Try a more specific phrase.",
+          message,
         };
       }
       return {

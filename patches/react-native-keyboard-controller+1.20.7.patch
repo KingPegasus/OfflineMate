@@ -8,3 +8,21 @@ index 0000000..1111111 100644
 +<manifest xmlns:android="http://schemas.android.com/apk/res/android">
  
  </manifest>
+diff --git a/node_modules/react-native-keyboard-controller/android/src/main/java/com/reactnativekeyboardcontroller/views/overlay/OverKeyboardViewGroup.kt b/node_modules/react-native-keyboard-controller/android/src/main/java/com/reactnativekeyboardcontroller/views/overlay/OverKeyboardViewGroup.kt
+index 0000000..1111111 100644
+--- a/node_modules/react-native-keyboard-controller/android/src/main/java/com/reactnativekeyboardcontroller/views/overlay/OverKeyboardViewGroup.kt
++++ b/node_modules/react-native-keyboard-controller/android/src/main/java/com/reactnativekeyboardcontroller/views/overlay/OverKeyboardViewGroup.kt
+@@ -149,9 +149,9 @@ class OverKeyboardViewGroup(
+ 
+   override fun onSizeChanged(
+     width: Int,
+     height: Int,
+-    oldWidth: Int,
+-    oldHeight: Int,
++    oldw: Int,
++    oldh: Int,
+   ) {
+-    super.onSizeChanged(width, height, oldWidth, oldHeight)
++    super.onSizeChanged(width, height, oldw, oldh)
+     stretchTo(width, height)
+   }
