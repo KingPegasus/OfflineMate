@@ -15,6 +15,8 @@ This repository is currently maintained as a private-team project.
 - Require at least one reviewer
 - Require CI checks to pass before merge
 
+A **Husky pre-commit** hook runs the same validation as CI locally (`npm run validate`). See **`docs/pre-commit.md`** for what runs, setup, and how to skip in emergencies.
+
 Recommended branch names:
 
 - `feat/<area>-<summary>`

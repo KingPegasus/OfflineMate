@@ -8,6 +8,8 @@
     "doc": "docs"
   },
   "scripts": {
+    "prepare": "husky",
+    "validate": "npm run typecheck && npm run lint && npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:perf && npm audit --audit-level=high",
     "postinstall": "patch-package",
     "start": "expo start",
     "android": "expo run:android",
@@ -77,6 +79,7 @@
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.39.4",
     "eslint-config-expo": "^55.0.0",
+    "husky": "^9.1.7",
     "patch-package": "^8.0.1",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",

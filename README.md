@@ -55,6 +55,7 @@ npm run ios
 
 ## Project Docs
 
+- Pre-commit hook (Husky, same checks as CI): `docs/pre-commit.md`
 - Docs index: `docs/README.md`
 - Architecture: `docs/architecture/overview.md`
 - Model tiers: `docs/architecture/model-and-capability-tiers.md`

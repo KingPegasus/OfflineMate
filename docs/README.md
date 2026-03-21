@@ -33,6 +33,10 @@ technical decisions.
 - `tech/embeddings-and-indexing.md`
 - `tech/agent-planning-and-execution.md`
 
+## Development
+
+- **`pre-commit.md`** — Git **pre-commit** hook (Husky): runs `typecheck`, `lint`, tests, and `npm audit` like [CI](../.github/workflows/ci.yml)
+
 ## Planning and Analysis
 
 - `ROADMAP_AND_GAPS.md` — Feature status vs goals, gaps, and prioritized roadmap
