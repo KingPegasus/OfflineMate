@@ -31,7 +31,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "expo": {
     "install": {
       "exclude": [

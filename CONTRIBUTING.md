@@ -1,12 +1,12 @@
 # Contributing to OfflineMate
 
-This repository is currently maintained as a private-team project.
+This project is open source under the [MIT License](LICENSE.md).
 
 ## Contribution Model
 
-- Internal contributions only (for now)
+- Pull requests welcome; keep changes focused and documented
 - Work is tracked by architecture and implementation milestones
-- Every significant change should include docs updates
+- Every significant change should include docs updates where it affects behavior or setup
 
 ## Branching and PR Rules
 

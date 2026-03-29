@@ -1,33 +1,28 @@
-# OfflineMate License
+# MIT License
 
-Copyright (c) 2026 OfflineMate
+Copyright (c) 2026 KingPegasus
 
-All rights reserved.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-This repository and all associated source code, documentation, assets, and configuration files are
-proprietary and confidential unless explicitly stated otherwise in writing.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-## Permissions
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
-No permission is granted to:
+---
 
-- Use
-- Copy
-- Modify
-- Merge
-- Publish
-- Distribute
-- Sublicense
-- Sell
+## Third-party components
 
-any part of this software without prior written authorization from OfflineMate.
-
-## Internal Use
-
-Internal team members and approved contractors may use this repository only for authorized project
-work under applicable employment or contractor agreements.
-
-## Third-Party Components
-
-This project may include or depend on third-party software with separate licenses. Those licenses
-remain in effect for their respective components.
+Dependencies and bundled assets may be under other licenses. See each package’s
+license and notices in `package-lock.json`, vendor headers, and asset metadata.
