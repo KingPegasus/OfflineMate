@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://offlinemate.com/sitemap.xml

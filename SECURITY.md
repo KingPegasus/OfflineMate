@@ -8,8 +8,18 @@ Until versioning is formalized, the latest default branch is considered supporte
 
 ## Reporting a Vulnerability
 
-Please report vulnerabilities privately to the project maintainers through internal channels.
-Do not disclose security issues publicly before triage and remediation.
+**Public repository:** report security issues **privately** so they can be fixed before wide disclosure.
+
+Preferred:
+
+- Use **[GitHub Security Advisories](https://docs.github.com/code-security/security-advisories)** for this repository (**Security → Report a vulnerability**), if enabled for the repo.
+
+If that is unavailable:
+
+- Email the maintainers at a **security contact** published on [offlinemate.com](https://offlinemate.com) or your organization’s security page.  
+- **Replace this paragraph** with a working address before relying on it for production.
+
+Do not open a **public** issue for unfixed exploitable vulnerabilities.
 
 Include:
 

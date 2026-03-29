@@ -1,0 +1,45 @@
+# Deploy static site: minify HTML/CSS then upload to GitHub Pages (custom domain: website/CNAME).
+
+name: Deploy site to Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "website/**"
+      - "scripts/minify-website.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run website:build
+      - uses: actions/configure-pages@v6
+      # Stay on v3: v4 omits dotfiles (would drop .nojekyll).
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: website-dist
+      - id: deployment
+        uses: actions/deploy-pages@v5

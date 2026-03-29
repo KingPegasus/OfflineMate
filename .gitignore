@@ -3,6 +3,7 @@ node_modules/
 .expo-shared/
 dist/
 build/
+website-dist/
 coverage/
 .DS_Store
 *.log

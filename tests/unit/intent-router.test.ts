@@ -67,6 +67,7 @@ describe("routeIntent", () => {
 
   it("routes note-taking phrases to tool", () => {
     expect(routeIntent("Take a note: buy milk")).toBe("tool");
+    expect(routeIntent("Add a note to buy bread")).toBe("tool");
     expect(routeIntent("Remember this password is wrong")).toBe("tool");
     expect(routeIntent("Play this musical note on the piano")).toBe("direct");
   });

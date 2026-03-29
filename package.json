@@ -25,7 +25,9 @@
     "test:coverage": "vitest run --coverage tests/unit tests/integration tests/e2e",
     "android:logs": "adb logcat -s ReactNativeJS:V ReactNative:V Expo:V",
     "android:logs:all": "adb logcat",
-    "android:logs:raw": "adb logcat *:V"
+    "android:logs:raw": "adb logcat *:V",
+    "website:build": "node scripts/minify-website.mjs",
+    "search:live": "tsx scripts/run-web-search.ts"
   },
   "keywords": [],
   "author": "",
@@ -74,6 +76,8 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "esbuild": "^0.25.0",
+    "html-minifier-terser": "^7.2.0",
     "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
     "@vitest/coverage-v8": "^4.0.18",
@@ -82,6 +86,7 @@
     "husky": "^9.1.7",
     "patch-package": "^8.0.1",
     "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }

@@ -49,7 +49,7 @@
 - **Stays direct:** “recursive **call** in JavaScript”, “error **message**” (no `message ` substring).
 
 ### Notes — **phrases**
-- **Use:** `take a note`, `save a note`, `write this down`, `remember this`, `find note`, `search note`.
+- **Use:** `add a note`, `take a note`, `save a note`, `write this down`, `remember this`, `find note`, `search note`.
 - **Removed:** bare `note` (matches “musical **note**”, “please **note**”).
 
 ### Web search — **explicit or time-sensitive**

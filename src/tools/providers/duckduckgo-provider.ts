@@ -3,6 +3,33 @@ import type { WebSearchProvider, WebSearchResult } from "./web-search-provider";
 const API_BASE = "https://api.duckduckgo.com/";
 const HTML_SEARCH_BASE = "https://html.duckduckgo.com/html/";
 
+/**
+ * DuckDuckGo often returns empty instant answers and no parseable HTML when it sees React Native's
+ * default okhttp User-Agent. Do not send this from Node: datacenter IPs + fake mobile Chrome can get
+ * empty responses; default undici UA works there.
+ */
+const REACT_NATIVE_BROWSER_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36",
+  "Accept-Language": "en-US,en;q=0.9",
+} as const;
+
+function needsBrowserLikeHeadersForDuckDuckGo(): boolean {
+  const nav = (globalThis as { navigator?: { product?: string; userAgent?: string } }).navigator;
+  if (nav?.product === "ReactNative") return true;
+  const ua = nav?.userAgent ?? "";
+  if (/okhttp/i.test(ua)) return true;
+  if (/ReactNative/i.test(ua)) return true;
+  return false;
+}
+
+function duckDuckGoFetchHeaders(accept: string): Record<string, string> {
+  if (needsBrowserLikeHeadersForDuckDuckGo()) {
+    return { ...REACT_NATIVE_BROWSER_HEADERS, Accept: accept };
+  }
+  return { Accept: accept };
+}
+
 function stripTags(input: string): string {
   return input.replace(/<[^>]+>/g, " ");
 }
@@ -59,9 +86,7 @@ export function createDuckDuckGoProvider(): WebSearchProvider {
         const url = `${API_BASE}?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
         const res = await fetch(url, {
           signal: controller.signal,
-          headers: {
-            Accept: "application/json",
-          },
+          headers: duckDuckGoFetchHeaders("application/json"),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as {
@@ -93,9 +118,7 @@ export function createDuckDuckGoProvider(): WebSearchProvider {
         const htmlUrl = `${HTML_SEARCH_BASE}?q=${encodeURIComponent(query)}`;
         const htmlRes = await fetch(htmlUrl, {
           signal: controller.signal,
-          headers: {
-            Accept: "text/html",
-          },
+          headers: duckDuckGoFetchHeaders("text/html,application/xhtml+xml;q=0.9,*/*;q=0.8"),
         });
         if (!htmlRes.ok) throw new Error(`HTTP ${htmlRes.status}`);
         const html = await htmlRes.text();

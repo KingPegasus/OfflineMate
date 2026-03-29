@@ -46,6 +46,10 @@ npm run android
 npm run ios
 ```
 
+## Website (offlinemate.com)
+
+Static site source: `website/`. **Production** deploy minifies HTML/CSS into `website-dist/` (`npm run website:build`). GitHub Actions runs that before Pages upload. Setup: `website/README.md`.
+
 ## Build and Release
 
 - Full local + EAS build runbook: `BUILDING.md`
@@ -74,6 +78,7 @@ npm run ios
 
 - Contribution guide: `CONTRIBUTING.md`
 - Security policy: `SECURITY.md`
+- **Privacy & terms (public / store listings):** `docs/legal/privacy-policy.md`, `docs/legal/terms-of-use.md` — index: `docs/legal/README.md`
 - License: `LICENSE.md` (Proprietary / All rights reserved)
 
 ## Domain

@@ -17,7 +17,7 @@ async function ensureReminderChannel(): Promise<void> {
     await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
       name: "Reminders",
       importance: Notifications.AndroidImportance.MAX,
-      sound: "reminder-tone.wav",
+      sound: "reminder_tone",
     });
     console.log("[OfflineMate] Reminder channel ready:", REMINDER_CHANNEL_ID);
   } catch (e) {

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { parseDuckHtmlResults } from "@/tools/providers/duckduckgo-provider";
+import { describe, expect, it, vi } from "vitest";
+import { createDuckDuckGoProvider, parseDuckHtmlResults } from "@/tools/providers/duckduckgo-provider";
 
 describe("duckduckgo html parser", () => {
   it("extracts title, snippet, and url", () => {
@@ -24,6 +24,45 @@ describe("duckduckgo html parser", () => {
 
   it("returns empty array when no result blocks are found", () => {
     expect(parseDuckHtmlResults("<html><body>No results</body></html>")).toEqual([]);
+  });
+
+  it("uses a browser-like User-Agent on React Native so DDG returns parseable HTML", async () => {
+    const calls: { url: string; headers?: HeadersInit }[] = [];
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      calls.push({ url, headers: init?.headers });
+      if (url.includes("api.duckduckgo.com")) {
+        return new Response(JSON.stringify({}), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      return new Response("<html><body></body></html>", { status: 200, headers: { "Content-Type": "text/html" } });
+    }) as typeof fetch;
+
+    const prev = (globalThis as { navigator?: unknown }).navigator;
+    Object.defineProperty(globalThis, "navigator", {
+      value: { product: "ReactNative" },
+      configurable: true,
+      writable: true,
+    });
+    try {
+      const provider = createDuckDuckGoProvider();
+      await provider.search("population of Tokyo", { timeoutMs: 5000 });
+    } finally {
+      globalThis.fetch = origFetch;
+      Object.defineProperty(globalThis, "navigator", {
+        value: prev,
+        configurable: true,
+        writable: true,
+      });
+    }
+
+    expect(calls.length).toBeGreaterThanOrEqual(2);
+    const h = calls[0]?.headers;
+    const ua =
+      h && typeof h === "object" && !(h instanceof Headers)
+        ? (h as Record<string, string>)["User-Agent"]
+        : new Headers(h as HeadersInit).get("User-Agent");
+    expect(ua).toMatch(/Chrome/);
   });
 
   it("parses DuckDuckGo multi-class markup (links_main links_deep result__body)", () => {

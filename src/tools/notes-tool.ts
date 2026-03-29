@@ -5,7 +5,7 @@ import type { Tool } from "@/tools/tool-registry";
 export const createNoteTool: Tool = {
   name: "notes.create",
   description: "Create a note in local SQLite",
-  keywords: ["note", "write down", "remember this"],
+  keywords: ["add a note", "note", "write down", "remember this"],
   params: { optional: ["title", "content"] },
   execute: async (params) => {
     const title = params.title ?? "Untitled note";

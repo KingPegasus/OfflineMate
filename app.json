@@ -7,6 +7,12 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "jsEngine": "hermes",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#030712"
+    },
     "plugins": [
       "expo-router",
       [
@@ -19,7 +25,7 @@
         "expo-notifications",
         {
           "color": "#1d4ed8",
-          "sounds": ["./assets/sounds/reminder-tone.wav"]
+          "sounds": ["./assets/sounds/reminder_tone.wav"]
         }
       ],
       [
@@ -45,6 +51,10 @@
     ],
     "android": {
       "package": "com.offlinemate.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0f172a"
+      },
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "RECORD_AUDIO",
@@ -70,6 +80,9 @@
         "projectId": "fb401217-1019-4b74-b72d-18b4574b8595"
       }
     },
-    "owner": "razasaleemi"
+    "owner": "razasaleemi",
+    "web": {
+      "favicon": "./assets/icon.png"
+    }
   }
 }

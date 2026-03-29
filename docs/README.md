@@ -37,6 +37,12 @@ technical decisions.
 
 - **`pre-commit.md`** — Git **pre-commit** hook (Husky): runs `typecheck`, `lint`, tests, and `npm audit` like [CI](../.github/workflows/ci.yml)
 
+## Legal (public / store)
+
+- `legal/README.md` — index
+- `legal/privacy-policy.md` — end-user privacy (on-device data, network, permissions)
+- `legal/terms-of-use.md` — app terms, AI disclaimers, liability
+
 ## Planning and Analysis
 
 - `ROADMAP_AND_GAPS.md` — Feature status vs goals, gaps, and prioritized roadmap

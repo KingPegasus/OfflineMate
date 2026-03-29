@@ -41,6 +41,7 @@ const TOOL_KEYWORDS = [
   "email ",
   "contact ",
   // Notes — phrases only (no bare "note"); phone "call …" handled by wantsPhoneCallIntent()
+  "add a note",
   "take a note",
   "save a note",
   "write this down",
