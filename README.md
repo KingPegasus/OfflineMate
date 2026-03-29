@@ -81,6 +81,10 @@ Static site source: `website/`. **Production** deploy minifies HTML/CSS into `we
 - **Privacy & terms (public / store listings):** `docs/legal/privacy-policy.md`, `docs/legal/terms-of-use.md` — index: `docs/legal/README.md`
 - License: `LICENSE.md` (Proprietary / All rights reserved)
 
+## Repository
+
+- [github.com/KingPegasus/OfflineMate](https://github.com/KingPegasus/OfflineMate)
+
 ## Domain
 
 - [offlinemate.com](https://offlinemate.com)

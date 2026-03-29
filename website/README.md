@@ -20,7 +20,7 @@ Point the apex domain to GitHub Pages ([current IPs in GitHub docs](https://docs
 - **A records** for `offlinemate.com` → GitHub’s documented IPv4 addresses.
 - Optional: **AAAA** for IPv6 if GitHub lists them.
 
-Or use **CNAME** for a subdomain (e.g. `www`) → `YOUR_USER.github.io` (see GitHub Pages custom domain docs).
+Or use **CNAME** for a subdomain (e.g. `www`) → `kingpegasus.github.io` (see [GitHub Pages custom domain docs](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site)).
 
 Propagation can take up to 48 hours.
 
@@ -51,7 +51,7 @@ npx --yes serve website -p 3333
 
 ## Repo links in HTML
 
-`index.html` and `privacy.html` link to `https://github.com/razasaleemi/offline-assistant`. If your GitHub org/user or repo name differs, search-replace in those files.
+`index.html` and `privacy.html` link to [`https://github.com/KingPegasus/OfflineMate`](https://github.com/KingPegasus/OfflineMate).
 
 ## Play / App Store
 
