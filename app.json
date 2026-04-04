@@ -25,7 +25,9 @@
         "expo-notifications",
         {
           "color": "#1d4ed8",
-          "sounds": ["./assets/sounds/reminder_tone.wav"]
+          "sounds": [
+            "./assets/sounds/reminder_tone.wav"
+          ]
         }
       ],
       [
@@ -41,7 +43,8 @@
           "contactsPermission": "OfflineMate needs contacts access for contact-related commands."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

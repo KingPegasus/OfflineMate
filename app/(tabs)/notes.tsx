@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { createNote, listNotes } from "@/db/notes-repository";
+import { createNote, deleteNote, listNotes } from "@/db/notes-repository";
 
 export default function NotesScreen() {
   const [title, setTitle] = useState("");
@@ -44,7 +44,34 @@ export default function NotesScreen() {
       <ScrollView style={styles.list}>
         {notes.map((note) => (
           <View key={note.id} style={styles.note}>
-            <Text style={styles.noteTitle}>{note.title}</Text>
+            <View style={styles.noteHeader}>
+              <Text style={styles.noteTitle} numberOfLines={2}>
+                {note.title}
+              </Text>
+              <TouchableOpacity
+                accessibilityLabel={`Delete note ${note.title}`}
+                onPress={() => {
+                  Alert.alert(
+                    "Delete note",
+                    "Remove this note from your device? It will also be removed from semantic search.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: () => {
+                          deleteNote(note.id);
+                          setRefreshKey((k) => k + 1);
+                        },
+                      },
+                    ],
+                  );
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.deleteLabel}>Delete</Text>
+              </TouchableOpacity>
+            </View>
             <Text style={styles.body}>{note.content}</Text>
           </View>
         ))}
@@ -68,7 +95,15 @@ const styles = StyleSheet.create({
   save: { color: "#60a5fa", fontWeight: "700" },
   list: { flex: 1 },
   note: { backgroundColor: "#111827", borderRadius: 10, padding: 12, marginBottom: 8 },
-  noteTitle: { color: "#e5e7eb", fontWeight: "700", marginBottom: 4 },
+  noteHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 4,
+  },
+  noteTitle: { color: "#e5e7eb", fontWeight: "700", flex: 1 },
+  deleteLabel: { color: "#f87171", fontWeight: "600", fontSize: 15 },
   body: { color: "#9ca3af" },
 });
 

@@ -22,6 +22,20 @@ describe("buildPrompt", () => {
     expect(result[0].content).toContain("User asked to remember");
     expect(result[0].content).toContain("Tool output:");
     expect(result[0].content).toContain("Context:");
+    expect(result[0].content).toContain("indexed notes");
+  });
+
+  it("when memory lookup returns nothing, hints the model not to answer generically", () => {
+    const messages: ChatMessage[] = [
+      { id: "u1", role: "user", content: "what did I save about X", createdAt: Date.now() },
+    ];
+    const result = buildPrompt({
+      tier: "standard",
+      messages,
+      contextSnippets: [],
+      contextLookupEmpty: true,
+    });
+    expect(result[0].content).toContain("no relevant passages");
   });
 
   it("applies tight context budget on lite tier", () => {

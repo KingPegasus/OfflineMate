@@ -2,14 +2,54 @@ import { getDb } from "@/db/database";
 import { indexNoteForRetrieval } from "@/context/context-indexer";
 import type { Tool } from "@/tools/tool-registry";
 
+/** Planner often passes only `text` / `query` (full user line); strip common note-taking prefixes for body. */
+const NOTE_INTENT_PREFIXES = [
+  /^add\s+a\s+note\s+to\s+/i,
+  /^add\s+a\s+note\s*:\s*/i,
+  /^take\s+a\s+note\s*:\s*/i,
+  /^take\s+a\s+note\s+to\s+/i,
+  /^save\s+a\s+note\s+to\s+/i,
+  /^save\s+a\s+note\s*:\s*/i,
+  /^add\s+a\s+note\s+/i,
+  /^remember\s+this\s*:\s*/i,
+  /^write\s+this\s+down\s*:\s*/i,
+];
+
+function stripNoteIntentPrefixes(raw: string): string {
+  let t = raw.trim();
+  for (const re of NOTE_INTENT_PREFIXES) {
+    t = t.replace(re, "").trim();
+  }
+  return t;
+}
+
+function firstLineOrTruncate(text: string, max: number): string {
+  const line = text.split(/\r?\n/)[0]?.trim() ?? "";
+  if (line.length <= max) return line;
+  return `${line.slice(0, Math.max(0, max - 1))}…`;
+}
+
 export const createNoteTool: Tool = {
   name: "notes.create",
   description: "Create a note in local SQLite",
   keywords: ["add a note", "note", "write down", "remember this"],
   params: { optional: ["title", "content"] },
   execute: async (params) => {
-    const title = params.title ?? "Untitled note";
-    const content = params.content ?? "";
+    const rawPrompt = (params.text ?? params.query ?? "").trim();
+    const explicitTitle = (params.title ?? "").trim();
+    const explicitContent = (params.content ?? "").trim();
+
+    let content = explicitContent;
+    if (!content && rawPrompt) {
+      const stripped = stripNoteIntentPrefixes(rawPrompt);
+      content = stripped || rawPrompt;
+    }
+
+    let title = explicitTitle;
+    if (!title) {
+      title = content ? firstLineOrTruncate(content, 72) : "Untitled note";
+    }
+
     const id = `note-${Date.now()}`;
     const db = getDb();
     db.runSync(

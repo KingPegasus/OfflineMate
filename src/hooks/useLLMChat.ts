@@ -13,6 +13,7 @@ import { isMemoryPressureHigh } from "@/utils/performance";
 import { saveImportantMemory } from "@/context/long-term-memory";
 import { executePlanSteps, planStepsFromPrompt } from "@/ai/agent-planner";
 import { cleanModelOutput } from "@/ai/output-guard";
+import { ragAnswerOrFallback } from "@/ai/rag-grounding";
 import { parseThinkTaggedContent, toThinkingLines } from "@/ai/think-parser";
 import { buildSearchSynthesisMessages, runAgenticSearchFlow } from "@/ai/agentic-search-flow";
 import { parseToolActionDecision } from "@/ai/tool-action-schema";
@@ -186,6 +187,13 @@ export function useLLMChat() {
 
         if (intent === "context") {
           contextSnippets = await retrieveContextForQuery(cleaned, activeTier);
+          console.log(
+            "[OfflineMate] RAG done:",
+            "snippets=",
+            contextSnippets.length,
+            "chars=",
+            contextSnippets.reduce((n, s) => n + s.length, 0),
+          );
         } else if (
           intent === "tool" ||
           (activeTier === "full" && /\b(and|then|after)\b/i.test(cleaned))
@@ -414,8 +422,11 @@ export function useLLMChat() {
                 tier: activeTier,
                 messages: [...messages, userMessage],
                 contextSnippets,
+                contextLookupEmpty: intent === "context" && contextSnippets.length === 0,
                 toolResult,
               });
+
+        console.log("[OfflineMate] LLM generate start:", "intent=", intent, "promptMessages=", promptMessages.length);
 
         let output: string;
         let parsedOutput: { response: string; thinking: string; hasThinkTag: boolean; isClosed: boolean };
@@ -438,6 +449,15 @@ export function useLLMChat() {
             () => llmEngine.interrupt(),
           );
           parsedOutput = parseThinkTaggedContent(output);
+          console.log(
+            "[OfflineMate] LLM generate done:",
+            "rawLen=",
+            output.length,
+            "intent=",
+            intent,
+            "thinkClosed=",
+            parsedOutput.isClosed,
+          );
         } catch (genErr) {
           if (intent === "tool" && toolResult) {
             const fallback = summarizeToolResult(toolResult) ?? toolResult.split("\n")[0]?.replace(/^[^:]+:\s*/, "").trim();
@@ -454,6 +474,12 @@ export function useLLMChat() {
         }
         const cleanedOutput = cleanModelOutput(parsedOutput.response.trimStart());
         const finalThinking = toThinkingLines(parsedOutput.thinking);
+        const clipForLog = (s: string, max = 2000) =>
+          s.length > max ? `${s.slice(0, max)}…` : s;
+        // One string so adb/logcat shows the full line (multi-arg console.log can fragment).
+        console.log(
+          `[OfflineMate] LLM response (no think): len=${cleanedOutput.length} text=${JSON.stringify(clipForLog(cleanedOutput))}`,
+        );
         if (intent === "tool" && toolResult) {
           console.log(
             "[OfflineMate] Tool reply: rawLen=",
@@ -485,6 +511,9 @@ export function useLLMChat() {
             "That reply was internal routing text, not an answer. For a reminder in about a minute, try: \"Remind me in 1 minute to get up.\"";
           console.log("[OfflineMate] Direct/context: stripped agentic decision leak from model output");
         }
+        if (intent === "context" && contextSnippets.length > 0) {
+          finalOutput = ragAnswerOrFallback(finalOutput, contextSnippets);
+        }
         setStreamingHasThinkTag(parsedOutput.hasThinkTag);
         setStreamingThinkClosed(parsedOutput.isClosed);
         setStreamingResponse(finalOutput);
@@ -496,8 +525,12 @@ export function useLLMChat() {
           console.log("[OfflineMate] Chat: voice on, speaking response");
           await speak(finalOutput);
         }
+        console.log(
+          `[OfflineMate] Assistant delivered: intent=${intent} finalLen=${finalOutput.length} text=${JSON.stringify(clipForLog(finalOutput))}`,
+        );
       } catch (errorValue) {
         const message = errorValue instanceof Error ? errorValue.message : "Unknown chat error";
+        console.error("[OfflineMate] Chat error:", message, errorValue);
         setError(message);
       } finally {
         setLoading(false);

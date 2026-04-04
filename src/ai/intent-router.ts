@@ -42,7 +42,13 @@ const TOOL_KEYWORDS = [
   "contact ",
   // Notes — phrases only (no bare "note"); phone "call …" handled by wantsPhoneCallIntent()
   "add a note",
+  // "Add note to …" (no "a") — common speech; avoid matching "add notebook" via space/punctuation after "note"
+  "add note ",
+  "add note.",
+  "add note,",
+  "add note:",
   "take a note",
+  "take note ",
   "save a note",
   "write this down",
   "remember this",
@@ -87,7 +93,16 @@ const TOOL_KEYWORDS = [
   "search",
 ];
 
-const CONTEXT_KEYWORDS = ["summarize", "what did i", "history", "memory", "notes", "meeting"];
+const CONTEXT_KEYWORDS = [
+  "summarize",
+  "what did i",
+  "did i save",
+  "have i saved",
+  "history",
+  "memory",
+  "notes",
+  "meeting",
+];
 
 /** Phone-style "call …" without matching programming "recursive call", "function call", etc. */
 export function wantsPhoneCallIntent(normalizedLower: string): boolean {

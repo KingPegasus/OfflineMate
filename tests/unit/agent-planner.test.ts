@@ -6,6 +6,7 @@ vi.mock("@/tools/tool-registry", () => ({
   listToolDescriptors: () => [{ name: "notes.search", description: "Search notes", params: {} }],
   selectToolFromInput: () => ({ name: "notes.search" }),
   filterArgsForTool: (tool: { name: string }, args: Record<string, string>) => args,
+  reconcilePlannerStepsWithKeywordMatch: (_prompt: string, steps: unknown[]) => steps,
 }));
 
 describe("agent planner", () => {

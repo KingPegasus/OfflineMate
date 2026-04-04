@@ -45,6 +45,19 @@ export async function upsertVectorChunk(
   }
 }
 
+/** Remove all indexed chunks for a source (e.g. when a note is deleted). */
+export function deleteVectorChunksBySource(sourceType: string, sourceId: string) {
+  const db = getDb();
+  db.runSync("DELETE FROM vectors WHERE source_type = ? AND source_id = ?", [sourceType, sourceId]);
+  if (isSqliteVecReady()) {
+    try {
+      db.runSync("DELETE FROM vectors_idx WHERE source_type = ? AND source_id = ?", [sourceType, sourceId]);
+    } catch {
+      // vec0 optional
+    }
+  }
+}
+
 export async function searchRelevantContext(
   query: string,
   topK = 5,

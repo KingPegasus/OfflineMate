@@ -1,5 +1,11 @@
 import type { ChatMessage } from "@/types/assistant";
-import { filterArgsForTool, getToolByName, listToolDescriptors, selectToolFromInput } from "@/tools/tool-registry";
+import {
+  filterArgsForTool,
+  getToolByName,
+  listToolDescriptors,
+  reconcilePlannerStepsWithKeywordMatch,
+  selectToolFromInput,
+} from "@/tools/tool-registry";
 
 export interface PlannedStep {
   id: string;
@@ -123,7 +129,9 @@ export async function planStepsFromPrompt(
     const plannerOutput = await generate(buildPlannerMessages(input.prompt));
     const payload = parsePlanPayload(plannerOutput);
     const validated = validatePlan(payload, maxSteps);
-    if (validated.length > 0) return validated;
+    if (validated.length > 0) {
+      return reconcilePlannerStepsWithKeywordMatch(input.prompt, validated) as PlannedStep[];
+    }
   } catch {
     // Fall through to deterministic fallback.
   }

@@ -1,5 +1,6 @@
 import { getDb } from "@/db/database";
 import { indexNoteForRetrieval } from "@/context/context-indexer";
+import { deleteVectorChunksBySource } from "@/context/vector-store";
 
 export interface NoteRow {
   id: string;
@@ -27,5 +28,11 @@ export function listNotes(limit = 20): NoteRow[] {
     "SELECT id, title, content, created_at FROM notes ORDER BY created_at DESC LIMIT ?",
     [limit],
   );
+}
+
+export function deleteNote(noteId: string) {
+  const db = getDb();
+  db.runSync("DELETE FROM notes WHERE id = ?", [noteId]);
+  deleteVectorChunksBySource("note", noteId);
 }
 

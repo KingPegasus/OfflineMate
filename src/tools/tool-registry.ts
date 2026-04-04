@@ -34,7 +34,8 @@ export const TOOL_REGISTRY: Tool[] = [
   setReminderTool,
 ];
 
-function scoreToolMatch(input: string, tool: Tool): number {
+/** Exported for planner reconciliation tests. */
+export function scoreToolMatch(input: string, tool: Tool): number {
   const normalized = input.toLowerCase();
   let best = 0;
   for (const keyword of tool.keywords) {
@@ -46,6 +47,14 @@ function scoreToolMatch(input: string, tool: Tool): number {
     }
   }
   return best;
+}
+
+export interface PlannerStepLike {
+  id: string;
+  description: string;
+  toolName?: string;
+  args?: Record<string, string>;
+  dependsOn?: string[];
 }
 
 /** Ranked selection: highest-scoring tool wins. Deterministic for ambiguous prompts. */
@@ -64,6 +73,35 @@ export function selectToolFromInput(input: string): Tool | undefined {
     }
   }
   return best;
+}
+
+/**
+ * The LLM planner sometimes picks the wrong tool (e.g. reminders.set for "add a note …").
+ * When keyword scoring clearly prefers another tool, use it for the first step instead.
+ */
+export function reconcilePlannerStepsWithKeywordMatch(prompt: string, steps: PlannerStepLike[]): PlannerStepLike[] {
+  const selected = selectToolFromInput(prompt);
+  if (!selected || steps.length === 0) return steps;
+  const first = steps[0];
+  if (!first?.toolName) return steps;
+  const plannerTool = getToolByName(first.toolName);
+  if (!plannerTool) return steps;
+  if (first.toolName === selected.name) return steps;
+
+  const plannerScore = scoreToolMatch(prompt, plannerTool);
+  const selectedScore = scoreToolMatch(prompt, selected);
+  if (selectedScore > plannerScore) {
+    return [
+      {
+        ...first,
+        toolName: selected.name,
+        description: `Execute ${selected.name}`,
+        args: { ...(first.args ?? {}), query: prompt, text: prompt },
+      },
+      ...steps.slice(1),
+    ];
+  }
+  return steps;
 }
 
 /** Filter args to only allowed keys per tool schema. */

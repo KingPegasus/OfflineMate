@@ -12,6 +12,8 @@ describe("routeIntent", () => {
 
   it("routes context-related text to context intent", () => {
     expect(routeIntent("What did I say in meeting notes yesterday?")).toBe("context");
+    expect(routeIntent("But did I save about the dentist?")).toBe("context");
+    expect(routeIntent("Have I saved anything about the project?")).toBe("context");
   });
 
   it("routes mixed tool+context text to tool intent", () => {
@@ -68,7 +70,9 @@ describe("routeIntent", () => {
   it("routes note-taking phrases to tool", () => {
     expect(routeIntent("Take a note: buy milk")).toBe("tool");
     expect(routeIntent("Add a note to buy bread")).toBe("tool");
+    expect(routeIntent("Add note to publish the application to the Google Play store.")).toBe("tool");
     expect(routeIntent("Remember this password is wrong")).toBe("tool");
     expect(routeIntent("Play this musical note on the piano")).toBe("direct");
+    expect(routeIntent("I need to add notebook pages")).toBe("direct");
   });
 });
