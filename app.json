@@ -6,7 +6,6 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "jsEngine": "hermes",
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/icon.png",
@@ -83,7 +82,7 @@
         "projectId": "fb401217-1019-4b74-b72d-18b4574b8595"
       }
     },
-    "owner": "KingPegasus",
+    "owner": "razasaleemi",
     "web": {
       "favicon": "./assets/icon.png"
     }

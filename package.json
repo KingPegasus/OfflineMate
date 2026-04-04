@@ -32,6 +32,9 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
   "expo": {
     "install": {
       "exclude": [
