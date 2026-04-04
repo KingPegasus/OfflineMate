@@ -1,8 +1,14 @@
+import { resolvePrimaryRuntimeForLoad } from "@/ai/model-manager";
 import { getTierSpec } from "@/ai/model-registry";
 import { parseToolActionDecision } from "@/ai/tool-action-schema";
 import type { ChatMessage, ModelTier } from "@/types/assistant";
 import { LLMModule } from "react-native-executorch";
 import type { Message } from "react-native-executorch";
+
+export type LLMInitializeOptions = {
+  /** ExecuTorch reports progress while fetching the model binary from a remote URL (0–1). */
+  onDownloadProgress?: (progress: number) => void;
+};
 
 // The runtime API in react-native-executorch evolves quickly. This adapter keeps
 // app code stable and allows swapping runtime implementations later.
@@ -90,50 +96,104 @@ export class LLMEngine {
   private initializedTier: ModelTier | null = null;
   private llm: LLMModule | null = null;
   private isLoaded = false;
+  /** True while `load()` is in progress; native interrupt can cancel in-flight fetch/download before `isLoaded`. */
+  private loadInFlight = false;
+  /** Bumped on each new load attempt or cancel; stale loads must not configure after await. */
+  private loadGeneration = 0;
   /** Set before generate() to receive tokens as they are produced; cleared in finally. */
   private streamCallback: ((token: string) => void) | null = null;
 
-  async initialize(tier: ModelTier) {
-    const previousTier = this.initializedTier;
+  /**
+   * Call when init times out or user switches tier mid-load. Stops overlapping native downloads
+   * (ExecuTorch error 181 "Already downloading this file") when fallback init runs immediately after.
+   */
+  cancelPendingLoad() {
+    this.loadGeneration += 1;
+    this.interrupt();
+    this.unload();
+    /** Cancel ends any in-flight load; stale `initialize` finally must not leave this stuck true. */
+    this.loadInFlight = false;
+  }
 
-    // If caller switches tiers, force a fresh module load/config so runtime
-    // settings (context window, generation config) always match the active tier.
-    if (this.llm && this.isLoaded && previousTier && previousTier !== tier) {
+  /**
+   * Tear down a specific `LLMModule` from a superseded init without touching the singleton when
+   * a newer `initialize()` already replaced `this.llm` (timeout → fallback race).
+   */
+  private disposeOrphanInitModule(m: LLMModule) {
+    try {
+      if (typeof (m as { interrupt?: () => void }).interrupt === "function") {
+        try {
+          (m as { interrupt: () => void }).interrupt();
+        } catch (e) {
+          const code = (e as { code?: number })?.code;
+          const msg = e instanceof Error ? e.message : String(e);
+          if (code !== 102 && !/not loaded/i.test(msg)) {
+            console.warn("[OfflineMate] LLM interrupt failed (orphan init):", e);
+          }
+        }
+      }
+      m.delete();
+    } catch (e) {
+      console.warn("[OfflineMate] LLM orphan init dispose failed:", e);
+    }
+    if (this.llm === m) {
+      this.llm = null;
+      this.isLoaded = false;
+      this.initializedTier = null;
+    }
+  }
+
+  async initialize(tier: ModelTier, options?: LLMInitializeOptions) {
+    if (this.llm && this.isLoaded && this.initializedTier === tier) {
+      return getTierSpec(tier).primary;
+    }
+
+    const myGen = ++this.loadGeneration;
+
+    if (this.llm) {
+      this.interrupt();
       this.unload();
     }
 
-    if (!this.llm) {
-      const opts: LLMModuleOptions = {
-        tokenCallback: (token: string) => this.streamCallback?.(token),
-      };
-      // Library supports tokenCallback in constructor for streaming; types may not expose it.
-      this.llm = new LLMModule(opts as never);
-    }
+    const opts: LLMModuleOptions = {
+      tokenCallback: (token: string) => this.streamCallback?.(token),
+    };
+    this.llm = new LLMModule(opts as never);
+    const moduleForInit = this.llm;
 
-    if (!this.isLoaded) {
-      const spec = getTierSpec(tier).primary;
-      try {
-        await this.llm.load(spec.runtime);
-        this.llm.configure({
-          chatConfig: {
-            contextWindowLength: tier === "full" ? 8192 : tier === "standard" ? 4096 : 2048,
-            initialMessageHistory: [],
-            systemPrompt: "You are OfflineMate, a local private assistant.",
-          },
-          generationConfig: getGenerationConfigForTier(tier),
-        });
-        this.isLoaded = true;
-        this.initializedTier = tier;
-        return spec;
-      } catch (error) {
-        // Prevent partially loaded state from leaking into fallback initialization.
+    const spec = getTierSpec(tier).primary;
+    const onDownloadProgress = options?.onDownloadProgress;
+    this.loadInFlight = true;
+    try {
+      const runtime = await resolvePrimaryRuntimeForLoad(tier);
+      await moduleForInit.load(runtime, onDownloadProgress ?? (() => {}));
+      if (myGen !== this.loadGeneration) {
+        this.disposeOrphanInitModule(moduleForInit);
+        throw new Error("Model load cancelled");
+      }
+      moduleForInit.configure({
+        chatConfig: {
+          contextWindowLength: tier === "full" ? 8192 : tier === "standard" ? 4096 : 2048,
+          initialMessageHistory: [],
+          systemPrompt: "You are OfflineMate, a local private assistant.",
+        },
+        generationConfig: getGenerationConfigForTier(tier),
+      });
+      this.isLoaded = true;
+      this.initializedTier = tier;
+      return spec;
+    } catch (error) {
+      if (myGen === this.loadGeneration) {
         this.unload();
-        throw error;
+      } else {
+        this.disposeOrphanInitModule(moduleForInit);
+      }
+      throw error;
+    } finally {
+      if (myGen === this.loadGeneration) {
+        this.loadInFlight = false;
       }
     }
-
-    this.initializedTier = tier;
-    return getTierSpec(tier).primary;
   }
 
   /**
@@ -214,11 +274,19 @@ export class LLMEngine {
   }
 
   interrupt() {
+    if (!this.llm || (!this.isLoaded && !this.loadInFlight)) {
+      return;
+    }
     try {
-      if (this.llm && typeof (this.llm as { interrupt?: () => void }).interrupt === "function") {
+      if (typeof (this.llm as { interrupt?: () => void }).interrupt === "function") {
         (this.llm as { interrupt: () => void }).interrupt();
       }
     } catch (error) {
+      const code = (error as { code?: number })?.code;
+      const msg = error instanceof Error ? error.message : String(error);
+      if (code === 102 || /not loaded/i.test(msg)) {
+        return;
+      }
       console.warn("[OfflineMate] LLM interrupt failed:", error);
     }
   }
@@ -230,8 +298,19 @@ export class LLMEngine {
       return;
     }
     try {
-      if (typeof (this.llm as { interrupt?: () => void }).interrupt === "function") {
-        (this.llm as { interrupt: () => void }).interrupt();
+      if (
+        (this.isLoaded || this.loadInFlight) &&
+        typeof (this.llm as { interrupt?: () => void }).interrupt === "function"
+      ) {
+        try {
+          (this.llm as { interrupt: () => void }).interrupt();
+        } catch (e) {
+          const code = (e as { code?: number })?.code;
+          const msg = e instanceof Error ? e.message : String(e);
+          if (code !== 102 && !/not loaded/i.test(msg)) {
+            console.warn("[OfflineMate] LLM interrupt before unload failed:", e);
+          }
+        }
       }
       this.llm.delete();
     } catch (e) {

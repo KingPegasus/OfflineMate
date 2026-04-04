@@ -1,12 +1,19 @@
 import { useCallback } from "react";
+import { Alert } from "react-native";
 import { llmEngine } from "@/ai/llm-engine";
-import { getFallbackTier } from "@/ai/model-registry";
+import {
+  getFallbackTier,
+  getPrimaryModelDisplayName,
+  getPrimaryModelFileLabel,
+  getTierSpec,
+} from "@/ai/model-registry";
 import { routeIntent } from "@/ai/intent-router";
 import { retrieveContextForQuery } from "@/ai/rag-pipeline";
 import { buildPrompt } from "@/ai/prompt-builder";
 import { filterArgsForTool, getToolByName, selectToolFromInput } from "@/tools/tool-registry";
 import { WEB_SEARCH_NO_RESULTS_PREFIX } from "@/tools/search-tool";
 import { useChatStore } from "@/stores/chat-store";
+import { useModelStore } from "@/stores/model-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { speak } from "@/voice/tts-engine";
 import { isMemoryPressureHigh } from "@/utils/performance";
@@ -18,7 +25,121 @@ import { parseThinkTaggedContent, toThinkingLines } from "@/ai/think-parser";
 import { buildSearchSynthesisMessages, runAgenticSearchFlow } from "@/ai/agentic-search-flow";
 import { parseToolActionDecision } from "@/ai/tool-action-schema";
 import { isEnabled } from "@/config/feature-flags";
-import type { ChatMessage } from "@/types/assistant";
+import type { ChatMessage, ModelTier } from "@/types/assistant";
+
+/** Cold load from storage + runtime init can take several minutes on mid-range phones; partial downloads also stall until complete. */
+const MODEL_INIT_TIMEOUT_MS = 300_000;
+/** If the model file reports progress but bytes stop moving for this long, treat as stalled. */
+const LLM_DOWNLOAD_STALL_MS = 15 * 60 * 1000;
+/** How often we re-check idle deadline vs download state during LLM init. */
+const LLM_INIT_POLL_MS = 30_000;
+
+let llmIdleCheckpointMs = Date.now();
+let lastLlmDownloadProgressAt = 0;
+let llmInitDownloadFileLabel = "";
+let llmInitDownloadModelName = "";
+
+function setLlmInitDownloadContext(tier: ModelTier) {
+  llmInitDownloadModelName = getPrimaryModelDisplayName(tier);
+  llmInitDownloadFileLabel = getPrimaryModelFileLabel(tier);
+}
+
+function isLlmAssetDownloading(): boolean {
+  return useModelStore.getState().llmInitDownload !== null;
+}
+
+/** ExecuTorch only invokes this while the model binary is fetched from a remote URL. */
+function reportLlmInitDownloadProgress(progress: number) {
+  const p = Math.min(1, Math.max(0, progress));
+  if (p < 1) {
+    lastLlmDownloadProgressAt = Date.now();
+    useModelStore.getState().setLlmInitDownload({
+      progress: p,
+      modelName: llmInitDownloadModelName || undefined,
+      fileLabel: llmInitDownloadFileLabel || undefined,
+    });
+  } else {
+    useModelStore.getState().setLlmInitDownload(null);
+    llmIdleCheckpointMs = Date.now();
+  }
+}
+
+/**
+ * Enforces `idleDeadlineMs` only while we are not actively downloading the LLM binary
+ * (ExecuTorch progress still below 1). While downloading, the timer does not fire; only stall detection applies.
+ * When the model file reaches 100%, `reportLlmInitDownloadProgress` resets the idle checkpoint for tokenizer/configure.
+ */
+function withIdleDeadlineUnlessDownloading<T>(
+  promise: Promise<T>,
+  idleDeadlineMs: number,
+  timeoutMessage: string,
+  onTimeout?: () => void,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const clearTimer = () => {
+      if (timer !== null) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    };
+
+    const fail = (message: string) => {
+      if (settled) return;
+      settled = true;
+      clearTimer();
+      try {
+        onTimeout?.();
+      } catch (timeoutError) {
+        console.warn("[OfflineMate] Timeout handler failed:", timeoutError);
+      }
+      reject(new Error(message));
+    };
+
+    const scheduleNext = () => {
+      if (settled) return;
+      clearTimer();
+      timer = setTimeout(tick, LLM_INIT_POLL_MS);
+    };
+
+    const tick = () => {
+      if (settled) return;
+      if (isLlmAssetDownloading()) {
+        if (
+          lastLlmDownloadProgressAt > 0 &&
+          Date.now() - lastLlmDownloadProgressAt >= LLM_DOWNLOAD_STALL_MS
+        ) {
+          fail("Model download stalled. Check your connection and try again.");
+          return;
+        }
+        scheduleNext();
+        return;
+      }
+      if (Date.now() - llmIdleCheckpointMs >= idleDeadlineMs) {
+        fail(timeoutMessage);
+        return;
+      }
+      scheduleNext();
+    };
+
+    timer = setTimeout(tick, 0);
+    promise
+      .then((value) => {
+        if (settled) return;
+        settled = true;
+        clearTimer();
+        resolve(value);
+      })
+      .catch((error) => {
+        if (settled) return;
+        settled = true;
+        clearTimer();
+        reject(error);
+      });
+  });
+}
 
 function withTimeout<T>(
   promise: Promise<T>,
@@ -49,6 +170,23 @@ function withTimeout<T>(
 
 function createMessage(role: ChatMessage["role"], content: string): ChatMessage {
   return { id: `${role}-${Date.now()}-${Math.random()}`, role, content, createdAt: Date.now() };
+}
+
+/** Ask before switching to a smaller tier after primary model init fails. */
+function confirmModelFallback(failedTier: "full" | "standard", fallbackTier: "standard" | "lite"): Promise<boolean> {
+  const failedName = getTierSpec(failedTier).name;
+  const fallbackName = getTierSpec(fallbackTier).name;
+  return new Promise((resolve) => {
+    Alert.alert(
+      "Model could not load",
+      `The ${failedName} model did not start (timeout, missing files, or not enough memory). Switch to ${fallbackName}? Your choice is saved in Settings.`,
+      [
+        { text: "Not now", style: "cancel", onPress: () => resolve(false) },
+        { text: `Use ${fallbackName}`, onPress: () => resolve(true) },
+      ],
+      { cancelable: true, onDismiss: () => resolve(false) },
+    );
+  });
 }
 
 function extractPlannerPayload(raw: string): { steps: unknown[] } | null {
@@ -138,38 +276,59 @@ export function useLLMChat() {
       try {
         let activeTier = tier;
         let initError: Error | null = null;
+        const llmInitOpts = { onDownloadProgress: reportLlmInitDownloadProgress };
         try {
-          await withTimeout(
-            llmEngine.initialize(activeTier),
-            45000,
-            "Model initialization timed out. Open Onboarding, complete the model download for your tier, then try again.",
-          );
-        } catch (err) {
-          initError = err instanceof Error ? err : new Error(String(err));
-          console.error("[OfflineMate] LLM init failed for tier:", tier, initError.message, initError);
-          const fallback = getFallbackTier(tier);
-          if (fallback) {
-            activeTier = fallback;
-            setTier(fallback);
-            try {
-              await withTimeout(
-                llmEngine.initialize(activeTier),
-                45000,
-                "Fallback model initialization timed out. Try the Lite tier from Settings.",
-              );
-            } catch (fallbackErr) {
-              const fb = fallbackErr instanceof Error ? fallbackErr : new Error(String(fallbackErr));
-              console.error("[OfflineMate] LLM init failed for fallback tier:", fallback, fb.message, fb);
+          try {
+            llmIdleCheckpointMs = Date.now();
+            lastLlmDownloadProgressAt = 0;
+            setLlmInitDownloadContext(activeTier);
+            await withIdleDeadlineUnlessDownloading(
+              llmEngine.initialize(activeTier, llmInitOpts),
+              MODEL_INIT_TIMEOUT_MS,
+              "Model initialization timed out. Ensure the model finished downloading (Onboarding), then try again. On slow devices the first load can take up to several minutes.",
+              () => llmEngine.cancelPendingLoad(),
+            );
+          } catch (err) {
+            initError = err instanceof Error ? err : new Error(String(err));
+            console.error("[OfflineMate] LLM init failed for tier:", tier, initError.message, initError);
+            const fallback = getFallbackTier(tier);
+            if (fallback) {
+              const proceed = await confirmModelFallback(tier as "full" | "standard", fallback);
+              if (!proceed) {
+                throw new Error(
+                  `Could not load the ${getTierSpec(tier).name} model. Fix downloads in Onboarding or pick another tier in Settings, then send your message again.`,
+                );
+              }
+              activeTier = fallback;
+              setTier(fallback);
+              // Let native download/load settle so Lite init does not hit "Already downloading this file" (ExecuTorch 181).
+              await new Promise((r) => setTimeout(r, 1500));
+              try {
+                llmIdleCheckpointMs = Date.now();
+                lastLlmDownloadProgressAt = 0;
+                setLlmInitDownloadContext(activeTier);
+                await withIdleDeadlineUnlessDownloading(
+                  llmEngine.initialize(activeTier, llmInitOpts),
+                  MODEL_INIT_TIMEOUT_MS,
+                  "Fallback model initialization timed out. Open Onboarding and confirm the Lite model downloaded, or retry after a few minutes.",
+                  () => llmEngine.cancelPendingLoad(),
+                );
+              } catch (fallbackErr) {
+                const fb = fallbackErr instanceof Error ? fallbackErr : new Error(String(fallbackErr));
+                console.error("[OfflineMate] LLM init failed for fallback tier:", fallback, fb.message, fb);
+                throw new Error(
+                  "Could not load any model. Open Settings → Onboarding: wait until each download shows complete. If downloads were interrupted, use a stable connection and retry. Standard/Full are large—Lite is smallest. First load after install can take several minutes on some devices.",
+                );
+              }
+            } else {
+              console.error("[OfflineMate] LLM init failed (no fallback tier).", initError?.message, initError);
               throw new Error(
-                "Could not load any model. Open Settings → Open Onboarding, finish downloading the model for your tier (Lite is fastest), then try again. If you see this on first launch, ensure you have internet for the initial download.",
+                "Could not load the model. Open Settings → Open Onboarding, complete the model download for your tier, then try again. Check logcat for details.",
               );
             }
-          } else {
-            console.error("[OfflineMate] LLM init failed (no fallback tier).", initError?.message, initError);
-            throw new Error(
-              "Could not load the model. Open Settings → Open Onboarding, complete the model download for your tier, then try again. Check logcat for details.",
-            );
           }
+        } finally {
+          useModelStore.getState().setLlmInitDownload(null);
         }
 
         if (await isMemoryPressureHigh() && activeTier === "full") {

@@ -65,13 +65,18 @@ export const searchNotesTool: Tool = {
   name: "notes.search",
   description: "Search notes by title/content text matching",
   keywords: ["find note", "search note"],
-  params: { required: ["query"] },
+  params: { required: ["query"], optional: ["text", "search"] },
   execute: async (params) => {
-    const query = `%${params.query ?? ""}%`;
+    const raw = String(params.query ?? params.text ?? params.search ?? "").trim();
+    if (!raw) {
+      return { ok: true, message: "Found 0 notes.", payload: { rows: [] } };
+    }
     const db = getDb();
     const rows = db.getAllSync<{ id: string; title: string }>(
-      "SELECT id, title FROM notes WHERE title LIKE ? OR content LIKE ? LIMIT 5",
-      [query, query],
+      `SELECT id, title FROM notes
+       WHERE instr(lower(title), lower(?)) > 0 OR instr(lower(content), lower(?)) > 0
+       LIMIT 5`,
+      [raw, raw],
     );
     return { ok: true, message: `Found ${rows.length} notes.`, payload: { rows } };
   },

@@ -157,7 +157,30 @@ export function getTierSpec(tier: ModelTier): TierSpec {
   return MODEL_TIERS.find((it) => it.key === tier) ?? MODEL_TIERS[1];
 }
 
-export function getFallbackTier(tier: ModelTier): ModelTier | null {
+/** Human-readable primary model for UI (tier + family + size). */
+export function getPrimaryModelDisplayName(tier: ModelTier): string {
+  const tierSpec = getTierSpec(tier);
+  const p = tierSpec.primary;
+  return `${tierSpec.name} · ${p.family} ${p.size}`;
+}
+
+/** Basename of the primary LLM weight URL (for UI when ExecuTorch reports download progress). */
+export function getPrimaryModelFileLabel(tier: ModelTier): string {
+  const spec = getTierSpec(tier).primary;
+  const src = spec.runtime.modelSource;
+  if (typeof src === "string" && (src.startsWith("http://") || src.startsWith("https://"))) {
+    const clean = src.split("?")[0];
+    const name = clean.substring(clean.lastIndexOf("/") + 1);
+    try {
+      return decodeURIComponent(name) || spec.id;
+    } catch {
+      return name || spec.id;
+    }
+  }
+  return spec.id;
+}
+
+export function getFallbackTier(tier: ModelTier): "standard" | "lite" | null {
   if (tier === "full") return "standard";
   if (tier === "standard") return "lite";
   return null;

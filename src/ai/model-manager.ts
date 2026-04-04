@@ -44,7 +44,8 @@ function asHttpUrl(value: unknown): string | null {
   return value;
 }
 
-function getTierAssets(tier: ModelTier): AssetToDownload[] {
+/** Same layout as onboarding / `downloadTierPrimaryModel` (under `documentDirectory/models/`). */
+export function getTierAssets(tier: ModelTier): AssetToDownload[] {
   const primary = getTierSpec(tier).primary;
   const modelSource = asHttpUrl(primary.runtime.modelSource);
   const tokenizerSource = asHttpUrl(primary.runtime.tokenizerSource);
@@ -77,6 +78,68 @@ function getTierAssets(tier: ModelTier): AssetToDownload[] {
   }));
 }
 
+function fileUriForLocalPath(path: string): string {
+  return path.startsWith("file://") ? path : `file://${path}`;
+}
+
+/**
+ * If onboarding already saved the primary LLM + tokenizer + config under `models/`,
+ * return those as `file://` sources so ExecuTorch loads from disk instead of re-downloading
+ * into `react-native-executorch/`.
+ */
+export async function resolvePrimaryRuntimeForLoad(tier: ModelTier) {
+  const primary = getTierSpec(tier).primary;
+  const assets = getTierAssets(tier);
+  const modelAsset = assets.find((a) => a.id === `${primary.id}-model`);
+  const tokAsset = assets.find((a) => a.id === `${primary.id}-tokenizer`);
+  const cfgAsset = assets.find((a) => a.id === `${primary.id}-tokenizer-config`);
+  if (!modelAsset || !tokAsset || !cfgAsset) {
+    return primary.runtime;
+  }
+  const [m, t, c] = await Promise.all([
+    FileSystem.getInfoAsync(modelAsset.destination),
+    FileSystem.getInfoAsync(tokAsset.destination),
+    FileSystem.getInfoAsync(cfgAsset.destination),
+  ]);
+  if (!m.exists || !t.exists || !c.exists) {
+    return primary.runtime;
+  }
+  console.log("[OfflineMate] LLM load using onboarding model files (same copy, no second download)", {
+    tier,
+  });
+  return {
+    modelSource: fileUriForLocalPath(modelAsset.destination),
+    tokenizerSource: fileUriForLocalPath(tokAsset.destination),
+    tokenizerConfigSource: fileUriForLocalPath(cfgAsset.destination),
+  };
+}
+
+const DOWNLOAD_ASSET_RETRIES = 3;
+const DOWNLOAD_RETRY_DELAYS_MS = [800, 2200, 4500];
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** HF often redirects to xethub; DNS can fail transiently on some networks / emulators. */
+function isTransientDownloadFailure(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes("resolve") ||
+    lower.includes("hostname") ||
+    lower.includes("network") ||
+    lower.includes("timed out") ||
+    lower.includes("timeout") ||
+    lower.includes("connection") ||
+    lower.includes("unreachable") ||
+    lower.includes("failed to connect") ||
+    lower.includes("econnrefused") ||
+    lower.includes("etimedout") ||
+    lower.includes("enotfound")
+  );
+}
+
 async function downloadAsset(
   asset: AssetToDownload,
   onProgress?: (progress: number) => void,
@@ -87,12 +150,32 @@ async function downloadAsset(
     return asset.destination;
   }
 
-  const task = FileSystem.createDownloadResumable(asset.url, asset.destination, {}, (event) => {
-    if (!onProgress || event.totalBytesExpectedToWrite === 0) return;
-    onProgress(event.totalBytesWritten / event.totalBytesExpectedToWrite);
-  });
-  await task.downloadAsync();
-  return asset.destination;
+  console.log("[OfflineMate] Onboarding: starting asset download", { id: asset.id });
+
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= DOWNLOAD_ASSET_RETRIES; attempt++) {
+    try {
+      const task = FileSystem.createDownloadResumable(asset.url, asset.destination, {}, (event) => {
+        if (!onProgress || event.totalBytesExpectedToWrite === 0) return;
+        onProgress(event.totalBytesWritten / event.totalBytesExpectedToWrite);
+      });
+      await task.downloadAsync();
+      return asset.destination;
+    } catch (e) {
+      lastErr = e;
+      const retry = attempt < DOWNLOAD_ASSET_RETRIES && isTransientDownloadFailure(e);
+      console.warn(
+        `[OfflineMate] Onboarding: asset download failed (attempt ${attempt}/${DOWNLOAD_ASSET_RETRIES})`,
+        { id: asset.id, retry },
+        e,
+      );
+      if (!retry) break;
+      await sleep(DOWNLOAD_RETRY_DELAYS_MS[attempt - 1] ?? 2000);
+    }
+  }
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error(String(lastErr ?? "Download failed"));
 }
 
 export async function downloadTierPrimaryModel(
@@ -101,6 +184,11 @@ export async function downloadTierPrimaryModel(
 ) {
   await ensureModelsDirectory();
   const assets = getTierAssets(tier);
+  console.log("[OfflineMate] Onboarding: downloadTierPrimaryModel", {
+    tier,
+    assetCount: assets.length,
+    assetIds: assets.map((a) => a.id),
+  });
   const results: Record<string, string> = {};
   const total = assets.length;
   let completed = 0;
