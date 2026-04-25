@@ -3,7 +3,7 @@
     "name": "OfflineMate",
     "slug": "offlinemate",
     "scheme": "offlinemate",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -63,11 +63,7 @@
         "READ_CALENDAR",
         "WRITE_CALENDAR",
         "READ_CONTACTS",
-        "POST_NOTIFICATIONS",
-        "android.permission.READ_CALENDAR",
-        "android.permission.WRITE_CALENDAR",
-        "android.permission.READ_CONTACTS",
-        "android.permission.WRITE_CONTACTS"
+        "POST_NOTIFICATIONS"
       ]
     },
     "ios": {

@@ -30,6 +30,10 @@ Planned `eas.json` profiles:
 4. Build production artifact
 5. Submit to Play Store/App Store workflows
 
+**Google Play (AAB), store listing graphics, tablet screenshots via emulator, lockfile/Node alignment with EAS, and `npx eas-cli`:** see **[android-release-playstore.md](./android-release-playstore.md)**. Run **`npx expo-doctor`** before EAS builds when changing config or assets.
+
+**Manual CI release:** Trigger [`.github/workflows/release-android.yml`](../../.github/workflows/release-android.yml) from the GitHub **Actions** tab; it runs checks and kicks off an EAS build (with optional `eas submit`). Versioning is safe because `eas.json` uses `appVersionSource: "remote"` + `autoIncrement` on production (details in the Play doc).
+
 ## First Android Preview Build (Command Sequence)
 
 ```bash

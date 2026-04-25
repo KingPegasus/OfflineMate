@@ -16,7 +16,7 @@ technical decisions.
 ## Deployment
 
 - `deployment/expo-build-and-release.md`
-- `deployment/android-release-playstore.md`
+- **`deployment/android-release-playstore.md`** — Play AAB/submit, **store listing** (icon 512, feature graphic, screenshots), **emulator** for tablet shots, EAS/Expo account notes, lockfile alignment
 - `deployment/ota-updates.md`
 - `deployment/ci-cd-pipeline.md`
 - `deployment/android-preview-device-qa-checklist.md`
@@ -47,6 +47,7 @@ technical decisions.
 
 - `ROADMAP_AND_GAPS.md` — Feature status vs goals, gaps, and prioritized roadmap
 - `TECHNICAL_ANALYSIS.md` — Technical review and improvement suggestions
+- `FUNCTIONALITY_IMPROVEMENT_ROADMAP.md` — Product, UX, AI/runtime, and release-quality improvement roadmap
 
 ## How to Use This Docs Set
 

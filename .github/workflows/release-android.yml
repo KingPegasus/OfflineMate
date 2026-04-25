@@ -1,0 +1,100 @@
+name: Release Android (EAS)
+
+# Manual trigger only. Run from GitHub -> Actions -> "Release Android (EAS)" -> Run workflow.
+# Versioning: `eas.json` uses appVersionSource: "remote" with autoIncrement on production,
+# so EAS picks the next Android versionCode. Bump expo.version in app.json for user-visible
+# version changes; commit that to main before dispatching a production build.
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "EAS build profile"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - preview
+          - production
+      submit:
+        description: "Submit the resulting build to Google Play after build"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      message:
+        description: "Optional build message (shown in EAS)"
+        required: false
+        type: string
+
+concurrency:
+  group: release-android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: EAS build (${{ inputs.profile }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: ".nvmrc"
+          cache: npm
+
+      # Install EAS CLI globally so subsequent steps can use `eas` directly.
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Verify EAS login (uses EXPO_TOKEN secret)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas whoami
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit + integration tests
+        run: |
+          npm run test:unit
+          npm run test:integration
+
+      - name: Expo Doctor
+        run: npx expo-doctor
+
+      - name: EAS build (non-interactive, wait)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          MSG="${{ inputs.message }}"
+          if [ -z "$MSG" ]; then
+            MSG="CI build from ${GITHUB_SHA::7} on ${GITHUB_REF_NAME}"
+          fi
+          eas build \
+            --platform android \
+            --profile "${{ inputs.profile }}" \
+            --non-interactive \
+            --no-wait=false \
+            --message "$MSG"
+
+      - name: EAS submit to Google Play
+        if: ${{ inputs.submit == 'true' && inputs.profile == 'production' }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas submit \
+            --platform android \
+            --profile production \
+            --latest \
+            --non-interactive

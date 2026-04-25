@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StyleSheet, Text, View } from "react-native";
+import Constants from "expo-constants";
 import { useSettingsStore } from "@/stores/settings-store";
 import { getTierSpec, MODEL_TIERS } from "@/ai/model-registry";
 
@@ -13,6 +14,7 @@ export default function SettingsScreen() {
   const webSearchEnabled = useSettingsStore((s) => s.webSearchEnabled);
   const setWebSearchEnabled = useSettingsStore((s) => s.setWebSearchEnabled);
   const tierSpec = getTierSpec(selectedTier);
+  const appVersion = Constants.expoConfig?.version ?? "unknown";
 
   return (
     <SafeAreaView style={styles.root}>
@@ -43,6 +45,7 @@ export default function SettingsScreen() {
       <Text style={styles.link} onPress={() => setWebSearchEnabled(!webSearchEnabled)}>
         Web search: {webSearchEnabled ? "On" : "Off"}
       </Text>
+      <Text style={styles.versionLabel}>App version: {appVersion}</Text>
     </SafeAreaView>
   );
 }
@@ -64,5 +67,6 @@ const styles = StyleSheet.create({
   item: { color: "#9ca3af", backgroundColor: "#111827", borderRadius: 10, padding: 10 },
   selected: { color: "#60a5fa", borderWidth: 1, borderColor: "#60a5fa" },
   link: { marginTop: 16, color: "#93c5fd", fontWeight: "600" },
+  versionLabel: { marginTop: 20, color: "#9ca3af", fontSize: 12 },
 });
 

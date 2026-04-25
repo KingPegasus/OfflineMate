@@ -233,3 +233,9 @@ Notes:
 - Usually transitive (upstream dependencies).
 - Not a blocker if app builds/tests pass; keep dependencies updated over time.
 
+## 8) Play publishing (graphics, screenshots, EAS)
+
+Store listing dimensions, **listing image script**, **emulator-only tablet screenshots**, **EAS/lockfile alignment**, and related notes live in **[`docs/deployment/android-release-playstore.md`](docs/deployment/android-release-playstore.md)**.
+
+For **emulator** binaries without Android Studio: same doc explains installing the **`emulator`** + **system image** packages via `sdkmanager` if you already use command-line SDK tools.
+

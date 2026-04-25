@@ -31,8 +31,10 @@ Target: weak devices. Prioritize speed, battery, and minimal RAM. No RAG retriev
 
 **Future options** (when ExecuTorch exports exist):
 
-- **Qwen 3 0.6B** — Better reasoning than SmolLM at similar size; available in react-native-executorch.
-- **Qwen 3.5 0.8B** — Planned upgrade; better general quality. See [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
+- **Qwen 3 0.6B** — Better reasoning than SmolLM at similar size; already available in react-native-executorch as a quantized ~400 MB model.
+- **Qwen 2.5 0.5B** — Older Qwen line, but already available in react-native-executorch and useful as a conservative Lite-tier fallback candidate.
+- **Hammer 2.1 0.5B** — Built-in mobile option optimized for assistant/tool workflows.
+- **Qwen 3.5 0.8B** — Still blocked for the current runtime; see [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
 
 ---
 
@@ -49,8 +51,11 @@ Target: mid-range devices. Full RAG, tools, and speech. Balanced quality and res
 **Other options in react-native-executorch** (not yet in app registry):
 
 - **Hammer 2.1 1.5B** — Optimized for function/tool calling; ideal for reminders, search, calendar.
+- **LFM 2.5 1.2B Instruct** — Compact instruction-following model; promising Standard-tier alternate.
+- **Qwen 2.5 1.5B / 3B** — Stable built-in Qwen alternatives if Qwen 3 behavior regresses.
 - **Phi 4 Mini 4B** — Microsoft reasoning model; stronger on complex tasks (larger download).
-- **Qwen 3.5 2B** — Planned when ExecuTorch exports are available. See [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
+- **Gemma 4 E2B** — Upstream ExecuTorch support exists, but React Native ExecuTorch exports are still open.
+- **Qwen 3.5 2B** — Not ready for React Native ExecuTorch; planned only when mobile exports are available. See [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
 
 ---
 
@@ -67,7 +72,8 @@ Target: strong devices. Longer context (8K), advanced planner, richer RAG.
 
 - **Phi 4 Mini 4B** — Microsoft model; often strong on reasoning benchmarks.
 - **Hammer 2.1 3B** — Tool-calling focused; good for assistants with many tools.
-- **Qwen 3.5 4B** — Planned when ExecuTorch exports are available. See [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
+- **Gemma 4 E4B** — Promising if Software Mansion ships React Native exports; upstream ExecuTorch text-only support has landed.
+- **Qwen 3.5 4B** — Not ready for React Native ExecuTorch. See [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
 
 ---
 
@@ -90,6 +96,15 @@ Target: strong devices. Longer context (8K), advanced planner, richer RAG.
 | **Llama 3.2** | Meta | Reasoning; instruction-following |
 | **Hammer 2.1** | MadeAgents | Function/tool calling |
 | **Phi 4 Mini** | Microsoft | Reasoning; complex tasks |
+| **LFM 2.5** | Liquid AI | Compact instruction following |
+| **Gemma 4** | Google | Strong small-model candidate; pending RN ExecuTorch exports |
+| **Qwen 3.5 / 3.6** | Alibaba | Watchlist only; not compatible with current mobile runtime |
+
+### Not Practical for Phone Tiers
+
+- **Kimi K2.x** — Current open-weight releases are very large MoE models (hundreds of GB even quantized). They are server/desktop candidates, not OfflineMate phone models.
+- **MiniMax M2.x** — Strong agent/coding models, but GGUF quantizations still target high-RAM desktops or servers. No React Native ExecuTorch path found.
+- **Qwen 3.6** — Released and useful in vLLM/SGLang/llama.cpp/MLX ecosystems, but current public sizes are not phone-tier React Native ExecuTorch candidates.
 
 ---
 

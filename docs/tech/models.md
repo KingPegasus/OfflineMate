@@ -11,8 +11,12 @@ This document tracks model families, target tiers, and migration strategy. For u
 ## Model Families in Scope
 
 - Qwen 3 family (0.6B, 1.7B, 4B as available in runtime ecosystem)
+- Qwen 2.5 family (0.5B, 1.5B, 3B as conservative built-in alternates)
 - SmolLM2 family (135M, 360M, 1.7B)
 - Llama 3.2 family (1B, 3B class options)
+- Hammer 2.1 family (0.5B, 1.5B, 3B tool-calling candidates)
+- LFM 2.5 1.2B Instruct (Standard-tier candidate)
+- Phi 4 Mini 4B (Full-tier reasoning candidate)
 
 ## Tier-Driven Model Assignment
 
@@ -63,6 +67,15 @@ low-end devices.
 - **Detailed research:** See [qwen35-compatibility-research.md](./qwen35-compatibility-research.md) for architecture analysis, ExecuTorch status, and migration blockers
 - Plan migration as a configuration and model-registry update, not a pipeline rewrite
 
+## 2026 Compatibility Watchlist
+
+- **Qwen 3.5:** Still blocked for OfflineMate's React Native ExecuTorch runtime. Server/WebGPU work is progressing, but no built-in `.pte` mobile exports are available.
+- **Qwen 3.6:** Released with large 35B-A3B and 27B models and support in server/desktop runtimes such as vLLM, SGLang, KTransformers, llama.cpp/GGUF, and MLX. Not a phone-tier React Native ExecuTorch candidate today.
+- **Gemma 4:** Promising. Upstream ExecuTorch text-only support exists for E2B/E4B, while React Native ExecuTorch export work is still open. Track for Standard/Full tiers.
+- **Kimi K2.x:** Not practical for phone tiers. Current open-weight releases are very large MoE models requiring server-class memory.
+- **MiniMax M2.x:** Not practical for phone tiers. GGUF quantizations exist, but even compressed variants target high-RAM desktop/server setups.
+- **Prefer currently built-in React Native ExecuTorch options first:** Qwen 3 0.6B, Qwen 2.5 0.5B/1.5B/3B, Hammer 2.1, LFM 2.5 1.2B, and Phi 4 Mini 4B.
+
 ## ExecuTorch Deployment (Best Practices)
 
 - **Export:** Models are exported to `.pte` (ExecuTorch) format; Hugging Face Optimum and native export paths are supported. The runtime loads these files from app storage (e.g. after download from model manager).
@@ -80,6 +93,7 @@ low-end devices.
 
 - [Qwen (Alibaba)](https://github.com/QwenLM)
 - [React Native ExecuTorch](https://docs.swmansion.com/react-native-executorch/docs)
+- [React Native ExecuTorch available LLM models](https://mintlify.com/software-mansion/react-native-executorch/llm/available-models)
 - [ExecuTorch LLM Deployment](https://docs.pytorch.org/executorch/stable/llm/getting-started.html)
 - [ExecuTorch (executorch.ai)](https://executorch.ai/)
 - [LLMModule / GenerationConfig](https://docs.swmansion.com/react-native-executorch/docs/typescript-api/natural-language-processing/LLMModule)

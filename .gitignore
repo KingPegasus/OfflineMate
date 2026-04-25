@@ -28,3 +28,6 @@ assets/models/
 
 expo-env.d.ts
 # @end expo-cli
+
+#Ignore cursor AI rules
+.cursor/rules/codacy.mdc
