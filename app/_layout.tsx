@@ -5,9 +5,15 @@ import { useKeepAwake } from "expo-keep-awake";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { StatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
+import { initExecutorch } from "react-native-executorch";
+import { ExpoResourceFetcher } from "react-native-executorch-expo-resource-fetcher";
 import { runMigrations } from "@/db/migrations";
 import { registerBackgroundUnload } from "@/utils/performance";
 import { llmEngine } from "@/ai/llm-engine";
+
+initExecutorch({
+  resourceFetcher: ExpoResourceFetcher,
+});
 
 // Show notifications when app is in foreground (e.g. scheduled reminders)
 Notifications.setNotificationHandler({

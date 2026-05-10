@@ -32,8 +32,7 @@ async function ensureEmbeddingsModule() {
   if (embeddingsModule) return embeddingsModule;
   if (!loadPromise) {
     loadPromise = (async () => {
-      embeddingsModule = new TextEmbeddingsModule();
-      await embeddingsModule.load(ALL_MINILM_L6_V2);
+      embeddingsModule = await TextEmbeddingsModule.fromModelName(ALL_MINILM_L6_V2);
     })();
   }
   await loadPromise;

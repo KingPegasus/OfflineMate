@@ -31,3 +31,4 @@ expo-env.d.ts
 
 #Ignore cursor AI rules
 .cursor/rules/codacy.mdc
+tmp-logcat.txt

@@ -155,25 +155,27 @@ export class LLMEngine {
       this.unload();
     }
 
-    const opts: LLMModuleOptions = {
-      tokenCallback: (token: string) => this.streamCallback?.(token),
-    };
-    this.llm = new LLMModule(opts as never);
-    const moduleForInit = this.llm;
+    const tokenCallback = (token: string) => this.streamCallback?.(token);
 
     const spec = getTierSpec(tier).primary;
     const onDownloadProgress = options?.onDownloadProgress;
     this.loadInFlight = true;
     try {
       const runtime = await resolvePrimaryRuntimeForLoad(tier);
-      await moduleForInit.load(runtime, onDownloadProgress ?? (() => {}));
+      const moduleForInit = await LLMModule.fromCustomModel(
+        runtime.modelSource,
+        runtime.tokenizerSource,
+        runtime.tokenizerConfigSource,
+        onDownloadProgress ?? (() => {}),
+        tokenCallback,
+      );
       if (myGen !== this.loadGeneration) {
         this.disposeOrphanInitModule(moduleForInit);
         throw new Error("Model load cancelled");
       }
+      this.llm = moduleForInit;
       moduleForInit.configure({
         chatConfig: {
-          contextWindowLength: tier === "full" ? 8192 : tier === "standard" ? 4096 : 2048,
           initialMessageHistory: [],
           systemPrompt: "You are OfflineMate, a local private assistant.",
         },
@@ -183,10 +185,8 @@ export class LLMEngine {
       this.initializedTier = tier;
       return spec;
     } catch (error) {
-      if (myGen === this.loadGeneration) {
+      if (myGen === this.loadGeneration && this.llm) {
         this.unload();
-      } else {
-        this.disposeOrphanInitModule(moduleForInit);
       }
       throw error;
     } finally {
