@@ -66,7 +66,7 @@
     "expo-speech": "~55.0.13",
     "expo-sqlite": "~55.0.15",
     "expo-status-bar": "^55.0.6",
-    "react": "19.2.5",
+    "react": "^19.2.6",
     "react-native": "0.83.6",
     "react-native-device-info": "^15.0.2",
     "react-native-executorch": "^0.8.4",
