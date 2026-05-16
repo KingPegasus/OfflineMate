@@ -1,5 +1,21 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { webSearchTool } from "@/tools/search-tool";
+
+const { mockSearch } = vi.hoisted(() => ({
+  mockSearch: vi.fn(async (query: string) => ({
+    heading: `mock heading for ${query}`,
+    abstractText: "",
+    relatedTopics: [],
+    results: [{ title: "mock result", snippet: "mock snippet", url: "https://example.com" }],
+  })),
+}));
+
+vi.mock("@/tools/providers/duckduckgo-provider", () => ({
+  createDuckDuckGoProvider: () => ({
+    name: "duckduckgo",
+    search: mockSearch,
+  }),
+}));
 
 describe("search.web local deterministic answers", () => {
   it("answers current date locally without web dependency", async () => {
@@ -29,5 +45,6 @@ describe("search.web local deterministic answers", () => {
       // Should NOT be local_datetime — webSearchTool may mock/search; we just assert it didn't short-circuit
       expect(result.payload?.source).not.toBe("local_datetime");
     }
+    expect(mockSearch).toHaveBeenCalledTimes(queries.length);
   });
 });

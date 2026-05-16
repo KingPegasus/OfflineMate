@@ -2,10 +2,18 @@ export type Role = "user" | "assistant" | "system";
 
 export interface ChatMessage {
   id: string;
+  conversationId?: string;
   role: Role;
   content: string;
   createdAt: number;
   thinking?: string[];
+}
+
+export interface ChatConversation {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export type ModelTier = "lite" | "standard" | "full";

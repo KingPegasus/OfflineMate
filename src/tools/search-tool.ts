@@ -40,6 +40,13 @@ export const webSearchTool: Tool = {
     "current information",
     "current date",
     "today's date",
+    "todays date",
+    "current time",
+    "time now",
+    "what is current time",
+    "what's current time",
+    "what is time now",
+    "what's time now",
     "up to date on",
     // Verification / fact-check
     "is it true that",

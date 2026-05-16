@@ -36,7 +36,11 @@ export const TOOL_REGISTRY: Tool[] = [
 
 /** Exported for planner reconciliation tests. */
 export function scoreToolMatch(input: string, tool: Tool): number {
-  const normalized = input.toLowerCase();
+  const normalized = input
+    .normalize("NFKC")
+    .replace(/[\u2018\u2019\u02BC]/g, "'")
+    .replace(/\btodays\b/g, "today's")
+    .toLowerCase();
   let best = 0;
   for (const keyword of tool.keywords) {
     if (!keyword || keyword.length === 0) continue;

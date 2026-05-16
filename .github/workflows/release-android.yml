@@ -70,6 +70,14 @@ jobs:
           npm run test:unit
           npm run test:integration
 
+      - name: E2E + perf smoke tests
+        run: |
+          npm run test:e2e
+          npm run test:perf
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+
       - name: Expo Doctor
         run: npx expo-doctor
 

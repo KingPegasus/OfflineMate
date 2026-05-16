@@ -12,8 +12,6 @@ export type LLMInitializeOptions = {
 
 // The runtime API in react-native-executorch evolves quickly. This adapter keeps
 // app code stable and allows swapping runtime implementations later.
-// Optional constructor options for streaming; not all type definitions expose this.
-type LLMModuleOptions = { tokenCallback?: (token: string) => void };
 type LLMGenerationConfig = {
   temperature?: number;
   topp?: number;
@@ -93,6 +91,8 @@ function shouldInterruptForRepetition(text: string): boolean {
 }
 
 export class LLMEngine {
+  private static readonly POST_INTERRUPT_COOLDOWN_MS = 450;
+  private static readonly GENERATE_BUSY_RETRY_DELAYS_MS = [120, 260, 500, 900];
   private initializedTier: ModelTier | null = null;
   private llm: LLMModule | null = null;
   private isLoaded = false;
@@ -102,6 +102,27 @@ export class LLMEngine {
   private loadGeneration = 0;
   /** Set before generate() to receive tokens as they are produced; cleared in finally. */
   private streamCallback: ((token: string) => void) | null = null;
+  /** Timestamp of the last interrupt call; used to avoid immediate post-interrupt re-generate races. */
+  private lastInterruptAtMs = 0;
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async waitForPostInterruptCooldown(): Promise<void> {
+    if (this.lastInterruptAtMs <= 0) return;
+    const elapsed = Date.now() - this.lastInterruptAtMs;
+    const remaining = LLMEngine.POST_INTERRUPT_COOLDOWN_MS - elapsed;
+    if (remaining > 0) {
+      await this.sleep(remaining);
+    }
+  }
+
+  private isModelBusyError(error: unknown): boolean {
+    const code = (error as { code?: number })?.code;
+    const message = error instanceof Error ? error.message : String(error ?? "");
+    return code === 104 || /currently generating/i.test(message);
+  }
 
   /**
    * Call when init times out or user switches tier mid-load. Stops overlapping native downloads
@@ -211,31 +232,43 @@ export class LLMEngine {
       return `OfflineMate fallback response: ${lastUser?.content ?? "hello"}`;
     }
     const mapped: Message[] = messages.map((m) => ({ role: m.role, content: m.content }));
+    await this.waitForPostInterruptCooldown();
+    let retries = 0;
     let buffer = "";
-    const charLimit = Math.max(maxNewTokens * 3, 100);
-    let interruptedForCap = false;
-    this.streamCallback = (token: string) => {
-      buffer += token;
-      onToken?.(token);
-      if (interruptedForCap) return;
-      // Only strict JSON parse for early-stop; lenient parser is for complete output in agentic-search-flow
-      const decision = parseToolActionDecision(buffer);
-      if (decision || buffer.length >= charLimit) {
-        interruptedForCap = true;
-        try {
-          this.interrupt();
-        } catch (e) {
-          console.warn("[OfflineMate] generateWithMaxTokens interrupt failed:", e);
+    while (true) {
+      const previousBufferLength = buffer.length;
+      const charLimit = Math.max(maxNewTokens * 3, 100);
+      let interruptedForCap = false;
+      this.streamCallback = (token: string) => {
+        buffer += token;
+        onToken?.(token);
+        if (interruptedForCap) return;
+        // Only strict JSON parse for early-stop; lenient parser is for complete output in agentic-search-flow
+        const decision = parseToolActionDecision(buffer);
+        if (decision || buffer.length >= charLimit) {
+          interruptedForCap = true;
+          try {
+            this.interrupt();
+          } catch (e) {
+            console.warn("[OfflineMate] generateWithMaxTokens interrupt failed:", e);
+          }
         }
+      };
+      try {
+        return await this.llm.generate(mapped);
+      } catch (e) {
+        if (buffer.length > previousBufferLength) return buffer;
+        if (this.isModelBusyError(e) && retries < LLMEngine.GENERATE_BUSY_RETRY_DELAYS_MS.length) {
+          const delayMs = LLMEngine.GENERATE_BUSY_RETRY_DELAYS_MS[retries]!;
+          retries += 1;
+          console.warn("[OfflineMate] LLM generate busy after interrupt; retrying in", delayMs, "ms");
+          await this.sleep(delayMs);
+          continue;
+        }
+        throw e;
+      } finally {
+        this.streamCallback = null;
       }
-    };
-    try {
-      return await this.llm.generate(mapped);
-    } catch (e) {
-      if (buffer.length > 0) return buffer;
-      throw e;
-    } finally {
-      this.streamCallback = null;
     }
   }
 
@@ -252,24 +285,37 @@ export class LLMEngine {
       role: m.role,
       content: m.content,
     }));
-    let streamText = "";
-    let interruptedForLoop = false;
-    this.streamCallback = (token: string) => {
-      streamText += token;
-      onToken?.(token);
-      if (!interruptedForLoop && shouldInterruptForRepetition(streamText)) {
-        interruptedForLoop = true;
-        try {
-          this.llm?.interrupt();
-        } catch (error) {
-          console.warn("[OfflineMate] Failed to interrupt repetitive generation:", error);
+    await this.waitForPostInterruptCooldown();
+    let retries = 0;
+    while (true) {
+      let streamText = "";
+      let interruptedForLoop = false;
+      this.streamCallback = (token: string) => {
+        streamText += token;
+        onToken?.(token);
+        if (!interruptedForLoop && shouldInterruptForRepetition(streamText)) {
+          interruptedForLoop = true;
+          try {
+            this.llm?.interrupt();
+          } catch (error) {
+            console.warn("[OfflineMate] Failed to interrupt repetitive generation:", error);
+          }
         }
+      };
+      try {
+        return await this.llm.generate(mapped);
+      } catch (error) {
+        if (this.isModelBusyError(error) && retries < LLMEngine.GENERATE_BUSY_RETRY_DELAYS_MS.length) {
+          const delayMs = LLMEngine.GENERATE_BUSY_RETRY_DELAYS_MS[retries]!;
+          retries += 1;
+          console.warn("[OfflineMate] LLM generate busy after interrupt; retrying in", delayMs, "ms");
+          await this.sleep(delayMs);
+          continue;
+        }
+        throw error;
+      } finally {
+        this.streamCallback = null;
       }
-    };
-    try {
-      return await this.llm.generate(mapped);
-    } finally {
-      this.streamCallback = null;
     }
   }
 
@@ -277,6 +323,7 @@ export class LLMEngine {
     if (!this.llm || (!this.isLoaded && !this.loadInFlight)) {
       return;
     }
+    this.lastInterruptAtMs = Date.now();
     try {
       if (typeof (this.llm as { interrupt?: () => void }).interrupt === "function") {
         (this.llm as { interrupt: () => void }).interrupt();

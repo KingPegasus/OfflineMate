@@ -62,48 +62,93 @@ export async function searchRelevantContext(
   query: string,
   topK = 5,
   minSimilarity = 0.45,
+  options?: {
+    sourceType?: string;
+    sourceId?: string;
+    diversifyBySource?: boolean;
+    perSourceLimit?: number;
+  },
 ): Promise<string[]> {
   const db = getDb();
   const queryEmbedding = await generateEmbedding(query);
+  const perSourceLimit = options?.diversifyBySource ? Math.max(1, options.perSourceLimit ?? 2) : Number.MAX_SAFE_INTEGER;
+
+  const pickTopTexts = (
+    rows: { text: string; score: number; sourceType?: string; sourceId?: string }[],
+  ): string[] => {
+    const sourceCounts = new Map<string, number>();
+    return rows
+      .filter((it) => Number.isFinite(it.score) && it.score >= minSimilarity)
+      .sort((a, b) => b.score - a.score)
+      .filter((it) => {
+        const sourceKey = `${it.sourceType ?? "unknown"}:${it.sourceId ?? "unknown"}`;
+        const current = sourceCounts.get(sourceKey) ?? 0;
+        if (current >= perSourceLimit) return false;
+        sourceCounts.set(sourceKey, current + 1);
+        return true;
+      })
+      .slice(0, topK)
+      .map((it) => it.text);
+  };
 
   if (isSqliteVecReady()) {
     try {
       const queryVector = toSqlVector(queryEmbedding);
-      const rows = db.getAllSync<{ text_chunk: string; distance: number }>(
-        `SELECT text_chunk, distance
+      const whereClauses = ["embedding MATCH ?", "k = ?"];
+      const params: (string | number)[] = [queryVector, Math.max(topK * 4, topK)];
+      if (options?.sourceType) {
+        whereClauses.push("source_type = ?");
+        params.push(options.sourceType);
+      }
+      if (options?.sourceId) {
+        whereClauses.push("source_id = ?");
+        params.push(options.sourceId);
+      }
+      const rows = db.getAllSync<{ text_chunk: string; source_type?: string; source_id?: string; distance: number }>(
+        `SELECT text_chunk, source_type, source_id, distance
          FROM vectors_idx
-         WHERE embedding MATCH ?
-           AND k = ?
+         WHERE ${whereClauses.join(" AND ")}
          ORDER BY distance ASC`,
-        [queryVector, Math.max(topK * 3, topK)],
+        params,
       );
 
-      return rows
+      const ranked = rows
         .map((row) => ({
           text: row.text_chunk,
+          sourceType: row.source_type,
+          sourceId: row.source_id,
           // For cosine distance, score ~ 1 - distance.
           score: 1 - Number(row.distance),
-        }))
-        .filter((it) => Number.isFinite(it.score) && it.score >= minSimilarity)
-        .slice(0, topK)
-        .map((it) => it.text);
+        }));
+      return pickTopTexts(ranked);
     } catch {
       // Continue to legacy fallback scan.
     }
   }
 
-  const rows = db.getAllSync<{ text_chunk: string; embedding: string }>(
-    "SELECT text_chunk, embedding FROM vectors LIMIT 2000",
+  const whereClauses: string[] = [];
+  const params: string[] = [];
+  if (options?.sourceType) {
+    whereClauses.push("source_type = ?");
+    params.push(options.sourceType);
+  }
+  if (options?.sourceId) {
+    whereClauses.push("source_id = ?");
+    params.push(options.sourceId);
+  }
+  const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+  const rows = db.getAllSync<{ text_chunk: string; source_type?: string; source_id?: string; embedding: string }>(
+    `SELECT text_chunk, source_type, source_id, embedding FROM vectors ${whereSql} LIMIT 2000`,
+    params,
   );
 
-  return rows
+  const ranked = rows
     .map((row) => ({
       text: row.text_chunk,
+      sourceType: row.source_type,
+      sourceId: row.source_id,
       score: cosineSimilarity(queryEmbedding, JSON.parse(row.embedding) as number[]),
-    }))
-    .filter((it) => it.score >= minSimilarity)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topK)
-    .map((it) => it.text);
+    }));
+  return pickTopTexts(ranked);
 }
 
