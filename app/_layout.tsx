@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { useKeepAwake } from "expo-keep-awake";
 import { KeyboardProvider } from "react-native-keyboard-controller";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
 import { initExecutorch } from "react-native-executorch";
@@ -37,18 +38,20 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <KeyboardProvider>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="dark" hidden={false} translucent={false} backgroundColor="#ffffff" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="onboarding"
-            options={{ presentation: "modal", headerShown: true, title: "Setup" }}
-          />
-        </Stack>
-      </QueryClientProvider>
-    </KeyboardProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <KeyboardProvider>
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style="dark" hidden={false} translucent={false} backgroundColor="#ffffff" />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="onboarding"
+              options={{ presentation: "modal", headerShown: true, title: "Setup" }}
+            />
+          </Stack>
+        </QueryClientProvider>
+      </KeyboardProvider>
+    </GestureHandlerRootView>
   );
 }
 

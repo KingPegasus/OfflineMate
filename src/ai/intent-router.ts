@@ -1,4 +1,11 @@
-export type IntentType = "direct" | "context" | "tool";
+export type IntentType = "direct" | "context" | "tool" | "datetime";
+
+function normalizeIntentInput(input: string): string {
+  return input
+    .normalize("NFKC")
+    .replace(/[\u2018\u2019\u02BC]/g, "'")
+    .toLowerCase();
+}
 
 /**
  * Coarse keyword routing before LLM/tool execution.
@@ -82,6 +89,12 @@ const TOOL_KEYWORDS = [
   "latest news",
   "latest about",
   "current information",
+  "current time",
+  "time now",
+  "what is current time",
+  "what's current time",
+  "what is time now",
+  "what's time now",
   "up to date on",
   "is it true that",
   "verify online",
@@ -90,6 +103,12 @@ const TOOL_KEYWORDS = [
   "current weather",
   "weather now",
   "near me",
+  "today's date",
+  "todays date",
+  "what is today's date",
+  "what's today's date",
+  "what is todays date",
+  "what's todays date",
   "search",
 ];
 
@@ -130,6 +149,12 @@ export function wantsReminderRelativeTimeIntent(normalizedLower: string): boolea
   return false;
 }
 
+function wantsLocalDateTimeIntent(normalizedLower: string): boolean {
+  return /\b(today('| i)?s date|date today|current date|what('?s| is) the date|what day is it|current time|time now|what('?s| is) the time|local time)\b/.test(
+    normalizedLower,
+  );
+}
+
 /**
  * Phrase keywords use substring search; require a token boundary on the left so
  * "text " does not match inside "con**text** " or "phone " inside "smart**phone** ".
@@ -156,7 +181,8 @@ function hasKeywordMatch(input: string, keyword: string): boolean {
 }
 
 export function routeIntent(input: string): IntentType {
-  const normalized = input.toLowerCase();
+  const normalized = normalizeIntentInput(input);
+  if (wantsLocalDateTimeIntent(normalized)) return "datetime";
   // Action-oriented tool commands should win when both sets match
   // (e.g. "remind me about the meeting").
   if (TOOL_KEYWORDS.some((k) => hasKeywordMatch(normalized, k))) return "tool";

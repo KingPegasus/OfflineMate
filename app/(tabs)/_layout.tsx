@@ -36,6 +36,14 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="chats"
+        options={{
+          href: null,
+          title: "Chats",
+          tabBarIcon: ({ focused }) => tabIcon("chatbubbles-outline", focused),
+        }}
+      />
+      <Tabs.Screen
         name="notes"
         options={{
           title: "Notes",

@@ -8,9 +8,16 @@ const MIGRATE_DEFAULTS = {
   voiceEnabled: false,
   webSearchEnabled: true,
   hasCompletedOnboarding: false,
+  persistChatHistory: false,
 };
 
-const SETTINGS_KEYS = ["selectedTier", "voiceEnabled", "webSearchEnabled", "hasCompletedOnboarding"] as const;
+const SETTINGS_KEYS = [
+  "selectedTier",
+  "voiceEnabled",
+  "webSearchEnabled",
+  "hasCompletedOnboarding",
+  "persistChatHistory",
+] as const;
 
 /** Exported for tests. Ensures undefined/invalid persisted state yields full defaults. Never returns {} or partial state. */
 export function migrateSettingsState(
@@ -29,6 +36,7 @@ export function migrateSettingsState(
   for (const k of SETTINGS_KEYS) {
     if (base[k] !== undefined) out[k] = base[k];
   }
+  out.persistChatHistory = Boolean(out.persistChatHistory);
   return out;
 }
 
@@ -43,9 +51,11 @@ interface SettingsState {
   voiceEnabled: boolean;
   webSearchEnabled: boolean;
   hasCompletedOnboarding: boolean;
+  persistChatHistory: boolean;
   setSelectedTier: (tier: ModelTier) => void;
   setVoiceEnabled: (enabled: boolean) => void;
   setWebSearchEnabled: (enabled: boolean) => void;
+  setPersistChatHistory: (enabled: boolean) => void;
   completeOnboarding: () => void;
   resetOnboarding: () => void;
 }
@@ -57,22 +67,25 @@ export const useSettingsStore = create<SettingsState>()(
       voiceEnabled: false,
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
+      persistChatHistory: false,
       setSelectedTier: (tier) => set({ selectedTier: tier }),
       setVoiceEnabled: (voiceEnabled) => set({ voiceEnabled }),
       setWebSearchEnabled: (webSearchEnabled) => set({ webSearchEnabled }),
+      setPersistChatHistory: (persistChatHistory) => set({ persistChatHistory }),
       completeOnboarding: () => set({ hasCompletedOnboarding: true }),
       resetOnboarding: () => set({ hasCompletedOnboarding: false }),
     }),
     {
       name: "offlinemate-settings",
       storage: createJSONStorage(() => secureStorage),
-      version: 2,
+      version: 4,
       migrate: migrateSettingsState,
       partialize: (s) => ({
         selectedTier: s.selectedTier,
         voiceEnabled: s.voiceEnabled,
         webSearchEnabled: s.webSearchEnabled,
         hasCompletedOnboarding: s.hasCompletedOnboarding,
+        persistChatHistory: s.persistChatHistory,
       }),
     },
   ),

@@ -34,9 +34,17 @@ describe("routeIntent", () => {
 
   it("routes explicit search queries to tool intent", () => {
     expect(routeIntent("search for population of Tokyo")).toBe("tool");
-    expect(routeIntent("current date. Kindly check from the internet.")).toBe("tool");
+    expect(routeIntent("current date. Kindly check from the internet.")).toBe("datetime");
     expect(routeIntent("what is the current price of bitcoin")).toBe("tool");
+    expect(routeIntent("What is today's date?")).toBe("datetime");
+    expect(routeIntent("What's today's date?")).toBe("datetime");
+    expect(routeIntent("What is todays date?")).toBe("datetime");
+    expect(routeIntent("What’s today’s date?")).toBe("datetime");
+    expect(routeIntent("What is time now")).toBe("datetime");
+    expect(routeIntent("What is current time")).toBe("datetime");
+    expect(routeIntent("What's time now?")).toBe("datetime");
   });
+
 
   it("routes bare definitional questions to direct (not web search)", () => {
     expect(routeIntent("What is an LLM?")).toBe("direct");

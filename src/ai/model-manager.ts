@@ -22,7 +22,7 @@ export function getModelPath(modelId: string) {
   return `${MODELS_DIR}/${modelId}.pte`;
 }
 
-interface AssetToDownload {
+export interface AssetToDownload {
   id: string;
   url: string;
   destination: string;
@@ -76,6 +76,68 @@ export function getTierAssets(tier: ModelTier): AssetToDownload[] {
           : urlToFilename(it.url)
     }`,
   }));
+}
+
+export interface TierAssetReadiness {
+  ready: boolean;
+  missingAssets: AssetToDownload[];
+  presentAssets: AssetToDownload[];
+}
+
+function isChatCriticalAsset(assetId: string, primaryModelId: string) {
+  return (
+    assetId === `${primaryModelId}-model` ||
+    assetId === `${primaryModelId}-tokenizer` ||
+    assetId === `${primaryModelId}-tokenizer-config`
+  );
+}
+
+/**
+ * Assets required for text generation in chat. Voice and other optional assets are excluded.
+ */
+export function getTierChatAssets(tier: ModelTier): AssetToDownload[] {
+  const primaryId = getTierSpec(tier).primary.id;
+  return getTierAssets(tier).filter((asset) => isChatCriticalAsset(asset.id, primaryId));
+}
+
+/**
+ * Verifies whether all required assets for a tier already exist on device.
+ * Used by chat preflight to avoid confusing "load failed" errors when onboarding was skipped.
+ */
+export async function getTierAssetReadiness(tier: ModelTier): Promise<TierAssetReadiness> {
+  await ensureModelsDirectory();
+  const assets = getTierAssets(tier);
+  const checks = await Promise.all(
+    assets.map(async (asset) => ({
+      asset,
+      info: await FileSystem.getInfoAsync(asset.destination),
+    })),
+  );
+  const missingAssets = checks.filter((it) => !it.info.exists).map((it) => it.asset);
+  const presentAssets = checks.filter((it) => it.info.exists).map((it) => it.asset);
+  return {
+    ready: missingAssets.length === 0,
+    missingAssets,
+    presentAssets,
+  };
+}
+
+export async function getTierChatAssetReadiness(tier: ModelTier): Promise<TierAssetReadiness> {
+  await ensureModelsDirectory();
+  const assets = getTierChatAssets(tier);
+  const checks = await Promise.all(
+    assets.map(async (asset) => ({
+      asset,
+      info: await FileSystem.getInfoAsync(asset.destination),
+    })),
+  );
+  const missingAssets = checks.filter((it) => !it.info.exists).map((it) => it.asset);
+  const presentAssets = checks.filter((it) => it.info.exists).map((it) => it.asset);
+  return {
+    ready: missingAssets.length === 0,
+    missingAssets,
+    presentAssets,
+  };
 }
 
 function fileUriForLocalPath(path: string): string {

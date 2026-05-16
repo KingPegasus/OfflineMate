@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Alert } from "react-native";
 import { llmEngine } from "@/ai/llm-engine";
 import {
@@ -15,6 +15,7 @@ import { WEB_SEARCH_NO_RESULTS_PREFIX } from "@/tools/search-tool";
 import { useChatStore } from "@/stores/chat-store";
 import { useModelStore } from "@/stores/model-store";
 import { useSettingsStore } from "@/stores/settings-store";
+import { getTierChatAssetReadiness } from "@/ai/model-manager";
 import { speak } from "@/voice/tts-engine";
 import { isMemoryPressureHigh } from "@/utils/performance";
 import { saveImportantMemory } from "@/context/long-term-memory";
@@ -172,6 +173,19 @@ function createMessage(role: ChatMessage["role"], content: string): ChatMessage 
   return { id: `${role}-${Date.now()}-${Math.random()}`, role, content, createdAt: Date.now() };
 }
 
+async function assertChatAssetsReady(tier: ModelTier): Promise<void> {
+  const readiness = await getTierChatAssetReadiness(tier);
+  if (readiness.ready) return;
+  const missing = readiness.missingAssets
+    .map((asset) => asset.id)
+    .slice(0, 4)
+    .join(", ");
+  const tierName = getTierSpec(tier).name;
+  throw new Error(
+    `The ${tierName} chat model files are not fully downloaded. Open Onboarding, choose ${tierName}, and finish download before sending messages. Missing assets: ${missing}.`,
+  );
+}
+
 /** Ask before switching to a smaller tier after primary model init fails. */
 function confirmModelFallback(failedTier: "full" | "standard", fallbackTier: "standard" | "lite"): Promise<boolean> {
   const failedName = getTierSpec(failedTier).name;
@@ -231,8 +245,43 @@ function summarizeToolResult(toolResult?: string): string | null {
   return firstNonPlan;
 }
 
+function buildLocalDateTimeAnswer(rawQuery: string): string | null {
+  const lower = rawQuery.toLowerCase();
+  const needDate = /\b(today('| i)?s date|date today|current date|what('?s| is) the date)\b/.test(lower);
+  const needTime = /\b(current time|time now|what('?s| is) the time|local time)\b/.test(lower);
+  const needDay = /\b(what day is it|day today|today day|weekday)\b/.test(lower);
+  if (!needDate && !needTime && !needDay) return null;
+
+  const now = new Date();
+  const dateText = new Intl.DateTimeFormat(undefined, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(now);
+  const timeText = new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(now);
+  const weekday = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(now);
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "local time zone";
+
+  if (needDate && needTime) return `It is ${dateText}, and the current time is ${timeText} (${zone}).`;
+  if (needTime) return `The current time is ${timeText} (${zone}).`;
+  if (needDay && !needDate) return `Today is ${weekday} (${zone}).`;
+  return `Today is ${dateText} (${zone}).`;
+}
+
 export function useLLMChat() {
-  const messages = useChatStore((s) => s.messages);
+  const conversations = useChatStore((s) => s.conversations);
+  const activeConversationId = useChatStore((s) => s.activeConversationId);
+  const allMessages = useChatStore((s) => s.messages);
+  const createConversation = useChatStore((s) => s.createConversation);
+  const selectConversation = useChatStore((s) => s.selectConversation);
+  const deleteConversation = useChatStore((s) => s.deleteConversation);
+  const renameConversation = useChatStore((s) => s.renameConversation);
+  const clearMessages = useChatStore((s) => s.clearMessages);
   const pushMessage = useChatStore((s) => s.pushMessage);
   const setLoading = useChatStore((s) => s.setLoading);
   const setError = useChatStore((s) => s.setError);
@@ -249,6 +298,14 @@ export function useLLMChat() {
   const tier = useSettingsStore((s) => s.selectedTier);
   const setTier = useSettingsStore((s) => s.setSelectedTier);
   const voiceEnabled = useSettingsStore((s) => s.voiceEnabled);
+  const messages = useMemo(
+    () => (activeConversationId ? allMessages.filter((m) => m.conversationId === activeConversationId) : []),
+    [activeConversationId, allMessages],
+  );
+
+  const startNewConversation = useCallback((seedTitle?: string) => {
+    createConversation(seedTitle);
+  }, [createConversation]);
 
   const stopGeneration = useCallback(() => {
     llmEngine.interrupt();
@@ -262,8 +319,9 @@ export function useLLMChat() {
         setError("The model is currently generating. Please wait for the current response to finish.");
         return;
       }
+      const requestConversationId = activeConversationId ?? createConversation(cleaned);
       const userMessage = createMessage("user", cleaned);
-      pushMessage(userMessage);
+      pushMessage(userMessage, requestConversationId);
       if (cleaned.toLowerCase().startsWith("remember ")) {
         saveImportantMemory(cleaned.replace(/^remember\s+/i, ""));
       }
@@ -279,6 +337,7 @@ export function useLLMChat() {
         const llmInitOpts = { onDownloadProgress: reportLlmInitDownloadProgress };
         try {
           try {
+            await assertChatAssetsReady(activeTier);
             llmIdleCheckpointMs = Date.now();
             lastLlmDownloadProgressAt = 0;
             setLlmInitDownloadContext(activeTier);
@@ -301,6 +360,7 @@ export function useLLMChat() {
               }
               activeTier = fallback;
               setTier(fallback);
+              await assertChatAssetsReady(activeTier);
               // Let native download/load settle so Lite init does not hit "Already downloading this file" (ExecuTorch 181).
               await new Promise((r) => setTimeout(r, 1500));
               try {
@@ -343,6 +403,26 @@ export function useLLMChat() {
         let planSummary: string | undefined;
         let agenticDirectAnswer: string | undefined;
         let needsPostInterruptDelay = false;
+
+        if (intent === "datetime") {
+          const localDateTime = buildLocalDateTimeAnswer(cleaned);
+          if (localDateTime) {
+            const finalOutput = cleanModelOutput(localDateTime);
+            setStreamingHasThinkTag(false);
+            setStreamingThinkClosed(true);
+            setStreamingThinking([]);
+            setStreamingResponse(finalOutput);
+            pushMessage(createMessage("assistant", finalOutput), requestConversationId);
+            if (voiceEnabled) {
+              console.log("[OfflineMate] Chat: voice on, speaking local datetime response");
+              await speak(finalOutput);
+            }
+            console.log(
+              `[OfflineMate] Assistant delivered: intent=${intent} finalLen=${finalOutput.length} text=${JSON.stringify(finalOutput)}`,
+            );
+            return;
+          }
+        }
 
         if (intent === "context") {
           contextSnippets = await retrieveContextForQuery(cleaned, activeTier);
@@ -541,7 +621,7 @@ export function useLLMChat() {
         if (agenticDirectAnswer) {
           const direct = cleanModelOutput(agenticDirectAnswer);
           console.log("[OfflineMate] Agentic cleaned output:", JSON.stringify(direct.slice(0, 120)));
-          pushMessage(createMessage("assistant", direct));
+          pushMessage(createMessage("assistant", direct), requestConversationId);
           console.log("[OfflineMate] Agentic direct answer delivered");
           if (voiceEnabled) {
             console.log("[OfflineMate] Chat: voice on, speaking direct answer");
@@ -567,7 +647,7 @@ export function useLLMChat() {
           setStreamingThinkClosed(true);
           setStreamingThinking([]);
           setStreamingResponse(directNoResults);
-          pushMessage(createMessage("assistant", directNoResults));
+          pushMessage(createMessage("assistant", directNoResults), requestConversationId);
           if (voiceEnabled) {
             await speak(directNoResults);
           }
@@ -676,10 +756,13 @@ export function useLLMChat() {
         setStreamingHasThinkTag(parsedOutput.hasThinkTag);
         setStreamingThinkClosed(parsedOutput.isClosed);
         setStreamingResponse(finalOutput);
-        pushMessage({
-          ...createMessage("assistant", finalOutput),
-          thinking: finalThinking.length > 0 ? finalThinking : undefined,
-        });
+        pushMessage(
+          {
+            ...createMessage("assistant", finalOutput),
+            thinking: finalThinking.length > 0 ? finalThinking : undefined,
+          },
+          requestConversationId,
+        );
         if (voiceEnabled) {
           console.log("[OfflineMate] Chat: voice on, speaking response");
           await speak(finalOutput);
@@ -701,6 +784,8 @@ export function useLLMChat() {
     },
     [
       messages,
+      activeConversationId,
+      createConversation,
       pushMessage,
       setLoading,
       setError,
@@ -716,7 +801,14 @@ export function useLLMChat() {
   );
 
   return {
+    conversations,
+    activeConversationId,
     messages,
+    startNewConversation,
+    selectConversation,
+    deleteConversation,
+    renameConversation,
+    clearMessages,
     sendMessage,
     stopGeneration,
     streamingResponse,

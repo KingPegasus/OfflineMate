@@ -10,6 +10,7 @@ import { ModelDownloader } from "@/components/ModelDownloader";
 export default function OnboardingScreen() {
   const router = useRouter();
   const [recommended, setRecommended] = useState<"lite" | "standard" | "full">("standard");
+  const [isSelectedTierReady, setIsSelectedTierReady] = useState(false);
   const setTier = useSettingsStore((s) => s.setSelectedTier);
   const selectedTier = useSettingsStore((s) => s.selectedTier);
   const completeOnboarding = useSettingsStore((s) => s.completeOnboarding);
@@ -34,6 +35,10 @@ export default function OnboardingScreen() {
         Recommended tier: {recommendedTier.name} ({recommendedTier.targetRam})
       </Text>
       <Text style={styles.body}>Selected download size: {selectedTierSpec.estimatedDownload}</Text>
+      <Text style={styles.body}>
+        Chat uses fully on-device generation after model files are downloaded. Downloads require internet one time per
+        tier.
+      </Text>
       <View style={styles.buttons}>
         {MODEL_TIERS.map((item) => (
           <Text
@@ -46,9 +51,9 @@ export default function OnboardingScreen() {
         ))}
       </View>
       <Text style={styles.note}>
-        Model download manager and resumable download flow will run after base setup.
+        Status: {isSelectedTierReady ? "Chat-ready for selected tier" : "Downloads still required for selected tier"}
       </Text>
-      <ModelDownloader tier={selectedTier} />
+      <ModelDownloader tier={selectedTier} onReadinessChange={setIsSelectedTierReady} />
       <Text
         style={styles.continue}
         onPress={() => {
@@ -56,8 +61,13 @@ export default function OnboardingScreen() {
           router.replace("/chat");
         }}
       >
-        Continue to Chat
+        {isSelectedTierReady ? "Continue to Chat" : "Continue to Chat (finish download later)"}
       </Text>
+      {!isSelectedTierReady ? (
+        <Text style={styles.note}>
+          If you continue now, chat will show a model-readiness message and guide you back here to finish download.
+        </Text>
+      ) : null}
     </SafeAreaView>
   );
 }
