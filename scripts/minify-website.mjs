@@ -47,12 +47,19 @@ async function main() {
     });
   }
 
-  const skip = new Set(["index.html", "privacy.html", "styles.css", "README.md"]);
+  const skipRootFiles = new Set(["index.html", "privacy.html", "styles.css", "README.md"]);
   for (const ent of fs.readdirSync(srcDir, { withFileTypes: true })) {
-    if (!ent.isFile()) continue;
     const name = ent.name;
-    if (skip.has(name)) continue;
-    fs.copyFileSync(path.join(srcDir, name), path.join(outDir, name));
+    const from = path.join(srcDir, name);
+    const to = path.join(outDir, name);
+    if (ent.isFile()) {
+      if (skipRootFiles.has(name)) continue;
+      fs.copyFileSync(from, to);
+      continue;
+    }
+    if (ent.isDirectory()) {
+      fs.cpSync(from, to, { recursive: true, force: true });
+    }
   }
 
   console.log("website-dist ready:", outDir);
