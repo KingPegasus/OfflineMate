@@ -28,10 +28,8 @@ export function ModelDownloader({ tier, onReadinessChange }: Props) {
   const [missingAssets, setMissingAssets] = useState(0);
   const [currentAsset, setCurrentAsset] = useState<string>("");
 
-  const refreshReadiness = useCallback(async () => {
-    setIsChecking(true);
-    try {
-      const readiness = await getTierAssetReadiness(tier);
+  const applyReadiness = useCallback(
+    (readiness: Awaited<ReturnType<typeof getTierAssetReadiness>>) => {
       setRequiredAssets(readiness.missingAssets.length + readiness.presentAssets.length);
       setMissingAssets(readiness.missingAssets.length);
       onReadinessChange?.(readiness.ready);
@@ -43,17 +41,45 @@ export function ModelDownloader({ tier, onReadinessChange }: Props) {
       } else {
         setStatus("Not downloaded");
       }
+    },
+    [onReadinessChange],
+  );
+
+  const refreshReadiness = useCallback(async () => {
+    setIsChecking(true);
+    try {
+      const readiness = await getTierAssetReadiness(tier);
+      applyReadiness(readiness);
     } catch {
       setStatus("Unknown");
       onReadinessChange?.(false);
     } finally {
       setIsChecking(false);
     }
-  }, [onReadinessChange, tier]);
+  }, [applyReadiness, onReadinessChange, tier]);
 
   useEffect(() => {
-    void refreshReadiness();
-  }, [refreshReadiness]);
+    let cancelled = false;
+
+    getTierAssetReadiness(tier)
+      .then((readiness) => {
+        if (cancelled) return;
+        applyReadiness(readiness);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setStatus("Unknown");
+        onReadinessChange?.(false);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsChecking(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyReadiness, onReadinessChange, tier]);
 
   const isReady = missingAssets === 0 && requiredAssets > 0;
   const downloadedAssets = Math.max(0, requiredAssets - missingAssets);

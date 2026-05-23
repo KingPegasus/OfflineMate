@@ -14,7 +14,7 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "image": "sdk-55"
+        "image": "sdk-56"
       }
     }
   },

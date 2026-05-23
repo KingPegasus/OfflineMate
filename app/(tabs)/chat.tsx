@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -31,28 +31,28 @@ export default function ChatScreen() {
   } = useLLMChat();
   const selectedTier = useSettingsStore((s) => s.selectedTier);
   const tierSpec = getTierSpec(selectedTier);
-  const [isLiveThinkingOpen, setIsLiveThinkingOpen] = useState(true);
+  const [liveThinkingExpandedOverride, setLiveThinkingExpandedOverride] = useState<boolean | null>(
+    null,
+  );
+  const autoLiveThinkingOpen =
+    !isLoading || !streamingHasThinkTag || !streamingThinkClosed;
+  const isLiveThinkingOpen = liveThinkingExpandedOverride ?? autoLiveThinkingOpen;
+
+  const resetLiveThinkingOverride = () => setLiveThinkingExpandedOverride(null);
 
   const canSubmit = useMemo(() => prompt.trim().length > 0 && !isLoading, [prompt, isLoading]);
-
-  useEffect(() => {
-    if (!isLoading || !streamingHasThinkTag) {
-      setIsLiveThinkingOpen(true);
-      return;
-    }
-    if (streamingThinkClosed) {
-      // Cursor-like behavior: minimize once </redacted_thinking> appears.
-      setIsLiveThinkingOpen(false);
-    } else {
-      setIsLiveThinkingOpen(true);
-    }
-  }, [isLoading, streamingHasThinkTag, streamingThinkClosed]);
 
   return (
     <SafeAreaView style={styles.root} edges={["top"]}>
       <LlmInitDownloadModal />
       <View style={styles.conversationBar}>
-        <Pressable style={styles.primaryBtn} onPress={() => startNewConversation("New chat")}>
+        <Pressable
+          style={styles.primaryBtn}
+          onPress={() => {
+            resetLiveThinkingOverride();
+            startNewConversation("New chat");
+          }}
+        >
           <Text style={styles.primaryBtnText}>+ New chat</Text>
         </Pressable>
         <Pressable style={styles.secondaryBtn} onPress={() => router.push("/chats" as never)}>
@@ -73,7 +73,9 @@ export default function ChatScreen() {
           visible={isLoading && streamingHasThinkTag}
           lines={streamingThinking}
           expanded={isLiveThinkingOpen}
-          onToggleExpanded={() => setIsLiveThinkingOpen((v) => !v)}
+          onToggleExpanded={() =>
+            setLiveThinkingExpandedOverride((value) => !(value ?? autoLiveThinkingOpen))
+          }
         />
         {streamingResponse ? <StreamingText text={streamingResponse} /> : null}
       </ScrollView>
@@ -83,10 +85,14 @@ export default function ChatScreen() {
           onChangeText={setPrompt}
           onSend={() => {
             if (!canSubmit) return;
+            resetLiveThinkingOverride();
             void sendMessage(prompt.trim());
             setPrompt("");
           }}
-          onStop={stopGeneration}
+          onStop={() => {
+            resetLiveThinkingOverride();
+            stopGeneration();
+          }}
           isLoading={isLoading}
           canSubmit={canSubmit}
           onVoiceTranscript={(text) => {
