@@ -1,5 +1,5 @@
 import * as FileSystem from "expo-file-system/legacy";
-import { getTierSpec } from "@/ai/model-registry";
+import { resolveModelForTier } from "@/ai/model-registry";
 import type { ModelTier } from "@/types/assistant";
 import { ALL_MINILM_L6_V2 } from "react-native-executorch";
 
@@ -45,8 +45,8 @@ function asHttpUrl(value: unknown): string | null {
 }
 
 /** Same layout as onboarding / `downloadTierPrimaryModel` (under `documentDirectory/models/`). */
-export function getTierAssets(tier: ModelTier): AssetToDownload[] {
-  const primary = getTierSpec(tier).primary;
+export function getTierAssets(tier: ModelTier, modelId?: string | null): AssetToDownload[] {
+  const primary = resolveModelForTier(tier, modelId);
   const modelSource = asHttpUrl(primary.runtime.modelSource);
   const tokenizerSource = asHttpUrl(primary.runtime.tokenizerSource);
   const tokenizerConfigSource = asHttpUrl(primary.runtime.tokenizerConfigSource);
@@ -95,18 +95,21 @@ function isChatCriticalAsset(assetId: string, primaryModelId: string) {
 /**
  * Assets required for text generation in chat. Voice and other optional assets are excluded.
  */
-export function getTierChatAssets(tier: ModelTier): AssetToDownload[] {
-  const primaryId = getTierSpec(tier).primary.id;
-  return getTierAssets(tier).filter((asset) => isChatCriticalAsset(asset.id, primaryId));
+export function getTierChatAssets(tier: ModelTier, modelId?: string | null): AssetToDownload[] {
+  const activeId = resolveModelForTier(tier, modelId).id;
+  return getTierAssets(tier, modelId).filter((asset) => isChatCriticalAsset(asset.id, activeId));
 }
 
 /**
  * Verifies whether all required assets for a tier already exist on device.
  * Used by chat preflight to avoid confusing "load failed" errors when onboarding was skipped.
  */
-export async function getTierAssetReadiness(tier: ModelTier): Promise<TierAssetReadiness> {
+export async function getTierAssetReadiness(
+  tier: ModelTier,
+  modelId?: string | null,
+): Promise<TierAssetReadiness> {
   await ensureModelsDirectory();
-  const assets = getTierAssets(tier);
+  const assets = getTierAssets(tier, modelId);
   const checks = await Promise.all(
     assets.map(async (asset) => ({
       asset,
@@ -122,9 +125,12 @@ export async function getTierAssetReadiness(tier: ModelTier): Promise<TierAssetR
   };
 }
 
-export async function getTierChatAssetReadiness(tier: ModelTier): Promise<TierAssetReadiness> {
+export async function getTierChatAssetReadiness(
+  tier: ModelTier,
+  modelId?: string | null,
+): Promise<TierAssetReadiness> {
   await ensureModelsDirectory();
-  const assets = getTierChatAssets(tier);
+  const assets = getTierChatAssets(tier, modelId);
   const checks = await Promise.all(
     assets.map(async (asset) => ({
       asset,
@@ -149,14 +155,14 @@ function fileUriForLocalPath(path: string): string {
  * return those as `file://` sources so ExecuTorch loads from disk instead of re-downloading
  * into `react-native-executorch/`.
  */
-export async function resolvePrimaryRuntimeForLoad(tier: ModelTier) {
-  const primary = getTierSpec(tier).primary;
-  const assets = getTierAssets(tier);
-  const modelAsset = assets.find((a) => a.id === `${primary.id}-model`);
-  const tokAsset = assets.find((a) => a.id === `${primary.id}-tokenizer`);
-  const cfgAsset = assets.find((a) => a.id === `${primary.id}-tokenizer-config`);
+export async function resolvePrimaryRuntimeForLoad(tier: ModelTier, modelId?: string | null) {
+  const active = resolveModelForTier(tier, modelId);
+  const assets = getTierAssets(tier, modelId);
+  const modelAsset = assets.find((a) => a.id === `${active.id}-model`);
+  const tokAsset = assets.find((a) => a.id === `${active.id}-tokenizer`);
+  const cfgAsset = assets.find((a) => a.id === `${active.id}-tokenizer-config`);
   if (!modelAsset || !tokAsset || !cfgAsset) {
-    return primary.runtime;
+    return active.runtime;
   }
   const [m, t, c] = await Promise.all([
     FileSystem.getInfoAsync(modelAsset.destination),
@@ -164,10 +170,11 @@ export async function resolvePrimaryRuntimeForLoad(tier: ModelTier) {
     FileSystem.getInfoAsync(cfgAsset.destination),
   ]);
   if (!m.exists || !t.exists || !c.exists) {
-    return primary.runtime;
+    return active.runtime;
   }
   console.log("[OfflineMate] LLM load using onboarding model files (same copy, no second download)", {
     tier,
+    modelId: active.id,
   });
   return {
     modelSource: fileUriForLocalPath(modelAsset.destination),

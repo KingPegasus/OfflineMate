@@ -4,12 +4,13 @@ This document lists the target stack and why each technology is selected.
 
 ## Mobile Framework
 
-- **Expo SDK 55** + React Native 0.83 + React 19.2 + TypeScript
+- **Expo SDK 56** + React Native 0.85 + React 19.2 + TypeScript
 - Why:
   - rapid iteration and strong module ecosystem
   - managed native builds with **EAS** (Expo Application Services)
   - **Development builds** (custom dev client) required for native modules like ExecuTorch and whisper.rn—Expo Go is not sufficient for this stack
-- Note: SDK 55 requires the New Architecture; Legacy Architecture support ended in SDK 54. Use `expo-dev-client` for local and EAS development builds.
+- Note: SDK 56 requires the New Architecture. Use `expo-dev-client` for local and EAS development builds.
+- **ExecuTorch stack:** `react-native-executorch@^0.9.1` (ExecuTorch runtime v1.2.0+). Official compatibility table lists Expo through SDK 55; RN 0.85 is supported—validate native builds after bumps.
 
 ## On-Device AI Runtime
 
@@ -51,7 +52,7 @@ This document lists the target stack and why each technology is selected.
 ## References
 
 - [Expo Documentation](https://docs.expo.dev/)
-- [Expo SDK 55 Changelog](https://expo.dev/changelog/sdk-55)
+- [Expo SDK 56 Changelog](https://expo.dev/changelog/sdk-56)
 - [EAS Development Builds](https://docs.expo.dev/develop/development-builds/create-a-build)
 - [React Native ExecuTorch](https://docs.swmansion.com/react-native-executorch/docs)
 - [ExecuTorch (PyTorch)](https://executorch.ai/)

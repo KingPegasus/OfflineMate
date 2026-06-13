@@ -1,9 +1,11 @@
 import type { ModelTier } from "@/types/assistant";
 import {
+  GEMMA4_E2B,
   LLAMA3_2_1B_SPINQUANT,
   LLAMA3_2_3B_SPINQUANT,
   QWEN3_1_7B_QUANTIZED,
   QWEN3_4B_QUANTIZED,
+  QWEN3_5_2B_QUANTIZED,
   SMOLLM2_1_135M_QUANTIZED,
   SMOLLM2_1_1_7B_QUANTIZED,
   SMOLLM2_1_360M_QUANTIZED,
@@ -11,7 +13,7 @@ import {
 
 export interface ModelSpec {
   id: string;
-  provider: "qwen" | "smollm" | "llama";
+  provider: "qwen" | "smollm" | "llama" | "gemma";
   family: string;
   size: string;
   quantization: "8da4w" | "int4";
@@ -114,6 +116,28 @@ const llama3b: ModelSpec = {
   runtime: LLAMA3_2_3B_SPINQUANT,
 };
 
+const qwen35_2b: ModelSpec = {
+  id: "qwen3.5-2b",
+  provider: "qwen",
+  family: "Qwen 3.5",
+  size: "2B",
+  quantization: "8da4w",
+  downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-qwen-3.5",
+  estimatedSizeMb: 1100,
+  runtime: QWEN3_5_2B_QUANTIZED,
+};
+
+const gemma4_e2b: ModelSpec = {
+  id: "gemma4-e2b",
+  provider: "gemma",
+  family: "Gemma 4",
+  size: "E2B",
+  quantization: "8da4w",
+  downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-gemma-4",
+  estimatedSizeMb: 900,
+  runtime: GEMMA4_E2B,
+};
+
 export const MODEL_TIERS: TierSpec[] = [
   {
     key: "lite",
@@ -133,10 +157,10 @@ export const MODEL_TIERS: TierSpec[] = [
     targetRam: "6-8 GB RAM",
     estimatedDownload: "~1.2 GB",
     primary: qwen17b,
-    alternates: [smol17b, llama1b],
+    alternates: [qwen35_2b, gemma4_e2b, smol17b, llama1b],
     futureUpgrade: {
       id: "qwen3.5-2b",
-      note: "Enable when ExecuTorch exports are available.",
+      note: "Available as a Standard alternate in Settings for side-by-side testing.",
     },
   },
   {
@@ -157,16 +181,29 @@ export function getTierSpec(tier: ModelTier): TierSpec {
   return MODEL_TIERS.find((it) => it.key === tier) ?? MODEL_TIERS[1];
 }
 
-/** Human-readable primary model for UI (tier + family + size). */
-export function getPrimaryModelDisplayName(tier: ModelTier): string {
+/** Primary plus alternates for a tier (deduped by id). */
+export function getModelsForTier(tier: ModelTier): ModelSpec[] {
   const tierSpec = getTierSpec(tier);
-  const p = tierSpec.primary;
-  return `${tierSpec.name} · ${p.family} ${p.size}`;
+  const seen = new Set<string>();
+  const models: ModelSpec[] = [];
+  for (const spec of [tierSpec.primary, ...tierSpec.alternates]) {
+    if (seen.has(spec.id)) continue;
+    seen.add(spec.id);
+    models.push(spec);
+  }
+  return models;
 }
 
-/** Basename of the primary LLM weight URL (for UI when ExecuTorch reports download progress). */
-export function getPrimaryModelFileLabel(tier: ModelTier): string {
-  const spec = getTierSpec(tier).primary;
+/** Resolve the active model for a tier; null/undefined modelId uses the tier primary. */
+export function resolveModelForTier(tier: ModelTier, modelId?: string | null): ModelSpec {
+  const tierSpec = getTierSpec(tier);
+  if (!modelId || modelId === tierSpec.primary.id) {
+    return tierSpec.primary;
+  }
+  return tierSpec.alternates.find((it) => it.id === modelId) ?? tierSpec.primary;
+}
+
+function modelFileLabelFromSource(spec: ModelSpec): string {
   const src = spec.runtime.modelSource;
   if (typeof src === "string" && (src.startsWith("http://") || src.startsWith("https://"))) {
     const clean = src.split("?")[0];
@@ -178,6 +215,28 @@ export function getPrimaryModelFileLabel(tier: ModelTier): string {
     }
   }
   return spec.id;
+}
+
+/** Human-readable active model for UI (tier + family + size). */
+export function getActiveModelDisplayName(tier: ModelTier, modelId?: string | null): string {
+  const tierSpec = getTierSpec(tier);
+  const spec = resolveModelForTier(tier, modelId);
+  return `${tierSpec.name} · ${spec.family} ${spec.size}`;
+}
+
+/** Human-readable primary model for UI (tier + family + size). */
+export function getPrimaryModelDisplayName(tier: ModelTier): string {
+  return getActiveModelDisplayName(tier, null);
+}
+
+/** Basename of the active LLM weight URL (for UI when ExecuTorch reports download progress). */
+export function getActiveModelFileLabel(tier: ModelTier, modelId?: string | null): string {
+  return modelFileLabelFromSource(resolveModelForTier(tier, modelId));
+}
+
+/** Basename of the primary LLM weight URL (for UI when ExecuTorch reports download progress). */
+export function getPrimaryModelFileLabel(tier: ModelTier): string {
+  return getActiveModelFileLabel(tier, null);
 }
 
 export function getFallbackTier(tier: ModelTier): "standard" | "lite" | null {

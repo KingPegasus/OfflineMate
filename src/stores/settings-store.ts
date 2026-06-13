@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import * as SecureStore from "expo-secure-store";
+import { getModelsForTier } from "@/ai/model-registry";
 import type { ModelTier } from "@/types/assistant";
 
 const MIGRATE_DEFAULTS = {
   selectedTier: "standard" as ModelTier,
+  standardModelId: null as string | null,
   voiceEnabled: false,
   webSearchEnabled: true,
   hasCompletedOnboarding: false,
@@ -13,11 +15,19 @@ const MIGRATE_DEFAULTS = {
 
 const SETTINGS_KEYS = [
   "selectedTier",
+  "standardModelId",
   "voiceEnabled",
   "webSearchEnabled",
   "hasCompletedOnboarding",
   "persistChatHistory",
 ] as const;
+
+function normalizeStandardModelId(value: unknown): string | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value !== "string") return null;
+  const allowed = new Set(getModelsForTier("standard").map((m) => m.id));
+  return allowed.has(value) ? value : null;
+}
 
 /** Exported for tests. Ensures undefined/invalid persisted state yields full defaults. Never returns {} or partial state. */
 export function migrateSettingsState(
@@ -36,6 +46,10 @@ export function migrateSettingsState(
   for (const k of SETTINGS_KEYS) {
     if (base[k] !== undefined) out[k] = base[k];
   }
+  if (version < 5) {
+    out.standardModelId = null;
+  }
+  out.standardModelId = normalizeStandardModelId(out.standardModelId);
   out.persistChatHistory = Boolean(out.persistChatHistory);
   return out;
 }
@@ -48,11 +62,14 @@ const secureStorage = {
 
 interface SettingsState {
   selectedTier: ModelTier;
+  /** Standard-tier LLM variant; null means tier primary (Qwen 3 1.7B). */
+  standardModelId: string | null;
   voiceEnabled: boolean;
   webSearchEnabled: boolean;
   hasCompletedOnboarding: boolean;
   persistChatHistory: boolean;
   setSelectedTier: (tier: ModelTier) => void;
+  setStandardModelId: (modelId: string | null) => void;
   setVoiceEnabled: (enabled: boolean) => void;
   setWebSearchEnabled: (enabled: boolean) => void;
   setPersistChatHistory: (enabled: boolean) => void;
@@ -64,11 +81,13 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       selectedTier: "standard",
+      standardModelId: null,
       voiceEnabled: false,
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
       persistChatHistory: false,
       setSelectedTier: (tier) => set({ selectedTier: tier }),
+      setStandardModelId: (modelId) => set({ standardModelId: normalizeStandardModelId(modelId) }),
       setVoiceEnabled: (voiceEnabled) => set({ voiceEnabled }),
       setWebSearchEnabled: (webSearchEnabled) => set({ webSearchEnabled }),
       setPersistChatHistory: (persistChatHistory) => set({ persistChatHistory }),
@@ -78,10 +97,11 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: "offlinemate-settings",
       storage: createJSONStorage(() => secureStorage),
-      version: 4,
+      version: 5,
       migrate: migrateSettingsState,
       partialize: (s) => ({
         selectedTier: s.selectedTier,
+        standardModelId: s.standardModelId,
         voiceEnabled: s.voiceEnabled,
         webSearchEnabled: s.webSearchEnabled,
         hasCompletedOnboarding: s.hasCompletedOnboarding,

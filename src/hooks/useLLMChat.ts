@@ -2,10 +2,11 @@ import { useCallback, useMemo } from "react";
 import { Alert } from "react-native";
 import { llmEngine } from "@/ai/llm-engine";
 import {
+  getActiveModelDisplayName,
+  getActiveModelFileLabel,
   getFallbackTier,
-  getPrimaryModelDisplayName,
-  getPrimaryModelFileLabel,
   getTierSpec,
+  resolveModelForTier,
 } from "@/ai/model-registry";
 import { routeIntent } from "@/ai/intent-router";
 import { retrieveContextForQuery } from "@/ai/rag-pipeline";
@@ -40,9 +41,9 @@ let lastLlmDownloadProgressAt = 0;
 let llmInitDownloadFileLabel = "";
 let llmInitDownloadModelName = "";
 
-function setLlmInitDownloadContext(tier: ModelTier) {
-  llmInitDownloadModelName = getPrimaryModelDisplayName(tier);
-  llmInitDownloadFileLabel = getPrimaryModelFileLabel(tier);
+function setLlmInitDownloadContext(tier: ModelTier, modelId?: string | null) {
+  llmInitDownloadModelName = getActiveModelDisplayName(tier, modelId);
+  llmInitDownloadFileLabel = getActiveModelFileLabel(tier, modelId);
 }
 
 function isLlmAssetDownloading(): boolean {
@@ -173,8 +174,14 @@ function createMessage(role: ChatMessage["role"], content: string): ChatMessage 
   return { id: `${role}-${Date.now()}-${Math.random()}`, role, content, createdAt: Date.now() };
 }
 
-async function assertChatAssetsReady(tier: ModelTier): Promise<void> {
-  const readiness = await getTierChatAssetReadiness(tier);
+async function assertChatAssetsReady(tier: ModelTier, modelId?: string | null): Promise<void> {
+  const active = resolveModelForTier(tier, modelId);
+  const primary = getTierSpec(tier).primary;
+  if (active.id !== primary.id) {
+    // Standard alternates download via ExecuTorch on first chat load.
+    return;
+  }
+  const readiness = await getTierChatAssetReadiness(tier, modelId);
   if (readiness.ready) return;
   const missing = readiness.missingAssets
     .map((asset) => asset.id)
@@ -296,6 +303,7 @@ export function useLLMChat() {
   const setStreamingHasThinkTag = useChatStore((s) => s.setStreamingHasThinkTag);
   const setStreamingThinkClosed = useChatStore((s) => s.setStreamingThinkClosed);
   const tier = useSettingsStore((s) => s.selectedTier);
+  const standardModelId = useSettingsStore((s) => s.standardModelId);
   const setTier = useSettingsStore((s) => s.setSelectedTier);
   const voiceEnabled = useSettingsStore((s) => s.voiceEnabled);
   const messages = useMemo(
@@ -333,14 +341,18 @@ export function useLLMChat() {
       setStreamingThinkClosed(false);
       try {
         let activeTier = tier;
+        const activeModelId = activeTier === "standard" ? standardModelId : null;
         let initError: Error | null = null;
-        const llmInitOpts = { onDownloadProgress: reportLlmInitDownloadProgress };
+        const llmInitOpts = {
+          modelId: activeModelId,
+          onDownloadProgress: reportLlmInitDownloadProgress,
+        };
         try {
           try {
-            await assertChatAssetsReady(activeTier);
+            await assertChatAssetsReady(activeTier, activeModelId);
             llmIdleCheckpointMs = Date.now();
             lastLlmDownloadProgressAt = 0;
-            setLlmInitDownloadContext(activeTier);
+            setLlmInitDownloadContext(activeTier, activeModelId);
             await withIdleDeadlineUnlessDownloading(
               llmEngine.initialize(activeTier, llmInitOpts),
               MODEL_INIT_TIMEOUT_MS,
@@ -360,15 +372,19 @@ export function useLLMChat() {
               }
               activeTier = fallback;
               setTier(fallback);
-              await assertChatAssetsReady(activeTier);
+              const fallbackModelId = activeTier === "standard" ? standardModelId : null;
+              await assertChatAssetsReady(activeTier, fallbackModelId);
               // Let native download/load settle so Lite init does not hit "Already downloading this file" (ExecuTorch 181).
               await new Promise((r) => setTimeout(r, 1500));
               try {
                 llmIdleCheckpointMs = Date.now();
                 lastLlmDownloadProgressAt = 0;
-                setLlmInitDownloadContext(activeTier);
+                setLlmInitDownloadContext(activeTier, fallbackModelId);
                 await withIdleDeadlineUnlessDownloading(
-                  llmEngine.initialize(activeTier, llmInitOpts),
+                  llmEngine.initialize(activeTier, {
+                    modelId: fallbackModelId,
+                    onDownloadProgress: reportLlmInitDownloadProgress,
+                  }),
                   MODEL_INIT_TIMEOUT_MS,
                   "Fallback model initialization timed out. Open Onboarding and confirm the Lite model downloaded, or retry after a few minutes.",
                   () => llmEngine.cancelPendingLoad(),
@@ -795,6 +811,7 @@ export function useLLMChat() {
       setStreamingThinkClosed,
       setTier,
       tier,
+      standardModelId,
       voiceEnabled,
       isLoading,
     ],

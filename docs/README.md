@@ -26,7 +26,7 @@ technical decisions.
 - **`tech/processing-pipeline-in-depth.md`** — **Single in-depth technical doc:** audio→text (STT tech and parameters), how context is saved and retrieved, embeddings and vector-space math, vector search (what it is, where used, how it works), RAG (where it fits and science), planner LLM, validation, and execution. Read this for a full technical understanding of the pipeline.
 - `tech/stack.md`
 - `tech/models.md`
-- **`tech/qwen35-compatibility-research.md`** — Qwen 3.5 ExecuTorch/mobile compatibility research
+- **`tech/qwen35-compatibility-research.md`** — On-device model compatibility (Qwen 3.5, Gemma 4, third-party vendors)
 - `tech/rag.md`
 - `tech/speech.md`
 - `tech/vector-store.md`

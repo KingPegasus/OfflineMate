@@ -29,16 +29,15 @@ Target: weak devices. Prioritize speed, battery, and minimal RAM. No RAG retriev
 | **SmolLM2 135M** (primary) | 135M | ~90 MB | Smallest, fastest; lowest RAM use; ideal for low-end phones |
 | **SmolLM2 360M** (alternate) | 360M | ~200 MB | Better chat quality than 135M; still fast and efficient |
 
-**Available in react-native-executorch** (not yet in app registry):
+**Available in react-native-executorch v0.9.1** (not yet in app registry):
 
 - **Qwen 3 0.6B** — Better reasoning than SmolLM at similar size; quantized ~400 MB download.
 - **Qwen 2.5 0.5B** — Older Qwen line; conservative Lite-tier fallback.
 - **Hammer 2.1 0.5B** — Built-in option optimized for assistant/tool workflows.
 - **LFM 2.5 350M** — Very compact instruction-following model.
+- **Qwen 3.5 0.8B** — `QWEN3_5_0_8B_QUANTIZED`; experimental slow prefill; runtime ready on current stack.
 
-**Watchlist** (requires library upgrade or validation):
-
-- **Qwen 3.5 0.8B** — Pre-exports ship in **react-native-executorch v0.9.0+** (`QWEN3_5_0_8B_QUANTIZED`); experimental with slow prefill. OfflineMate pins v0.8.4 today — see [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
+**Requires device validation before enabling by default** — see [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
 
 ---
 
@@ -58,9 +57,9 @@ Target: mid-range devices. Full RAG, tools, and speech. Balanced quality and res
 - **LFM 2.5 1.2B Instruct** — Compact instruction-following model; promising Standard-tier alternate.
 - **Qwen 2.5 1.5B / 3B** — Stable built-in Qwen alternatives if Qwen 3 behavior regresses.
 - **Phi 4 Mini 4B** — Microsoft reasoning model; stronger on complex tasks (larger download).
-- **Gemma 4 E2B** — Upstream ExecuTorch support exists; React Native ExecuTorch export still open ([#1062](https://github.com/software-mansion/react-native-executorch/issues/1062)).
-- **Bielik v3.0 1.5B** — Polish/CEE regional model; available in v0.9.0+.
-- **Qwen 3.5 2B** — Pre-exports in v0.9.0+ (`QWEN3_5_2B_QUANTIZED`); experimental slow prefill; not on OfflineMate's current runtime pin. See [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
+- **Gemma 4 E2B** — Shipped in v0.9.1 (`GEMMA4_E2B`); strong Standard-tier candidate; Vulkan/MLX backends.
+- **Bielik v3.0 1.5B** — Polish/CEE regional model.
+- **Qwen 3.5 2B** — `QWEN3_5_2B_QUANTIZED`; experimental slow prefill; runtime ready. See [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
 
 ---
 
@@ -77,7 +76,7 @@ Target: strong devices. Longer context (8K), advanced planner, richer RAG.
 
 - **Phi 4 Mini 4B** — Microsoft model; often strong on reasoning benchmarks.
 - **Hammer 2.1 3B** — Tool-calling focused; good for assistants with many tools.
-- **Gemma 4 E4B** — Promising if Software Mansion ships React Native exports; upstream ExecuTorch text-only support has landed.
+- **Gemma 4 E2B** — Available in v0.9.1; E4B not exported yet.
 - **Qwen 3.5 4B** — No React Native ExecuTorch pre-export yet; Full tier stays on Qwen 3 4B. See [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
 
 ---
@@ -102,9 +101,9 @@ Target: strong devices. Longer context (8K), advanced planner, richer RAG.
 | **Hammer 2.1** | MadeAgents | Function/tool calling |
 | **Phi 4 Mini** | Microsoft | Reasoning; complex tasks |
 | **LFM 2.5** | Liquid AI | Compact instruction following |
-| **Gemma 4** | Google | Strong small-model candidate; pending RN ExecuTorch exports |
-| **Bielik v3.0** | SpeakLeash | Polish/CEE regional; v0.9.0+ only |
-| **Qwen 3.5** | Alibaba | 0.8B/2B in v0.9.0+ (experimental); 4B not exported |
+| **Gemma 4** | Google | E2B in v0.9.1; E4B not exported yet |
+| **Bielik v3.0** | SpeakLeash | Polish/CEE regional |
+| **Qwen 3.5** | Alibaba | 0.8B/2B ready (experimental prefill); 4B not exported |
 | **Qwen 3.6** | Alibaba | Server/GGUF only; no phone-tier RN export |
 
 ### Not Practical for Phone Tiers

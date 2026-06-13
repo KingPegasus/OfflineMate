@@ -3,13 +3,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import Constants from "expo-constants";
 import { useSettingsStore } from "@/stores/settings-store";
-import { getTierSpec, MODEL_TIERS } from "@/ai/model-registry";
+import { getModelsForTier, getTierSpec, MODEL_TIERS, resolveModelForTier } from "@/ai/model-registry";
 import { useChatStore } from "@/stores/chat-store";
+import { llmEngine } from "@/ai/llm-engine";
 
 export default function SettingsScreen() {
   const router = useRouter();
   const selectedTier = useSettingsStore((s) => s.selectedTier);
+  const standardModelId = useSettingsStore((s) => s.standardModelId);
   const setTier = useSettingsStore((s) => s.setSelectedTier);
+  const setStandardModelId = useSettingsStore((s) => s.setStandardModelId);
   const voiceEnabled = useSettingsStore((s) => s.voiceEnabled);
   const setVoiceEnabled = useSettingsStore((s) => s.setVoiceEnabled);
   const webSearchEnabled = useSettingsStore((s) => s.webSearchEnabled);
@@ -18,7 +21,17 @@ export default function SettingsScreen() {
   const setPersistChatHistory = useSettingsStore((s) => s.setPersistChatHistory);
   const clearMessages = useChatStore((s) => s.clearMessages);
   const tierSpec = getTierSpec(selectedTier);
+  const activeModel = resolveModelForTier(selectedTier, selectedTier === "standard" ? standardModelId : null);
+  const standardModels = getModelsForTier("standard");
   const appVersion = Constants.expoConfig?.version ?? "unknown";
+
+  const handleSelectStandardModel = (modelId: string) => {
+    const primaryId = getTierSpec("standard").primary.id;
+    const nextId = modelId === primaryId ? null : modelId;
+    if (nextId === standardModelId || (nextId === null && standardModelId === null)) return;
+    llmEngine.cancelPendingLoad();
+    setStandardModelId(nextId);
+  };
 
   const handleClearCurrentChat = () => {
     Alert.alert("Clear current chat", "Delete this chat permanently?", [
@@ -55,9 +68,34 @@ export default function SettingsScreen() {
         <View style={styles.activeModelCard}>
           <Text style={styles.activeLabel}>Active model</Text>
           <Text style={styles.activeValue}>
-            {tierSpec.name} - {tierSpec.primary.family} {tierSpec.primary.size} ({tierSpec.primary.id})
+            {tierSpec.name} - {activeModel.family} {activeModel.size} ({activeModel.id})
           </Text>
         </View>
+        {selectedTier === "standard" && (
+          <>
+            <Text style={styles.subtitle}>Standard model variant</Text>
+            <Text style={styles.hint}>
+              Pick an alternate for side-by-side testing. Alternates download on first chat message.
+            </Text>
+            <View style={styles.section}>
+              {standardModels.map((model) => {
+                const isPrimary = model.id === tierSpec.primary.id;
+                const isSelected =
+                  (standardModelId === null && isPrimary) || standardModelId === model.id;
+                return (
+                  <Text
+                    key={model.id}
+                    style={[styles.item, isSelected && styles.selected]}
+                    onPress={() => handleSelectStandardModel(model.id)}
+                  >
+                    {model.family} {model.size}
+                    {isPrimary ? " (default)" : ""}
+                  </Text>
+                );
+              })}
+            </View>
+          </>
+        )}
         <View style={styles.section}>
           {MODEL_TIERS.map((tier) => (
             <Text
@@ -110,6 +148,8 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: 16, paddingBottom: 36 },
   title: { color: "#e5e7eb", fontSize: 20, fontWeight: "700", marginBottom: 12 },
+  subtitle: { color: "#e5e7eb", fontSize: 16, fontWeight: "600", marginTop: 4, marginBottom: 8 },
+  hint: { color: "#9ca3af", fontSize: 12, lineHeight: 18, marginBottom: 8 },
   activeModelCard: {
     backgroundColor: "#111827",
     borderWidth: 1,

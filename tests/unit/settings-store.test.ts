@@ -4,6 +4,7 @@ describe("settings store", () => {
   beforeEach(() => {
     useSettingsStore.setState({
       selectedTier: "standard",
+      standardModelId: null,
       voiceEnabled: false,
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
@@ -16,6 +17,13 @@ describe("settings store", () => {
     expect(useSettingsStore.getState().selectedTier).toBe("full");
   });
 
+  it("updates standard model id", () => {
+    useSettingsStore.getState().setStandardModelId("gemma4-e2b");
+    expect(useSettingsStore.getState().standardModelId).toBe("gemma4-e2b");
+    useSettingsStore.getState().setStandardModelId("invalid");
+    expect(useSettingsStore.getState().standardModelId).toBe(null);
+  });
+
   it("completes onboarding", () => {
     useSettingsStore.getState().completeOnboarding();
     expect(useSettingsStore.getState().hasCompletedOnboarding).toBe(true);
@@ -24,9 +32,10 @@ describe("settings store", () => {
 
 describe("migrateSettingsState", () => {
   it("returns full defaults when persisted is undefined", () => {
-    const result = migrateSettingsState(undefined, 4);
+    const result = migrateSettingsState(undefined, 5);
     expect(result).toEqual({
       selectedTier: "standard",
+      standardModelId: null,
       voiceEnabled: false,
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
@@ -35,9 +44,10 @@ describe("migrateSettingsState", () => {
   });
 
   it("returns full defaults when persisted is null", () => {
-    const result = migrateSettingsState(null, 4);
+    const result = migrateSettingsState(null, 5);
     expect(result).toEqual({
       selectedTier: "standard",
+      standardModelId: null,
       voiceEnabled: false,
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
@@ -46,8 +56,9 @@ describe("migrateSettingsState", () => {
   });
 
   it("returns full defaults when persisted is empty object", () => {
-    const result = migrateSettingsState({}, 4);
+    const result = migrateSettingsState({}, 5);
     expect(result.selectedTier).toBe("standard");
+    expect(result.standardModelId).toBe(null);
     expect(result.voiceEnabled).toBe(false);
     expect(result.webSearchEnabled).toBe(true);
     expect(result.hasCompletedOnboarding).toBe(false);
@@ -70,15 +81,17 @@ describe("migrateSettingsState", () => {
     const result = migrateSettingsState(
       {
         selectedTier: "full",
+        standardModelId: "qwen3.5-2b",
         voiceEnabled: true,
         webSearchEnabled: false,
         hasCompletedOnboarding: true,
         persistChatHistory: true,
       },
-      4
+      5
     );
     expect(result).toEqual({
       selectedTier: "full",
+      standardModelId: "qwen3.5-2b",
       voiceEnabled: true,
       webSearchEnabled: false,
       hasCompletedOnboarding: true,
@@ -86,10 +99,30 @@ describe("migrateSettingsState", () => {
     });
   });
 
+  it("adds standardModelId when migrating from v4", () => {
+    const result = migrateSettingsState(
+      {
+        selectedTier: "standard",
+        voiceEnabled: true,
+        webSearchEnabled: false,
+        hasCompletedOnboarding: true,
+        persistChatHistory: true,
+      },
+      4
+    );
+    expect(result.standardModelId).toBe(null);
+    expect(result.selectedTier).toBe("standard");
+  });
+
+  it("rejects invalid standardModelId values", () => {
+    const result = migrateSettingsState({ standardModelId: "not-a-model" }, 5);
+    expect(result.standardModelId).toBe(null);
+  });
+
   it("replaces undefined persisted values with defaults (no broken state)", () => {
     const result = migrateSettingsState(
       { selectedTier: "lite", voiceEnabled: undefined, webSearchEnabled: undefined, chatHistoryLimit: 999 },
-      4
+      5
     );
     expect(result.selectedTier).toBe("lite");
     expect(result.voiceEnabled).toBe(false);

@@ -15,8 +15,11 @@ This document tracks model families, target tiers, and migration strategy. For u
 - SmolLM2 family (135M, 360M, 1.7B)
 - Llama 3.2 family (1B, 3B class options)
 - Hammer 2.1 family (0.5B, 1.5B, 3B tool-calling candidates)
-- LFM 2.5 1.2B Instruct (Standard-tier candidate)
+- LFM 2.5 (350M, 1.2B, VL variants)
 - Phi 4 Mini 4B (Full-tier reasoning candidate)
+- Qwen 3.5 (0.8B, 2B — experimental prefill; v0.9.1+)
+- Gemma 4 E2B (Standard-tier candidate; v0.9.1+)
+- Bielik v3.0 1.5B (Polish/CEE locale)
 
 ## Tier-Driven Model Assignment
 
@@ -63,18 +66,17 @@ low-end devices.
 
 ## Qwen 3.5 Path
 
-- Track Qwen 3.5 export/runtime maturity and stability for mobile runtime path in use
-- **Detailed research:** See [qwen35-compatibility-research.md](./qwen35-compatibility-research.md) for architecture analysis, ExecuTorch status, and migration blockers
-- Plan migration as a configuration and model-registry update, not a pipeline rewrite
+- Qwen 3.5 **0.8B and 2B** pre-exports are available in `react-native-executorch@^0.9.1` (`QWEN3_5_*_QUANTIZED`).
+- Support is **experimental** — Gated DeltaNet causes slow prefill; benchmark before enabling `QWEN35_MIGRATION_FLAG`.
+- **Qwen 3.5 4B** is still not exported; Full tier stays on Qwen 3 4B.
+- **Detailed research:** See [qwen35-compatibility-research.md](./qwen35-compatibility-research.md)
 
 ## 2026 Compatibility Watchlist
 
-- **Qwen 3.5:** Still blocked for OfflineMate's React Native ExecuTorch runtime. Server/WebGPU work is progressing, but no built-in `.pte` mobile exports are available.
-- **Qwen 3.6:** Released with large 35B-A3B and 27B models and support in server/desktop runtimes such as vLLM, SGLang, KTransformers, llama.cpp/GGUF, and MLX. Not a phone-tier React Native ExecuTorch candidate today.
-- **Gemma 4:** Promising. Upstream ExecuTorch text-only support exists for E2B/E4B, while React Native ExecuTorch export work is still open. Track for Standard/Full tiers.
-- **Kimi K2.x:** Not practical for phone tiers. Current open-weight releases are very large MoE models requiring server-class memory.
-- **MiniMax M2.x:** Not practical for phone tiers. GGUF quantizations exist, but even compressed variants target high-RAM desktop/server setups.
-- **Prefer currently built-in React Native ExecuTorch options first:** Qwen 3 0.6B, Qwen 2.5 0.5B/1.5B/3B, Hammer 2.1, LFM 2.5 1.2B, and Phi 4 Mini 4B.
+- **Gemma 4 E2B:** Shipped in react-native-executorch v0.9.1 (`GEMMA4_E2B`). Evaluate for Standard tier. E4B not exported yet.
+- **Qwen 3.6:** Server/GGUF only; not a phone-tier RN ExecuTorch candidate.
+- **Kimi K2.x / DeepSeek V3/V4 / MiniMax M2 / GLM-4-9B / Mistral Small 3:** Not practical for phone tiers (see research doc).
+- **Prefer built-in options for tier experiments:** Qwen 3 0.6B, Qwen 3.5 0.8B/2B, Gemma 4 E2B, Hammer 2.1, LFM 2.5, Phi 4 Mini 4B, Bielik v3.0.
 
 ## ExecuTorch Deployment (Best Practices)
 
