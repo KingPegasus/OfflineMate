@@ -3,7 +3,7 @@
     "name": "OfflineMate",
     "slug": "offlinemate",
     "scheme": "offlinemate",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",

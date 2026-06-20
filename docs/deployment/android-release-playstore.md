@@ -198,7 +198,7 @@ Play rejects any AAB whose **`versionCode`** is **≤** the latest on that track
 
 Your manual step each release:
 
-1. Bump **`expo.version`** (e.g. `0.1.0` → `0.2.0`) in [`app.json`](../../app.json) when user-visible changes ship.
+1. Bump **`expo.version`** (e.g. `0.2.0` → `0.3.0`) in [`app.json`](../../app.json) when user-visible changes ship.
 2. Commit, push to `main`.
 3. Dispatch the workflow with `profile = production` (and `submit = true` if Play should receive the AAB automatically).
 
