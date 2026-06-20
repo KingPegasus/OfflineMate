@@ -2,7 +2,7 @@
 
 ![Android 7.0+](https://img.shields.io/badge/Android-7.0%2B%20(API%2024)-3DDC84?logo=android&logoColor=white)
 ![Target SDK 36](https://img.shields.io/badge/Target%20SDK-36-blue)
-![Expo SDK 55](https://img.shields.io/badge/Expo%20SDK-55-000020)
+![Expo SDK 56](https://img.shields.io/badge/Expo%20SDK-56-000020)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 <p align="center">

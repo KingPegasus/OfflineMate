@@ -50,6 +50,8 @@ vi.mock("react-native-executorch", () => {
     SMOLLM2_1_1_7B_QUANTIZED: modelStub,
     QWEN3_1_7B_QUANTIZED: modelStub,
     QWEN3_4B_QUANTIZED: modelStub,
+    QWEN3_5_2B_QUANTIZED: modelStub,
+    GEMMA4_E2B: modelStub,
     LLAMA3_2_1B_SPINQUANT: modelStub,
     LLAMA3_2_3B_SPINQUANT: modelStub,
   };

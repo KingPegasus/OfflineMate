@@ -41,7 +41,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="dark" hidden={false} translucent={false} backgroundColor="#ffffff" />
+          <StatusBar style="dark" hidden={false} />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen

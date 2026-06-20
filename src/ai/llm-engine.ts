@@ -1,11 +1,15 @@
 import { resolvePrimaryRuntimeForLoad } from "@/ai/model-manager";
-import { getTierSpec } from "@/ai/model-registry";
+import { resolveModelForTier } from "@/ai/model-registry";
 import { parseToolActionDecision } from "@/ai/tool-action-schema";
 import type { ChatMessage, ModelTier } from "@/types/assistant";
 import { LLMModule } from "react-native-executorch";
 import type { Message } from "react-native-executorch";
 
 export type LLMInitializeOptions = {
+  /** When set, loads this registry model instead of the tier primary. */
+  modelId?: string | null;
+  /** When true, bypasses onboarding local files and uses runtime model URLs/paths directly. */
+  forceRuntimeSources?: boolean;
   /** ExecuTorch reports progress while fetching the model binary from a remote URL (0–1). */
   onDownloadProgress?: (progress: number) => void;
 };
@@ -94,6 +98,7 @@ export class LLMEngine {
   private static readonly POST_INTERRUPT_COOLDOWN_MS = 450;
   private static readonly GENERATE_BUSY_RETRY_DELAYS_MS = [120, 260, 500, 900];
   private initializedTier: ModelTier | null = null;
+  private initializedModelId: string | null = null;
   private llm: LLMModule | null = null;
   private isLoaded = false;
   /** True while `load()` is in progress; native interrupt can cancel in-flight fetch/download before `isLoaded`. */
@@ -161,12 +166,19 @@ export class LLMEngine {
       this.llm = null;
       this.isLoaded = false;
       this.initializedTier = null;
+      this.initializedModelId = null;
     }
   }
 
   async initialize(tier: ModelTier, options?: LLMInitializeOptions) {
-    if (this.llm && this.isLoaded && this.initializedTier === tier) {
-      return getTierSpec(tier).primary;
+    const spec = resolveModelForTier(tier, options?.modelId);
+    if (
+      this.llm &&
+      this.isLoaded &&
+      this.initializedTier === tier &&
+      this.initializedModelId === spec.id
+    ) {
+      return spec;
     }
 
     const myGen = ++this.loadGeneration;
@@ -178,11 +190,14 @@ export class LLMEngine {
 
     const tokenCallback = (token: string) => this.streamCallback?.(token);
 
-    const spec = getTierSpec(tier).primary;
     const onDownloadProgress = options?.onDownloadProgress;
     this.loadInFlight = true;
     try {
-      const runtime = await resolvePrimaryRuntimeForLoad(tier);
+      const runtime = await resolvePrimaryRuntimeForLoad(
+        tier,
+        options?.modelId,
+        !options?.forceRuntimeSources,
+      );
       const moduleForInit = await LLMModule.fromCustomModel(
         runtime.modelSource,
         runtime.tokenizerSource,
@@ -204,6 +219,7 @@ export class LLMEngine {
       });
       this.isLoaded = true;
       this.initializedTier = tier;
+      this.initializedModelId = spec.id;
       return spec;
     } catch (error) {
       if (myGen === this.loadGeneration && this.llm) {
@@ -342,6 +358,7 @@ export class LLMEngine {
     if (!this.llm) {
       this.isLoaded = false;
       this.initializedTier = null;
+      this.initializedModelId = null;
       return;
     }
     try {
@@ -366,6 +383,7 @@ export class LLMEngine {
       this.llm = null;
       this.isLoaded = false;
       this.initializedTier = null;
+      this.initializedModelId = null;
     }
   }
 }

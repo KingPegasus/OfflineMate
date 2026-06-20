@@ -1,4 +1,5 @@
-import * as Calendar from "expo-calendar";
+import * as Calendar from "expo-calendar/legacy";
+import type { Calendar as CalendarRecord } from "expo-calendar/legacy";
 import type { Tool } from "@/tools/tool-registry";
 import { parseDateRange, parseEventStart, eventEndFromStart } from "@/tools/date-parser";
 
@@ -9,7 +10,7 @@ async function ensureCalendarPermissions() {
   return requested.granted;
 }
 
-function getWritableCalendar(calendars: Calendar.Calendar[]): Calendar.Calendar | undefined {
+function getWritableCalendar(calendars: CalendarRecord[]): CalendarRecord | undefined {
   return calendars.find((c) => c.allowsModifications ?? true) ?? calendars[0];
 }
 

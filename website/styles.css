@@ -407,12 +407,15 @@ h1 {
 .screenshot-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  gap: clamp(1rem, 2.2vw, 1.5rem);
+  max-width: 64rem;
+  margin: 0 auto;
 }
 
 @media (max-width: 720px) {
   .screenshot-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 }
 
@@ -421,7 +424,7 @@ h1 {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 0.75rem;
+  padding: 0.9rem;
   box-shadow: 0 16px 36px -24px rgba(0, 0, 0, 0.55);
 }
 
@@ -719,12 +722,20 @@ h2 {
 }
 
 .page-header .logo-page {
+  display: block;
   width: 4rem;
   height: 4rem;
   border-radius: 1rem;
   object-fit: cover;
   margin-bottom: 1rem;
   box-shadow: 0 0 0 1px var(--border-strong), 0 12px 40px -16px rgba(56, 189, 248, 0.25);
+}
+
+@media (max-width: 640px) {
+  .page-header .logo-page {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
 }
 
 .page-header h1 {

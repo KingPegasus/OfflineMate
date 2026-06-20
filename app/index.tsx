@@ -17,8 +17,6 @@ export default function Index() {
       setHasHydrated(true);
     });
 
-    setHasHydrated(useSettingsStore.persist.hasHydrated());
-
     return () => {
       unsubscribeHydrate();
       unsubscribeFinishHydration();

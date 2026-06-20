@@ -1,16 +1,7 @@
 import { Platform, PermissionsAndroid, NativeModules } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
-import {
-  initWhisper,
-  initWhisperVad,
-  releaseAllWhisper,
-  releaseAllWhisperVad,
-} from "whisper.rn";
-import {
-  RealtimeTranscriber,
-  type RealtimeTranscribeEvent,
-} from "whisper.rn/src/realtime-transcription";
-import { mergeTranscript, normalizeSttResult } from "@/voice/stt-transcript-utils";
+import { initWhisper, releaseAllWhisper, type TranscribeOptions } from "whisper.rn";
+import { normalizeSttResult } from "@/voice/stt-transcript-utils";
 
 export type STTSize = "tiny" | "base";
 
@@ -18,7 +9,13 @@ const STT_MODEL_PATHS: Record<STTSize, string> = {
   tiny: `${FileSystem.documentDirectory}models/whisper-tiny.en.bin`,
   base: `${FileSystem.documentDirectory}models/whisper-base.en.bin`,
 };
-const VAD_MODEL_PATH = `${FileSystem.documentDirectory}models/ggml-silero-v6.2.0.bin`;
+
+// 16 kHz, mono, 16-bit PCM is what whisper.cpp expects.
+const SAMPLE_RATE = 16000;
+const CHANNELS = 1;
+const BITS_PER_SAMPLE = 16;
+// Android AudioSource: 6 = VOICE_RECOGNITION (tuned for ASR; avoids aggressive AGC/voice-comms processing).
+const ANDROID_AUDIO_SOURCE_VOICE_RECOGNITION = 6;
 
 async function modelExists(path: string) {
   const info = await FileSystem.getInfoAsync(path);
@@ -30,7 +27,6 @@ async function resolveModelPath(preferred: STTSize): Promise<{ modelSize: STTSiz
   const preferredExists = await modelExists(preferredPath);
 
   // Accuracy-first: if base exists, prefer it even when tiny was requested.
-  // tiny remains fallback for low-end devices or when base is not downloaded.
   const basePath = STT_MODEL_PATHS.base;
   const baseExists = await modelExists(basePath);
   if (baseExists) {
@@ -64,11 +60,7 @@ async function requestMicrophonePermission(): Promise<boolean> {
   }
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function logSttQualityHints(transcript: string, elapsedMs: number) {
+function logSttQualityHints(transcript: string, elapsedMs: number, audioMs: number) {
   const lowered = transcript.toLowerCase();
   const looksLikeReminder = /\b(remind|reminder|set reminder)\b/.test(lowered);
   const hasDuration = /\b(in|after)\s+\d+\s*(min|mins|minute|minutes|hour|hours|sec|second|seconds)\b/.test(
@@ -76,6 +68,7 @@ function logSttQualityHints(transcript: string, elapsedMs: number) {
   );
   console.log("[OfflineMate] STT metrics:", {
     elapsedMs,
+    audioMs,
     length: transcript.length,
     words: transcript.split(/\s+/).filter(Boolean).length,
     looksLikeReminder,
@@ -100,30 +93,41 @@ function ensureLiveAudioStreamEmitterCompat() {
   }
 }
 
+type AudioStreamData = { data: Uint8Array };
+
+function concatChunks(chunks: Uint8Array[], totalBytes: number): Uint8Array {
+  const merged = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return merged;
+}
+
 /**
- * Create a listening session (model load, init). Call start() to begin capturing, stop() when done.
- * Pre-warm by calling this early; then start() is fast and captures from the beginning of press.
+ * Create a listening session. Loading the model (initWhisper) is the slow part, so pre-warm by
+ * calling this early; start() then just opens the microphone stream.
+ *
+ * Capture strategy: we record the ENTIRE utterance as raw PCM and run a single whisper transcription
+ * on the full buffer at stop(). Whisper is far more accurate on a complete utterance than on the
+ * short VAD-cut slices produced by realtime streaming, which is critical for short voice commands.
  */
 export async function startListeningSession(
   modelSize: STTSize,
 ): Promise<{ start: () => Promise<void>; stop: () => Promise<string>; release: () => Promise<void> }> {
   const resolved = await resolveModelPath(modelSize);
-  const effectiveModel = resolved.modelSize;
   const filePath = resolved.filePath;
   console.log(
     "[OfflineMate] STT: startListeningSession, requested model:",
     modelSize,
     "effective model:",
-    effectiveModel,
+    resolved.modelSize,
   );
   const exists = await modelExists(filePath);
   if (!exists) {
     const msg = `STT model (${modelSize}) not downloaded yet.`;
-    return {
-      start: async () => {},
-      stop: async () => msg,
-      release: async () => {},
-    };
+    return { start: async () => {}, stop: async () => msg, release: async () => {} };
   }
 
   const hasPermission = await requestMicrophonePermission();
@@ -139,109 +143,41 @@ export async function startListeningSession(
   const useGpu = Platform.OS !== "android";
   const context = await initWhisper({ filePath, isBundleAsset: false, useGpu });
 
-  const vadModelExists = await modelExists(VAD_MODEL_PATH);
-  const vadContext = vadModelExists
-    ? await initWhisperVad({
-        filePath: VAD_MODEL_PATH,
-        isBundleAsset: false,
-        useGpu: Platform.OS === "ios",
-        nThreads: Platform.OS === "ios" ? 2 : 4,
-      }).catch((error) => {
-        console.warn("[OfflineMate] STT: initWhisperVad failed, continuing without VAD:", error);
-        return null;
-      })
-    : null;
-  if (!vadModelExists) {
-    console.warn(
-      "[OfflineMate] STT: VAD model missing, continuing without VAD. Download model assets from onboarding.",
-    );
-  }
-
   ensureLiveAudioStreamEmitterCompat();
   const { AudioPcmStreamAdapter } = await import(
     "whisper.rn/src/realtime-transcription/adapters/AudioPcmStreamAdapter"
   );
   const audioStream = new AudioPcmStreamAdapter();
-  let transcriber: RealtimeTranscriber;
-  try {
-    transcriber = new RealtimeTranscriber(
-      {
-        whisperContext: context,
-        vadContext: vadContext ?? undefined,
-        audioStream,
-      },
-      {
-        audioSliceSec: 8,
-        audioMinSec: 0.35,
-        maxSlicesInMemory: 6,
-        vadPreset: vadContext ? "default" : undefined,
-        vadOptions: vadContext ? { speechPadMs: 280 } : undefined,
-        autoSliceOnSpeechEnd: !!vadContext,
-        autoSliceThreshold: 300,
-        transcribeOptions: {
-          language: "en",
-          temperature: 0,
-          bestOf: 3,
-          beamSize: 3,
-        },
-      },
-    );
-  } catch (e) {
-    console.warn("[OfflineMate] STT: RealtimeTranscriber init failed", e);
-    await audioStream.release().catch((releaseError) => {
-      console.warn("[OfflineMate] STT: audioStream.release error (init path)", releaseError);
-    });
-    await context.release();
-    await releaseAllWhisper();
-    if (vadContext) {
-      await vadContext.release().catch(() => {});
-      await releaseAllWhisperVad().catch(() => {});
+
+  let chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  let capturing = false;
+  let startAt = 0;
+
+  audioStream.onData((raw: unknown) => {
+    if (!capturing) return;
+    const data = (raw as AudioStreamData)?.data;
+    if (data && data.length > 0) {
+      chunks.push(data);
+      totalBytes += data.length;
     }
-    return {
-      start: async () => {},
-      stop: async () => "STT failed to start.",
-      release: async () => {},
-    };
-  }
-
-  let transcript = "";
-  let lastUpdateAt = Date.now();
-  let finalSeen = false;
-  const startAt = Date.now();
-  let resolveFinal: (value: void) => void;
-  const finalPromise = new Promise<string>((resolve) => {
-    resolveFinal = () => resolve("");
   });
-
-  transcriber.updateCallbacks({
-    onTranscribe: (event: RealtimeTranscribeEvent) => {
-      const text = event.data?.result ?? "";
-      if (text) {
-        const merged = mergeTranscript(transcript, text);
-        if (merged !== transcript) {
-          transcript = merged;
-          lastUpdateAt = Date.now();
-          console.log("[OfflineMate] STT: merged transcript:", transcript.slice(0, 80));
-        }
-      }
-      if ((event.type === "end" || event.isCapturing === false) && !finalSeen) {
-        finalSeen = true;
-        resolveFinal();
-      }
-    },
-    onError: (error) => {
-      console.warn("[OfflineMate] STT: transcriber callback error", error);
-    },
-    onStatusChange: (isActive) => {
-      console.log("[OfflineMate] STT: transcriber status:", isActive ? "ACTIVE" : "INACTIVE");
-    },
+  audioStream.onError((error: string) => {
+    console.warn("[OfflineMate] STT: audio stream error", error);
   });
 
   async function doRelease() {
     try {
-      await transcriber.release();
+      if (audioStream.isRecording()) {
+        await audioStream.stop();
+      }
     } catch (e) {
-      console.warn("[OfflineMate] STT: transcriber.release error", e);
+      console.warn("[OfflineMate] STT: audioStream.stop error", e);
+    }
+    try {
+      await audioStream.release();
+    } catch (e) {
+      console.warn("[OfflineMate] STT: audioStream.release error", e);
     }
     try {
       await context.release();
@@ -249,48 +185,70 @@ export async function startListeningSession(
     } catch (e) {
       console.warn("[OfflineMate] STT: release error", e);
     }
-    if (vadContext) {
-      try {
-        await vadContext.release();
-        await releaseAllWhisperVad();
-      } catch (e) {
-        console.warn("[OfflineMate] STT: releaseAllWhisperVad error", e);
-      }
-    }
+    chunks = [];
+    totalBytes = 0;
   }
 
   return {
     start: async (): Promise<void> => {
+      chunks = [];
+      totalBytes = 0;
       try {
-        await transcriber.start();
+        await audioStream.initialize({
+          sampleRate: SAMPLE_RATE,
+          channels: CHANNELS,
+          bitsPerSample: BITS_PER_SAMPLE,
+          audioSource: ANDROID_AUDIO_SOURCE_VOICE_RECOGNITION,
+          bufferSize: 16 * 1024,
+        });
+        capturing = true;
+        startAt = Date.now();
+        await audioStream.start();
       } catch (error) {
-        console.warn("[OfflineMate] STT: transcriber.start failed", error);
+        capturing = false;
+        console.warn("[OfflineMate] STT: audio start failed", error);
         await doRelease();
         throw error;
       }
     },
     stop: async (): Promise<string> => {
-      // Keep capturing a bit longer so the end of the utterance isn't cut off.
-      await sleep(450);
+      capturing = false;
       try {
-        await transcriber.stop();
+        if (audioStream.isRecording()) {
+          await audioStream.stop();
+        }
       } catch (e) {
-        console.warn("[OfflineMate] STT: transcriber.stop error", e);
+        console.warn("[OfflineMate] STT: audioStream.stop error", e);
       }
-      await Promise.race([
-        finalPromise,
-        new Promise<string>((resolve) => setTimeout(() => resolve(""), 2500)),
-      ]);
-      // Wait for a quiet period after stop/final so tail tokens can land.
-      const settleStart = Date.now();
-      while (Date.now() - settleStart < 2500) {
-        const quietMs = Date.now() - lastUpdateAt;
-        if ((finalSeen && quietMs >= 450) || quietMs >= 900) break;
-        await sleep(100);
+
+      const audioMs = Math.round((totalBytes / (BITS_PER_SAMPLE / 8) / SAMPLE_RATE) * 1000);
+      if (totalBytes === 0) {
+        await doRelease();
+        return normalizeSttResult("");
       }
+
+      const pcm = concatChunks(chunks, totalBytes);
+      const transcribeOptions: TranscribeOptions = {
+        language: "en",
+        temperature: 0,
+        beamSize: 5,
+        bestOf: 5,
+      };
+
+      let result = "";
+      try {
+        const request = context.transcribeData(pcm.buffer as ArrayBuffer, transcribeOptions);
+        const transcribeResult = await request.promise;
+        result = transcribeResult?.result ?? "";
+      } catch (e) {
+        console.warn("[OfflineMate] STT: transcribeData failed", e);
+        await doRelease();
+        return "STT failed.";
+      }
+
       await doRelease();
-      const normalized = normalizeSttResult(transcript);
-      logSttQualityHints(normalized, Date.now() - startAt);
+      const normalized = normalizeSttResult(result);
+      logSttQualityHints(normalized, Date.now() - startAt, audioMs);
       console.log("[OfflineMate] STT: done, result:", normalized.slice(0, 80));
       return normalized;
     },
@@ -305,4 +263,3 @@ export async function transcribeFromMicrophone(modelSize: STTSize) {
   await new Promise((resolve) => setTimeout(resolve, 6000));
   return handle.stop();
 }
-

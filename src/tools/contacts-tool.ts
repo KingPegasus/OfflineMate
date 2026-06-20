@@ -1,4 +1,4 @@
-import * as Contacts from "expo-contacts";
+import * as Contacts from "expo-contacts/legacy";
 import type { Tool } from "@/tools/tool-registry";
 
 export const searchContactsTool: Tool = {

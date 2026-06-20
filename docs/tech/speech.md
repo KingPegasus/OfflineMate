@@ -6,13 +6,9 @@ OfflineMate speech mode is designed for local-first operation.
 
 - **Engine:** `whisper.rn` (React Native binding of whisper.cpp)
 - **Tier strategy:** Lite uses tiny.en; Standard/Full can use base or larger models for better accuracy. Model files (e.g. `whisper-tiny.en.bin`, `whisper-base.en.bin`) are stored under the app document directory and loaded by path.
-- **Current API:** The app now uses **RealtimeTranscriber** with press-and-hold UX (`start` on press, `stop` on release), callback-based transcript accumulation, and settle-window finalization to avoid trailing-word truncation.
-- **VAD path:** The app initializes `initWhisperVad()` with `ggml-silero-v6.2.0.bin` when available and uses VAD-aware auto-slicing. If VAD model is missing or init fails, STT continues without VAD (degraded segmentation but still functional).
-- **Deprecation note:** Legacy `transcribeRealtime()` is deprecated in whisper.rn and has been replaced in this codebase by RealtimeTranscriber. RealtimeTranscriber provides:
-  - **VAD (Voice Activity Detection)** via Silero VAD for automatic slice boundaries and speech detection
-  - **AudioPcmStreamAdapter** for microphone input (requires `@fugood/react-native-audio-pcm-stream`)
-  - Optional filesystem adapter (e.g. `react-native-fs`) for WAV output
-  Migration is complete for the app STT runtime path.
+- **Current API (full-utterance, single-shot):** The app captures the **entire utterance** as raw PCM during press-and-hold and runs **one** `context.transcribeData()` call on the complete buffer at release. Whisper decodes a full utterance with surrounding context, which is significantly more accurate for short commands than streaming/slice transcription.
+- **Audio capture:** `AudioPcmStreamAdapter` (requires `@fugood/react-native-audio-pcm-stream`) opens the mic at 16 kHz / mono / 16-bit PCM. On Android the audio source is `VOICE_RECOGNITION` (6), which is tuned for ASR. PCM chunks are accumulated in memory and concatenated at stop.
+- **Why not RealtimeTranscriber/VAD:** The realtime streaming path (`RealtimeTranscriber` + Silero VAD auto-slicing) was evaluated and removed from the capture path: short VAD-cut slices caused looping/partial hallucinations and dropped trailing words (especially times) on short commands. The single-shot full-buffer path is simpler and more accurate for this push-to-talk UX. `transcribeRealtime()` remains deprecated upstream and is not used.
 
 ## Platform Requirements (whisper.rn)
 
@@ -25,28 +21,26 @@ This section defines what we run now, what we migrate to next, and when we shoul
 
 ### Current Baseline (Now)
 
-- Primary STT runtime: `whisper.rn` **RealtimeTranscriber + optional VAD**.
+- Primary STT runtime: `whisper.rn` **full-utterance single-shot** transcription (`transcribeData` on the complete PCM buffer).
 - Reliability guardrails:
   - runtime mic permission request on Android
-  - transcript merge logic for non-monotonic realtime events
-  - no-input filtering (`[BLANK_AUDIO]`, empty, startup failures)
+  - no-input filtering (`[BLANK_AUDIO]`, empty, startup failures) via `normalizeSttResult`
 - Accuracy preference: use `base` model when available; fallback to `tiny` only when needed.
 
-### Phase 1 (Near-term): Harden RealtimeTranscriber + VAD
+### Phase 1 (Near-term): Harden single-shot capture
 
 - Keep dependency stack:
   - `@fugood/react-native-audio-pcm-stream` (required audio adapter; already integrated)
-  - optional fs adapter (e.g. `react-native-fs`) only if WAV artifacts are needed
-- Enable VAD preset tuning:
-  - start with `default`
-  - test `sensitive` in low-volume environments
-  - prefer conservative presets when false triggers are high
+- Tuning levers:
+  - keep `temperature: 0` + `beamSize: 5` for a stable decode
+  - Android audio source `VOICE_RECOGNITION` (6) for ASR-tuned input
+  - if accuracy remains weak on noisy devices, move Standard/Full tiers to a larger model (e.g. `small.en`) rather than adding text post-processing
 
 Expected impact:
 
-- better end-of-speech detection
-- less phrase truncation/misalignment around press/release timing
-- cleaner segmentation for command phrases
+- no streaming/slice loop or partial-hallucination artifacts
+- full trailing words (including times) captured before transcription
+- best achievable accuracy for a given on-device model size
 
 ### Phase 2 (If command accuracy remains weak): Hybrid STT
 
@@ -92,7 +86,7 @@ Suggested target baseline (device QA):
 ## Recommendation
 
 - Keep Whisper as primary engine now (best quality/effort trade-off).
-- Prioritize Phase 1 migration to RealtimeTranscriber + VAD.
+- Keep the full-utterance single-shot capture path; tune model size before adding complexity.
 - Reassess with metrics; only add a secondary command STT engine if metrics remain below target on key devices.
 
 ## TTS (Text-to-Speech)
@@ -108,16 +102,16 @@ Suggested target baseline (device QA):
 
 ## Runtime Considerations
 
-- Request microphone permission before starting realtime STT.
+- Request microphone permission before starting capture.
 - On iOS, audio session (e.g. PlayAndRecord, MixWithOthers) can be tuned via whisper.rn options for coexistence with playback.
-- Handle callback events for partial/final transcript updates and apply settle-window logic after stop to capture final tail tokens.
-- Keep capture duration and timeouts bounded to avoid battery and UX issues.
+- Pre-warm `startListeningSession` (model load) so press → record latency stays low; transcription runs once at release.
+- Keep capture duration bounded to avoid excessive memory/battery for very long holds.
 
 ## Future Enhancements
 
-- Further tune RealtimeTranscriber + VAD presets per device class for better turn-taking.
+- Move Standard/Full tiers to a larger model (e.g. `small.en`) for better noise robustness.
 - Evaluate offline neural TTS if voice quality becomes a requirement.
-- Add barge-in and end-of-speech detection for more natural dialogue.
+- Consider streaming/partial display only if a long-form dictation mode is added (separate from command push-to-talk).
 
 ## References
 
@@ -126,6 +120,6 @@ Suggested target baseline (device QA):
 - [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
 - [Expo Speech](https://docs.expo.dev/versions/latest/sdk/speech/)
 - [Expo AV](https://docs.expo.dev/versions/latest/sdk/audio-av/)
-- [@fugood/react-native-audio-pcm-stream](https://www.npmjs.com/package/@fugood/react-native-audio-pcm-stream) (for RealtimeTranscriber migration)
+- [@fugood/react-native-audio-pcm-stream](https://www.npmjs.com/package/@fugood/react-native-audio-pcm-stream) (microphone PCM capture)
 - [Vosk](https://alphacephei.com/vosk/)
 - [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx)

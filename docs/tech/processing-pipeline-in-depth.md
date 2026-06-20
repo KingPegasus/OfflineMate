@@ -14,27 +14,27 @@ This document describes, in one place, how OfflineMate processes user input end-
 
 ### Flow in the app
 
-1. User **press-and-holds** the mic button → `startListeningSession(modelSize)` runs.
+The app uses a **full-utterance, single-shot** capture strategy: it records the entire clip while the user holds the button, then runs **one** transcription on the complete audio buffer at release. Whisper is markedly more accurate on a complete utterance (it decodes with full context) than on the short VAD-cut slices produced by realtime streaming, which matters most for short voice commands.
+
+1. User **press-and-holds** the mic button → `startListeningSession(modelSize)` runs (pre-warmed so model load isn't on the critical path).
 2. **Permission:** On Android, `RECORD_AUDIO` is requested at runtime; without it the native session fails.
-3. **Load contexts:** `initWhisper({ filePath, isBundleAsset: false, useGpu })` loads the Whisper model. App also tries `initWhisperVad({ filePath: ggml-silero-v6.2.0.bin, ... })` for VAD.
-4. **Start transcriber:** `new RealtimeTranscriber({ whisperContext, vadContext, audioStream })` with `AudioPcmStreamAdapter`, then `transcriber.start()`.
-5. **Callbacks:** JS receives `onTranscribe` events (`data.result`) and merges partials with a non-regression merge strategy.
-6. User **releases** the button → `transcriber.stop()` is called; we wait for final/quiet settle, then release transcriber + contexts and return normalized transcript.
+3. **Load context:** `initWhisper({ filePath, isBundleAsset: false, useGpu })` loads the Whisper model.
+4. **Start capture:** an `AudioPcmStreamAdapter` opens the mic (16 kHz, mono, 16-bit PCM) and raw PCM chunks are accumulated in memory while the button is held.
+5. User **releases** the button → the mic stream stops, the accumulated chunks are concatenated into one buffer, and a single `context.transcribeData(pcm, transcribeOptions)` call produces the transcript.
+6. The result is normalized (`normalizeSttResult`) and returned; the context and stream are released.
 
 ### Parameters (and how to tune)
 
 | Parameter | Where | Effect |
 |-----------|--------|--------|
 | **language** | `transcribeOptions.language` | Restricts decoding to English; improves accuracy for English-only models. |
-| **temperature / bestOf / beamSize** | `transcribeOptions` | Accuracy-focused decode controls for short commands; lower temperature reduces random substitutions. |
-| **audioSliceSec** | `RealtimeOptions.audioSliceSec` | Slice duration before transcription chunking (we use 8s). |
-| **audioMinSec** | `RealtimeOptions.audioMinSec` | Minimum audio before processing starts (we use 1s). |
-| **vadPreset** | `RealtimeOptions.vadPreset` | VAD tuning preset (`default` baseline). |
-| **autoSliceOnSpeechEnd** | `RealtimeOptions.autoSliceOnSpeechEnd` | Ends slices based on speech-end events for better turn boundaries. |
+| **temperature / bestOf / beamSize** | `transcribeOptions` | Accuracy-focused decode controls; `temperature: 0` with `beamSize: 5` gives a stable single-shot decode. |
+| **audioSource** | `AudioPcmStreamAdapter` config | Android uses `VOICE_RECOGNITION` (6), tuned for ASR (avoids aggressive AGC/voice-comms processing). |
+| **sampleRate / channels / bitsPerSample** | `AudioPcmStreamAdapter` config | 16 kHz, mono, 16-bit PCM — the format whisper.cpp expects. |
 | **useGpu** | `initWhisper({ useGpu })` | We set `false` on Android (CPU-only stability), allow GPU on iOS. |
-| **model paths** | `initWhisper` / `initWhisperVad` | Whisper: `whisper-tiny.en.bin` / `whisper-base.en.bin`; VAD: `ggml-silero-v6.2.0.bin`. |
+| **model paths** | `initWhisper` | Whisper: `whisper-tiny.en.bin` / `whisper-base.en.bin`. |
 
-Optimization tips: For clearer speech, use `base` when device allows. If you see `[BLANK_AUDIO]` often, ensure the mic is active and verify VAD model availability; if VAD fails to initialize, the app continues without VAD but segmentation quality can drop.
+Optimization tips: For clearer speech, use `base` when device allows. On-device `base.en` in a noisy environment still has an accuracy ceiling; the next lever beyond this is a larger model (e.g. `small.en`) for the Standard/Full tiers rather than text post-processing.
 
 **Voice misrecognition:** STT can mishear words (e.g. “Set reminder” → “certain minder”, “5 minutes” → “fear”). For precise commands like reminders with times, typing in chat is more reliable. The reminder tool returns a hint when it cannot parse a time, suggesting the user repeat clearly or type.
 
