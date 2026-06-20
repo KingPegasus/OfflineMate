@@ -156,8 +156,8 @@ export const MODEL_TIERS: TierSpec[] = [
     name: "Standard",
     targetRam: "6-8 GB RAM",
     estimatedDownload: "~1.2 GB",
-    primary: qwen17b,
-    alternates: [qwen35_2b, gemma4_e2b, smol17b, llama1b],
+    primary: gemma4_e2b,
+    alternates: [qwen17b, qwen35_2b, smol17b, llama1b],
     futureUpgrade: {
       id: "qwen3.5-2b",
       note: "Available as a Standard alternate in Settings for side-by-side testing.",

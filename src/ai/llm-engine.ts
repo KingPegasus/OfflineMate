@@ -6,8 +6,10 @@ import { LLMModule } from "react-native-executorch";
 import type { Message } from "react-native-executorch";
 
 export type LLMInitializeOptions = {
-  /** When set on Standard tier, loads this registry model instead of the tier primary. */
+  /** When set, loads this registry model instead of the tier primary. */
   modelId?: string | null;
+  /** When true, bypasses onboarding local files and uses runtime model URLs/paths directly. */
+  forceRuntimeSources?: boolean;
   /** ExecuTorch reports progress while fetching the model binary from a remote URL (0–1). */
   onDownloadProgress?: (progress: number) => void;
 };
@@ -191,7 +193,11 @@ export class LLMEngine {
     const onDownloadProgress = options?.onDownloadProgress;
     this.loadInFlight = true;
     try {
-      const runtime = await resolvePrimaryRuntimeForLoad(tier, options?.modelId);
+      const runtime = await resolvePrimaryRuntimeForLoad(
+        tier,
+        options?.modelId,
+        !options?.forceRuntimeSources,
+      );
       const moduleForInit = await LLMModule.fromCustomModel(
         runtime.modelSource,
         runtime.tokenizerSource,

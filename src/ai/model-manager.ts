@@ -155,8 +155,15 @@ function fileUriForLocalPath(path: string): string {
  * return those as `file://` sources so ExecuTorch loads from disk instead of re-downloading
  * into `react-native-executorch/`.
  */
-export async function resolvePrimaryRuntimeForLoad(tier: ModelTier, modelId?: string | null) {
+export async function resolvePrimaryRuntimeForLoad(
+  tier: ModelTier,
+  modelId?: string | null,
+  preferOnDeviceFiles = true,
+) {
   const active = resolveModelForTier(tier, modelId);
+  if (!preferOnDeviceFiles) {
+    return active.runtime;
+  }
   const assets = getTierAssets(tier, modelId);
   const modelAsset = assets.find((a) => a.id === `${active.id}-model`);
   const tokAsset = assets.find((a) => a.id === `${active.id}-tokenizer`);
@@ -264,6 +271,40 @@ export async function downloadTierPrimaryModel(
 
   for (const asset of assets) {
     // Weighted aggregate progress across all assets.
+    await downloadAsset(asset, (assetProgress) => {
+      onProgress?.((completed + assetProgress) / total, asset.id);
+    });
+    completed += 1;
+    onProgress?.(completed / total, asset.id);
+    results[asset.id] = asset.destination;
+  }
+
+  return results;
+}
+
+/**
+ * Downloads only chat-critical files (model + tokenizer + tokenizer config) for a selected model.
+ * Useful for pre-downloading non-primary tier variants from Settings.
+ */
+export async function downloadTierChatModel(
+  tier: ModelTier,
+  modelId?: string | null,
+  onProgress?: (progress: number, label?: string) => void,
+) {
+  await ensureModelsDirectory();
+  const assets = getTierChatAssets(tier, modelId);
+  const active = resolveModelForTier(tier, modelId);
+  console.log("[OfflineMate] Settings: downloadTierChatModel", {
+    tier,
+    modelId: active.id,
+    assetCount: assets.length,
+    assetIds: assets.map((a) => a.id),
+  });
+  const results: Record<string, string> = {};
+  const total = Math.max(assets.length, 1);
+  let completed = 0;
+
+  for (const asset of assets) {
     await downloadAsset(asset, (assetProgress) => {
       onProgress?.((completed + assetProgress) / total, asset.id);
     });

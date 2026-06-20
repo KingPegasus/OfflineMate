@@ -11,6 +11,7 @@ technical decisions.
 - `architecture/expo-decision.md`
 - `architecture/model-and-capability-tiers.md`
 - **`architecture/model-comparison-and-selection.md`** — Model options per tier, pros, and tier-wise selection
+- `architecture/per-tier-model-selection-plan.md` — Implementation plan for model selection within each tier
 - `architecture/rag-memory-and-vector-store.md`
 
 ## Deployment
@@ -54,6 +55,6 @@ technical decisions.
 - Start with **architecture overview** for system topology and on-device constraints (privacy, memory, battery).
 - Review **model tiering**, **model comparison and selection**, and **input/tooling flow** for how requests are routed and executed.
 - Use **deployment** docs for EAS builds, release, OTA, and CI/CD.
-- Use **tech** docs for runtime and algorithm details: stack (Expo SDK 55, ExecuTorch, sqlite-vec), models (quantization, delegation), RAG (chunking, retrieval), speech (STT/TTS, VAD, RealtimeTranscriber), vector store (vec0, KNN), embeddings, and agent planning (plan-and-execute, ReWOO).
+- Use **tech** docs for runtime and algorithm details: stack (Expo SDK 56, ExecuTorch, sqlite-vec), models (quantization, delegation), RAG (chunking, retrieval), speech (STT/TTS, full-utterance single-shot capture), vector store (vec0, KNN), embeddings, and agent planning (plan-and-execute, ReWOO).
 
 Each tech doc includes references to official docs, papers, and best-practice articles where applicable.

@@ -2,9 +2,9 @@
 
 **Document type:** Technical research  
 **Author:** Senior tech lead research  
-**Last updated:** June 2026  
+**Last updated:** May 2026 (rechecked against npm + installed package)  
 **Scope:** Qwen 3.5 migration for OfflineMate, plus third-party model families (Moonshot, DeepSeek, MiniMax, Zhipu, Mistral, Google, and react-native-executorch catalog updates).  
-**Status:** Qwen 3.5 **0.8B/2B** and **Gemma 4 E2B** are available in **react-native-executorch v0.9.1** (npm stable). OfflineMate pins **`^0.9.1`** on **Expo SDK 56 / RN 0.85**. Keep `QWEN35_MIGRATION_FLAG` disabled until device benchmarks confirm acceptable prefill latency. **Qwen 3.5 4B** and **Gemma 4 E4B** are still not exported.
+**Status:** npm **latest is v0.9.2** (Jun 2026) — **no new LLM exports** since v0.9.1; bug fixes only. OfflineMate pins **`^0.9.1`** on **Expo SDK 56 / RN 0.85.3**. **Qwen 3.5 0.8B/2B** and **Gemma 4 E2B** remain the newest phone-tier LLM families in the registry. Standard-tier **Qwen 3.5 2B** and **Gemma 4 E2B** are wired as Settings alternates for side-by-side testing. Keep `QWEN35_MIGRATION_FLAG` disabled until device benchmarks confirm acceptable prefill latency. **Qwen 3.5 4B/9B** and **Gemma 4 E4B** are still not exported.
 
 ---
 
@@ -12,17 +12,19 @@
 
 Qwen 3.5 (Alibaba, Feb–Mar 2026) uses a **hybrid architecture** (Gated DeltaNet + Gated Attention) that blocked mobile export in April 2026. **Since late April 2026**, Software Mansion merged Qwen 3.5 support into react-native-executorch (**PR #1096**, milestone **v0.9.0**) with pre-exported `.pte` assets for **0.8B and 2B** on Hugging Face. Support is **experimental** — Gated DeltaNet requires sequential prefill fallback, which makes **prefill very slow**.
 
-**OfflineMate stack (June 2026):** Expo SDK **56**, React Native **0.85.3**, `react-native-executorch@^0.9.1`, ExecuTorch runtime **v1.2.0** (Qwen 3.5) / **v1.3.0** (Gemma 4 exports).
+**OfflineMate stack (May 2026):** Expo SDK **56**, React Native **0.85.3**, `react-native-executorch@^0.9.1` (installed **0.9.1**), ExecuTorch runtime **v1.2.0** (Qwen 3.5) / **v1.3.0** (Gemma 4 exports).
+
+**npm latest (v0.9.2):** LLM vision-cache fix, faster top-p sampling, RF-DETR keypoint preview — **same LLM catalog as v0.9.1**. Safe to bump pin when convenient.
 
 **Third-party vendors (Moonshot, DeepSeek, MiniMax, Zhipu):** Unchanged — flagship MoE/server models only; no new phone-tier RN pre-exports.
 
-**New since v0.9.0:** Qwen 3.5 0.8B/2B, Bielik v3.0 1.5B, typed `models` registry, Whisper/VAD improvements. **New in v0.9.1:** **Gemma 4 E2B** (XNNPACK/Vulkan/MLX backends; multimodal variant `gemma4-e2b-multimodal`).
+**New since v0.9.0:** Qwen 3.5 0.8B/2B, Bielik v3.0 1.5B, typed `models` registry, Whisper/VAD improvements. **New in v0.9.1:** **Gemma 4 E2B** (XNNPACK/Vulkan/MLX; multimodal `models.llm.gemma4_e2b_multimodal()` with vision+audio). **v0.9.2:** no additional LLM families.
 
 **Near-term registry candidates:** Qwen 3 0.6B or Qwen 3.5 0.8B (Lite), Qwen 3.5 2B or Gemma 4 E2B (Standard), Phi 4 Mini 4B or Qwen 3 4B (Full), Hammer 2.1 (tools), Bielik (Polish locale).
 
 ---
 
-## June 2026 Compatibility Snapshot
+## May 2026 Compatibility Snapshot (recheck)
 
 | Family | Mobile-runtime status | OfflineMate action |
 |--------|----------------------|--------------------|
@@ -95,11 +97,12 @@ Qwen 3.5 small models use a **hybrid architecture** distinct from standard trans
 
 ### Version Matrix (OfflineMate-relevant)
 
-| Package | npm (June 2026) | Key LLM additions |
-|---------|-----------------|-------------------|
+| Package | npm (May 2026 recheck) | Key LLM additions |
+|---------|------------------------|-------------------|
 | **0.8.4** | Superseded | No Qwen 3.5, no Gemma 4 |
-| **0.9.0** | Stable (May 2026) | Qwen 3.5 0.8B/2B, Bielik, LFM2.5-VL-450M, ExecuTorch v1.2.0 |
-| **0.9.1** | **Latest stable** (Jun 2026) — **OfflineMate pin** | **Gemma 4 E2B** (+ multimodal), Whisper iOS fp16 |
+| **0.9.0** | Stable | Qwen 3.5 0.8B/2B, Bielik, LFM2.5-VL-450M, ExecuTorch v1.2.0 |
+| **0.9.1** | Stable — **OfflineMate pin** | **Gemma 4 E2B** (+ multimodal), Whisper iOS fp16 |
+| **0.9.2** | **npm latest** | No new LLM exports; LLM sampling + VLM cache fixes |
 
 ### react-native-executorch v0.9.x — Full LLM Registry
 
@@ -277,15 +280,17 @@ These options do **not** integrate with OfflineMate's current react-native-execu
 ### Current Code
 
 - `src/ai/qwen35-migration.ts`: `QWEN35_MIGRATION_FLAG = false`; target IDs defined (0.8B, 2B, 4B).
-- `src/ai/model-registry.ts`: Tier specs include `futureUpgrade` for Qwen 3.5.
-- `package.json`: `react-native-executorch@^0.9.1`, `react-native-executorch-expo-resource-fetcher@^0.9.1` — **Qwen 3.5 and Gemma 4 constants available**.
+- `src/ai/model-registry.ts`: **Qwen 3.5 2B** and **Gemma 4 E2B** registered as Standard alternates; primary remains Qwen 3 1.7B.
+- `src/stores/settings-store.ts` + Settings UI: per-tier variant picker (`tierModelIds`).
+- `src/ai/llm-engine.ts` / `useLLMChat.ts`: load resolved model spec by tier + optional `modelId`.
+- `package.json`: `react-native-executorch@^0.9.1` — constants for full v0.9.1 LLM catalog; **bump to 0.9.2** optional for sampling fixes.
 
-### Remaining Blockers for Qwen 3.5
+### Remaining Blockers for Qwen 3.5 default migration
 
 1. **Experimental performance** — slow prefill on 0.8B/2B (Gated DeltaNet sequential fallback).
 2. **No 4B export** — Full tier cannot migrate.
 3. **Device validation** — chat template, tokenizer, tier RAM envelopes, prefill latency on Lite/Standard targets.
-4. **Migration wiring** — `model-registry.ts` and `QWEN35_MIGRATION_FLAG` not yet enabled.
+4. **Primary flip** — `QWEN35_MIGRATION_FLAG` still off; alternates are testable in Settings but not default primaries.
 
 ### Prerequisites for Migration
 
@@ -298,16 +303,17 @@ These options do **not** integrate with OfflineMate's current react-native-execu
 ## 7. Recommendations
 
 1. **Keep** `QWEN35_MIGRATION_FLAG = false` until Lite/Standard device benchmarks pass (prefill latency is the gate).
-2. **Runtime is ready:** v0.9.1 is pinned; spike Qwen 3.5 0.8B (Lite) and 2B (Standard) on physical devices.
-3. **Evaluate Gemma 4 E2B** for Standard tier — now shipped in v0.9.1; compare quality/latency vs Qwen 3 1.7B and Qwen 3.5 2B.
-4. **Immediate registry wins on current stack:**
+2. **Runtime is ready:** v0.9.1+ catalog unchanged in v0.9.2; use Settings → Standard variant to benchmark **Qwen 3.5 2B** vs **Gemma 4 E2B** vs **Qwen 3 1.7B**.
+3. **Optional bump** to `react-native-executorch@0.9.2` for top-p sampling speed (no new models).
+4. **Evaluate Gemma 4 E2B** first if prefill latency matters; **Qwen 3.5 2B** if quality wins and prefill is acceptable.
+5. **Immediate registry wins on current stack (not yet in app registry):**
    - **Qwen 3 0.6B** for Lite (stable, no slow-prefill caveat).
    - **Hammer 2.1 1.5B** if tool-calling quality is the bottleneck.
    - **LFM 2.5 1.2B** for Standard instruction following.
    - **Phi 4 Mini 4B** as Full-tier alternate.
-5. **Do not pursue** Moonshot Kimi, DeepSeek V3/V4, MiniMax M2, GLM-4-9B, or Mistral Small 3 for on-device tiers.
-6. **Track** Qwen 3.5 4B export and Gemma 4 E4B RN export.
-7. **Validate SDK 56** compatibility after each executorch bump (official table lags SDK 55).
+6. **Do not pursue** Moonshot Kimi, DeepSeek V3/V4, MiniMax M2, GLM-4-9B, or Mistral Small 3 for on-device tiers — still no SM `.pte` exports at phone sizes.
+7. **Track** Qwen 3.5 4B export and Gemma 4 E4B RN export (neither appeared in v0.9.2).
+8. **Validate SDK 56** after each executorch bump ([compatibility table](https://docs.swmansion.com/react-native-executorch/docs/other/compatibility) still lists Expo through SDK 55 only; RN **0.85** is supported).
 
 ---
 
@@ -337,6 +343,7 @@ These options do **not** integrate with OfflineMate's current react-native-execu
 ### Other mobile paths
 
 - [RN ExecuTorch v0.9.1 release — Gemma 4](https://github.com/software-mansion/react-native-executorch/releases/tag/v0.9.1)
+- [RN ExecuTorch v0.9.2 release](https://github.com/software-mansion/react-native-executorch/releases/tag/v0.9.2)
 - [software-mansion/react-native-executorch-gemma-4](https://huggingface.co/software-mansion/react-native-executorch-gemma-4)
 - [RN ExecuTorch compatibility table](https://docs.swmansion.com/react-native-executorch/docs/other/compatibility)
 - [ExecuTorch Gemma 4 — PR #18695](https://github.com/pytorch/executorch/pull/18695)

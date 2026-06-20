@@ -26,8 +26,8 @@ This document tracks model families, target tiers, and migration strategy. For u
 - Lite tier:
   - SmolLM2 135M or 360M
 - Standard tier:
-  - Qwen 3 1.7B
-  - fallback to SmolLM2 1.7B or Llama 3.2 1B
+  - Qwen 3 1.7B (primary)
+  - Settings alternates: Qwen 3.5 2B, Gemma 4 E2B, SmolLM2 1.7B, Llama 3.2 1B
 - Full tier:
   - Qwen 3 4B
   - fallback to Llama 3.2 3B class
@@ -71,10 +71,11 @@ low-end devices.
 - **Qwen 3.5 4B** is still not exported; Full tier stays on Qwen 3 4B.
 - **Detailed research:** See [qwen35-compatibility-research.md](./qwen35-compatibility-research.md)
 
-## 2026 Compatibility Watchlist
+## 2026 Compatibility Watchlist (May recheck)
 
-- **Gemma 4 E2B:** Shipped in react-native-executorch v0.9.1 (`GEMMA4_E2B`). Evaluate for Standard tier. E4B not exported yet.
-- **Qwen 3.6:** Server/GGUF only; not a phone-tier RN ExecuTorch candidate.
+- **react-native-executorch v0.9.2:** npm latest; no new LLM exports vs v0.9.1.
+- **Gemma 4 E2B:** In registry + Standard Settings alternate; multimodal variant available via `models.llm.gemma4_e2b_multimodal()`. E4B not exported yet.
+- **Qwen 3.5:** 0.8B/2B only; 4B/9B still missing; Standard alternate wired for 2B.
 - **Kimi K2.x / DeepSeek V3/V4 / MiniMax M2 / GLM-4-9B / Mistral Small 3:** Not practical for phone tiers (see research doc).
 - **Prefer built-in options for tier experiments:** Qwen 3 0.6B, Qwen 3.5 0.8B/2B, Gemma 4 E2B, Hammer 2.1, LFM 2.5, Phi 4 Mini 4B, Bielik v3.0.
 

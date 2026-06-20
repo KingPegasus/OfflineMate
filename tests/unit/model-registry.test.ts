@@ -14,7 +14,7 @@ describe("model registry", () => {
 
   it("resolveModelForTier uses primary when modelId is null", () => {
     const spec = resolveModelForTier("standard", null);
-    expect(spec.id).toBe("qwen3-1.7b");
+    expect(spec.id).toBe("gemma4-e2b");
   });
 
   it("resolveModelForTier resolves known alternates", () => {
@@ -23,6 +23,6 @@ describe("model registry", () => {
   });
 
   it("resolveModelForTier falls back to primary for unknown ids", () => {
-    expect(resolveModelForTier("standard", "not-a-model").id).toBe("qwen3-1.7b");
+    expect(resolveModelForTier("standard", "not-a-model").id).toBe("gemma4-e2b");
   });
 });

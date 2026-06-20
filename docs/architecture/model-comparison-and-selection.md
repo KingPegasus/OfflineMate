@@ -9,12 +9,15 @@ This document is the reference for OfflineMate model options, their pros, and ho
 ### Current Flow
 
 1. **Onboarding / Settings**: User selects a **tier** (Lite, Standard, or Full) based on device RAM.
-2. **App behavior**: The app uses the **primary model** for that tier. There is no per-model selection within a tier; the primary model is always loaded.
-3. **Fallback**: If the model fails to load (e.g. OOM), the app automatically downgrades to the next lower tier and retries.
+2. **Standard variant (Settings)**: When Standard tier is selected, user can pick among **Qwen 3 1.7B** (default), **Qwen 3.5 2B**, **Gemma 4 E2B**, SmolLM2 1.7B, or Llama 3.2 1B. Alternates download on first chat message.
+3. **App behavior**: Lite and Full tiers load the tier **primary** only. Standard loads the selected variant (or primary when default).
+4. **Fallback**: If the model fails to load (e.g. OOM), the app automatically downgrades to the next lower tier and retries.
 
-### Future: Per-Model Selection Within Tier
+### Future: Per-Model Selection for Lite / Full
 
-The model registry already defines `primary` and `alternates` per tier. A future enhancement could let users pick a specific model within the selected tier (e.g. Standard: Qwen 3 1.7B vs SmolLM 1.7B vs Llama 1B) and show pros for each. See [ROADMAP_AND_GAPS.md](../ROADMAP_AND_GAPS.md) for planned work.
+Lite and Full tiers still use primary-only loading. A future enhancement could extend the Standard variant picker pattern to other tiers (e.g. Qwen 3.5 0.8B on Lite, Phi 4 Mini on Full).
+
+Implementation plan: [per-tier-model-selection-plan.md](./per-tier-model-selection-plan.md)
 
 ---
 
@@ -48,18 +51,20 @@ Target: mid-range devices. Full RAG, tools, and speech. Balanced quality and res
 | Model | Size | Download | Pros |
 |-------|------|----------|------|
 | **Qwen 3 1.7B** (primary) | 1.7B | ~1 GB | Best general chat; strong tool use; Alibaba model |
+| **Qwen 3.5 2B** (alternate) | 2B | ~1.1 GB | Newer Qwen line; experimental slow prefill; side-by-side testing in Settings |
+| **Gemma 4 E2B** (alternate) | E2B | ~900 MB | Google PLE model; better prefill UX candidate; Settings alternate |
 | **SmolLM2 1.7B** (alternate) | 1.7B | ~1 GB | Fast; efficient; HuggingFace family |
 | **Llama 3.2 1B** (alternate) | 1B | ~700 MB | Meta model; solid reasoning; smaller than others |
 
-**Other options in react-native-executorch** (not yet in app registry):
+**Other options in react-native-executorch v0.9.1+** (not yet in app registry):
 
 - **Hammer 2.1 1.5B** — Optimized for function/tool calling; ideal for reminders, search, calendar.
 - **LFM 2.5 1.2B Instruct** — Compact instruction-following model; promising Standard-tier alternate.
 - **Qwen 2.5 1.5B / 3B** — Stable built-in Qwen alternatives if Qwen 3 behavior regresses.
 - **Phi 4 Mini 4B** — Microsoft reasoning model; stronger on complex tasks (larger download).
-- **Gemma 4 E2B** — Shipped in v0.9.1 (`GEMMA4_E2B`); strong Standard-tier candidate; Vulkan/MLX backends.
+- **Gemma 4 E2B multimodal** — vision + audio (`models.llm.gemma4_e2b_multimodal()`); separate from text-only `GEMMA4_E2B`.
 - **Bielik v3.0 1.5B** — Polish/CEE regional model.
-- **Qwen 3.5 2B** — `QWEN3_5_2B_QUANTIZED`; experimental slow prefill; runtime ready. See [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
+- **Qwen 3.5 2B** — also available as in-app Settings alternate; experimental slow prefill. See [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md).
 
 ---
 
@@ -83,10 +88,10 @@ Target: strong devices. Longer context (8K), advanced planner, richer RAG.
 
 ## Quick Comparison Matrix
 
-| Tier | Primary | Alternates | Best for… |
-|------|---------|------------|-----------|
+| Tier | Primary | Alternates (in app) | Best for… |
+|------|---------|---------------------|-----------|
 | Lite | SmolLM2 135M | SmolLM2 360M | Low RAM; speed; basic chat |
-| Standard | Qwen 3 1.7B | SmolLM2 1.7B, Llama 1B | General chat; tools; RAG |
+| Standard | Qwen 3 1.7B | Qwen 3.5 2B, Gemma 4 E2B, SmolLM2 1.7B, Llama 1B | General chat; tools; RAG |
 | Full | Qwen 3 4B | Llama 3B | Complex reasoning; long context |
 
 ---
@@ -124,10 +129,11 @@ See [qwen35-compatibility-research.md](../tech/qwen35-compatibility-research.md)
 ## Where to Change Model Selection
 
 - **Code**: `src/ai/model-registry.ts` — tier specs, primary/alternates.
-- **Settings UI**: `app/(tabs)/settings.tsx` — tier picker.
-- **Onboarding**: `app/onboarding.tsx` — tier picker and initial model download.
-- **LLM loading**: `src/ai/llm-engine.ts` — uses `getTierSpec(tier).primary`.
-- **Model downloads**: `src/ai/model-manager.ts` — downloads assets for the tier’s primary model.
+- **Settings UI**: `app/(tabs)/settings.tsx` — tier picker + **Standard model variant** picker.
+- **Persisted choice**: `src/stores/settings-store.ts` — `tierModelIds` (per-tier selected model id, `null` = primary).
+- **Onboarding**: `app/onboarding.tsx` — tier picker and primary model download.
+- **LLM loading**: `src/ai/llm-engine.ts` — `initialize(tier, { modelId })` via `resolveModelForTier`.
+- **Model downloads**: `src/ai/model-manager.ts` — onboarding downloads tier primary; alternates fetch on first chat load.
 
 ---
 

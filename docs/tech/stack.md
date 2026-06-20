@@ -10,7 +10,7 @@ This document lists the target stack and why each technology is selected.
   - managed native builds with **EAS** (Expo Application Services)
   - **Development builds** (custom dev client) required for native modules like ExecuTorch and whisper.rn—Expo Go is not sufficient for this stack
 - Note: SDK 56 requires the New Architecture. Use `expo-dev-client` for local and EAS development builds.
-- **ExecuTorch stack:** `react-native-executorch@^0.9.1` (ExecuTorch runtime v1.2.0+). Official compatibility table lists Expo through SDK 55; RN 0.85 is supported—validate native builds after bumps.
+- **ExecuTorch stack:** `react-native-executorch@^0.9.1` (npm latest **0.9.2** — same LLM catalog, sampling fixes). Official compatibility table lists Expo through SDK 55; RN 0.85 is supported—validate native builds after bumps.
 
 ## On-Device AI Runtime
 
@@ -34,9 +34,9 @@ This document lists the target stack and why each technology is selected.
 - **STT:** `whisper.rn` (whisper.cpp binding)
 - **TTS:** `expo-speech`
 - Why:
-  - on-device STT with optional VAD and RealtimeTranscriber path
+  - on-device STT using full-utterance single-shot transcription (record full clip, transcribe once at release)
   - pragmatic TTS baseline; no custom neural TTS in MVP
-- Microphone permission required on both iOS and Android for realtime STT.
+- Microphone permission required on both iOS and Android for STT.
 
 ## Device and App Tooling
 
