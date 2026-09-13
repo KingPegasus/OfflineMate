@@ -1,7 +1,7 @@
 import * as FileSystem from "expo-file-system/legacy";
 import { resolveModelForTier } from "@/ai/model-registry";
 import type { ModelTier } from "@/types/assistant";
-import { ALL_MINILM_L6_V2 } from "react-native-executorch";
+import { ALL_MINILM_L6_V2 } from "react-native-executorch/legacy";
 
 const MODELS_DIR = `${FileSystem.documentDirectory}models`;
 const WHISPER_TINY_EN_URL =

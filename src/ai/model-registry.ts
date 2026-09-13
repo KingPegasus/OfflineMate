@@ -1,6 +1,5 @@
 import type { ModelTier } from "@/types/assistant";
 import {
-  GEMMA4_E2B,
   LLAMA3_2_1B_SPINQUANT,
   LLAMA3_2_3B_SPINQUANT,
   QWEN3_1_7B_QUANTIZED,
@@ -9,7 +8,8 @@ import {
   SMOLLM2_1_135M_QUANTIZED,
   SMOLLM2_1_1_7B_QUANTIZED,
   SMOLLM2_1_360M_QUANTIZED,
-} from "react-native-executorch";
+  models,
+} from "react-native-executorch/legacy";
 
 export interface ModelSpec {
   id: string;
@@ -135,7 +135,7 @@ const gemma4_e2b: ModelSpec = {
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-gemma-4",
   estimatedSizeMb: 900,
-  runtime: GEMMA4_E2B,
+  runtime: models.llm.gemma4_e2b(),
 };
 
 export const MODEL_TIERS: TierSpec[] = [
