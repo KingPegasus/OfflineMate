@@ -12,7 +12,7 @@ vi.mock("expo-secure-store", () => ({
   }),
 }));
 
-vi.mock("react-native-executorch", () => {
+vi.mock("react-native-executorch/legacy", () => {
   const modelStub = {
     modelSource: "mock-model",
     tokenizerSource: "mock-tokenizer",
@@ -51,8 +51,8 @@ vi.mock("react-native-executorch", () => {
     QWEN3_1_7B_QUANTIZED: modelStub,
     QWEN3_4B_QUANTIZED: modelStub,
     QWEN3_5_2B_QUANTIZED: modelStub,
-    GEMMA4_E2B: modelStub,
     LLAMA3_2_1B_SPINQUANT: modelStub,
     LLAMA3_2_3B_SPINQUANT: modelStub,
+    models: { llm: { gemma4_e2b: () => modelStub } },
   };
 });

@@ -2,8 +2,8 @@ import { resolvePrimaryRuntimeForLoad } from "@/ai/model-manager";
 import { resolveModelForTier } from "@/ai/model-registry";
 import { parseToolActionDecision } from "@/ai/tool-action-schema";
 import type { ChatMessage, ModelTier } from "@/types/assistant";
-import { LLMModule } from "react-native-executorch";
-import type { Message } from "react-native-executorch";
+import { LLMModule } from "react-native-executorch/legacy";
+import type { Message } from "react-native-executorch/legacy";
 
 export type LLMInitializeOptions = {
   /** When set, loads this registry model instead of the tier primary. */

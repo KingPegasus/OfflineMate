@@ -1,4 +1,4 @@
-import { ALL_MINILM_L6_V2, TextEmbeddingsModule } from "react-native-executorch";
+import { ALL_MINILM_L6_V2, TextEmbeddingsModule } from "react-native-executorch/legacy";
 
 const EMBEDDING_DIMENSIONS = 384;
 const MAX_CACHE_ENTRIES = 256;

@@ -55,6 +55,6 @@ technical decisions.
 - Start with **architecture overview** for system topology and on-device constraints (privacy, memory, battery).
 - Review **model tiering**, **model comparison and selection**, and **input/tooling flow** for how requests are routed and executed.
 - Use **deployment** docs for EAS builds, release, OTA, and CI/CD.
-- Use **tech** docs for runtime and algorithm details: stack (Expo SDK 56, ExecuTorch, sqlite-vec), models (quantization, delegation), RAG (chunking, retrieval), speech (STT/TTS, full-utterance single-shot capture), vector store (vec0, KNN), embeddings, and agent planning (plan-and-execute, ReWOO).
+- Use **tech** docs for runtime and algorithm details: stack (Expo SDK 57, ExecuTorch, sqlite-vec), models (quantization, delegation), RAG (chunking, retrieval), speech (STT/TTS, full-utterance single-shot capture), vector store (vec0, KNN), embeddings, and agent planning (plan-and-execute, ReWOO).
 
 Each tech doc includes references to official docs, papers, and best-practice articles where applicable.

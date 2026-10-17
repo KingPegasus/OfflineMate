@@ -233,6 +233,17 @@ Notes:
 - Usually transitive (upstream dependencies).
 - Not a blocker if app builds/tests pass; keep dependencies updated over time.
 
+### `sha256sum` / `shasum` not recognized during `npm install`
+
+- `react-native-executorch` (0.10+) downloads prebuilt native binaries and backends during a `postinstall` step (`scripts/download-libs.js`) and verifies each artifact with `sha256sum` (falling back to `shasum`).
+- Neither tool is on `PATH` by default on Windows. Make Git's bundled coreutils available for the install:
+  ```powershell
+  $env:Path = "C:\Program Files\Git\usr\bin;$env:Path"
+  npm install
+  ```
+- Caveat: Git's `sha256sum` prefixes its output with `\` when the file path contains backslashes (e.g. `\4245...`), which fails the downloader's checksum comparison (`Checksum mismatch ... got \4245...`). If you hit that, provide a shim earlier on `PATH` whose `sha256sum` prints `<hash>  <file>` (or use a native Windows `sha256sum`/`shasum`).
+- To skip the download entirely (e.g. CI with a pre-populated cache), set `RNET_SKIP_DOWNLOAD=1`; the native binaries then must be supplied another way.
+
 ## 8) Play publishing (graphics, screenshots, EAS)
 
 Store listing dimensions, **listing image script**, **emulator-only tablet screenshots**, **EAS/lockfile alignment**, and related notes live in **[`docs/deployment/android-release-playstore.md`](docs/deployment/android-release-playstore.md)**.
