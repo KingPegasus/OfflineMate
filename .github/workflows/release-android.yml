@@ -76,7 +76,7 @@ jobs:
           npm run test:perf
 
       - name: Security audit
-        run: npm audit --audit-level=high
+        run: npm run audit:ci
 
       - name: Expo Doctor
         run: npx expo-doctor

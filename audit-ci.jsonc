@@ -1,0 +1,14 @@
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  // Fail on high and critical advisories, matching the previous `npm audit --audit-level=high` gate.
+  "high": true,
+  "report-type": "summary",
+  // Build-time tooling advisories with no patched release yet. None of these packages ship in the app bundle.
+  // Remove each entry once upstream publishes a fix (audit-ci warns about entries that no longer match).
+  "allowlist": [
+    // braces <=3.0.3 (latest), via micromatch in Metro and expo/cli
+    "GHSA-vfj7-8cjw-p6xm",
+    // node-forge <=1.4.0 (latest), via @expo/code-signing-certificates in expo/cli
+    "GHSA-86w9-cpqp-85rv"
+  ]
+}

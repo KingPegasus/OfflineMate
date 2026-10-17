@@ -9,7 +9,8 @@
   },
   "scripts": {
     "prepare": "husky",
-    "validate": "npm run typecheck && npm run lint && npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:perf && npm audit --audit-level=high",
+    "validate": "npm run typecheck && npm run lint && npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:perf && npm run audit:ci",
+    "audit:ci": "audit-ci --config audit-ci.jsonc",
     "postinstall": "patch-package",
     "start": "expo start",
     "android": "expo run:android",
@@ -85,6 +86,7 @@
     "@types/node": "^25.9.4",
     "@types/react": "~19.2.14",
     "@vitest/coverage-v8": "^4.1.9",
+    "audit-ci": "^7.1.0",
     "babel-preset-expo": "~57.0.0",
     "esbuild": "^0.28.1",
     "eslint": "^9.39.4",

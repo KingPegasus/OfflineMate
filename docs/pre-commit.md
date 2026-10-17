@@ -14,7 +14,7 @@ The `validate` npm script executes **in order**:
 | 4 | `npm run test:integration` | Vitest integration tests |
 | 5 | `npm run test:e2e` | Vitest e2e tests |
 | 6 | `npm run test:perf` | Vitest perf smoke tests |
-| 7 | `npm audit --audit-level=high` | Fail on high+ severity advisories |
+| 7 | `npm run audit:ci` | `audit-ci`: fail on high+ severity advisories, except those allowlisted in `audit-ci.jsonc` |
 
 CI also runs `npm ci` on a clean checkout; the hook uses your **existing** `node_modules` (same as a normal local dev loop).
 
@@ -53,7 +53,7 @@ Use sparingly; prefer fixing validate failures so CI stays green.
 ## Troubleshooting
 
 - **Slow commits:** The full suite can take ~10–20s+ depending on machine; that is expected for “full CI parity.”
-- **`npm audit` fails:** Resolve or bump vulnerable deps; CI will fail the same way on `main` / PRs.
+- **`audit:ci` fails:** Resolve or bump vulnerable deps; CI will fail the same way on `main` / PRs. Only allowlist an advisory in `audit-ci.jsonc` when no patched version exists and the package does not ship in the app; remove the entry once a fix is released.
 - **Hook not running:** Run `npm install` (with scripts enabled) and check `git config core.hooksPath` is `.husky` (relative to repo root).
 - **`patch-package` / “could not be parsed”:** Unified diff hunks must match line counts in the `@@` header (extra blank lines after `@@` break `patch-package` 8.x). Patch files are forced to **LF** via `.gitattributes` so CI on Linux matches local parses.
 
