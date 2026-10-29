@@ -20,7 +20,7 @@ All notable changes to this project are documented in this file.
 - Tabs initial route moved to expo-router's `unstable_settings`, since SDK 58 removed the `initialRouteName` prop from `<Tabs>` (`app/(tabs)/_layout.tsx`).
 - Regenerated `package-lock.json` from scratch; this also picks up a patched `vite` (GHSA-587h-7wmj-h5pm).
 - Rebased the `react-native-keyboard-controller` patch onto 1.22.7 (`patches/`).
-- Added an Expo config plugin that caps `CMAKE_OBJECT_PATH_MAX` at 240. Without it, Windows Android builds fail with "Filename longer than 260 characters" on gesture-handler 3 codegen objects (`plugins/with-cmake-object-path-max.js`, `app.json`).
+- Added an Expo config plugin that caps `CMAKE_OBJECT_PATH_MAX` at 250. Without it, Windows Android builds fail with "Filename longer than 260 characters" on gesture-handler 3 codegen objects (`plugins/with-cmake-object-path-max.js`, `app.json`).
 - Refreshed model research for October 2026 (LFM3, MiniCPM5, Gemma 4 E4B, Qwen 3.5–3.8 status) and updated tier docs and roadmap (`docs/tech/qwen35-compatibility-research.md`, `docs/tech/models.md`, `docs/architecture/model-comparison-and-selection.md`, `docs/architecture/model-and-capability-tiers.md`, `docs/ROADMAP_AND_GAPS.md`).
 - App version updated to `0.5.0` in `app.json`.
 
