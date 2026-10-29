@@ -133,6 +133,16 @@ export async function getTierAssetReadiness(
   };
 }
 
+/** Whisper weights used for press-and-hold voice input on this tier (VAD is not used by STT). */
+export function getTierVoiceAssets(tier: ModelTier): AssetToDownload[] {
+  return getTierAssets(tier).filter((asset) => asset.id === "whisper-model");
+}
+
+/** Approximate Whisper download size in MB, for confirmation prompts. */
+export function getTierVoiceDownloadMb(tier: ModelTier) {
+  return tier === "lite" ? 78 : 148;
+}
+
 export async function getTierChatAssetReadiness(
   tier: ModelTier,
   modelId?: string | null,
@@ -290,6 +300,26 @@ export async function downloadTierPrimaryModel(
   return results;
 }
 
+async function downloadAssetList(
+  assets: AssetToDownload[],
+  onProgress?: (progress: number, label?: string) => void,
+) {
+  const results: Record<string, string> = {};
+  const total = Math.max(assets.length, 1);
+  let completed = 0;
+
+  for (const asset of assets) {
+    await downloadAsset(asset, (assetProgress) => {
+      onProgress?.((completed + assetProgress) / total, asset.id);
+    });
+    completed += 1;
+    onProgress?.(completed / total, asset.id);
+    results[asset.id] = asset.destination;
+  }
+
+  return results;
+}
+
 /**
  * Downloads only chat-critical files (model + tokenizer + tokenizer config) for a selected model.
  * Useful for pre-downloading non-primary tier variants from Settings.
@@ -308,20 +338,21 @@ export async function downloadTierChatModel(
     assetCount: assets.length,
     assetIds: assets.map((a) => a.id),
   });
-  const results: Record<string, string> = {};
-  const total = Math.max(assets.length, 1);
-  let completed = 0;
+  return downloadAssetList(assets, onProgress);
+}
 
-  for (const asset of assets) {
-    await downloadAsset(asset, (assetProgress) => {
-      onProgress?.((completed + assetProgress) / total, asset.id);
-    });
-    completed += 1;
-    onProgress?.(completed / total, asset.id);
-    results[asset.id] = asset.destination;
-  }
-
-  return results;
+/**
+ * Downloads the tier's Whisper model. Switching tiers in Settings only fetches chat files, so voice
+ * input calls this when the tier's STT model is missing (no-op when already on disk).
+ */
+export async function downloadTierVoiceModel(
+  tier: ModelTier,
+  onProgress?: (progress: number, label?: string) => void,
+) {
+  await ensureModelsDirectory();
+  const assets = getTierVoiceAssets(tier);
+  console.log("[OfflineMate] Voice: downloadTierVoiceModel", { tier, assetIds: assets.map((a) => a.id) });
+  return downloadAssetList(assets, onProgress);
 }
 
 export async function modelExists(modelId: string) {

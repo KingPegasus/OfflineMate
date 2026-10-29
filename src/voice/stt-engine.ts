@@ -22,20 +22,24 @@ async function modelExists(path: string) {
   return info.exists;
 }
 
-async function resolveModelPath(preferred: STTSize): Promise<{ modelSize: STTSize; filePath: string }> {
-  const preferredPath = STT_MODEL_PATHS[preferred];
-  const preferredExists = await modelExists(preferredPath);
+/** Returned by a session's stop() when no Whisper model is on disk; voice input offers a download. */
+export const STT_MODEL_MISSING = "STT model not downloaded yet.";
 
-  // Accuracy-first: if base exists, prefer it even when tiny was requested.
-  const basePath = STT_MODEL_PATHS.base;
-  const baseExists = await modelExists(basePath);
-  if (baseExists) {
-    return { modelSize: "base", filePath: basePath };
+export function isSttModelMissing(result: string | null | undefined) {
+  return result === STT_MODEL_MISSING;
+}
+
+async function resolveModelPath(preferred: STTSize): Promise<{ modelSize: STTSize; filePath: string } | null> {
+  // Accuracy-first: prefer base whenever it exists, then the requested size, then any other size
+  // on disk (e.g. tiny from a Lite onboarding after switching to Standard in Settings).
+  const order: STTSize[] = ["base", preferred, preferred === "base" ? "tiny" : "base"];
+  for (const modelSize of order) {
+    const filePath = STT_MODEL_PATHS[modelSize];
+    if (await modelExists(filePath)) {
+      return { modelSize, filePath };
+    }
   }
-  if (preferredExists) {
-    return { modelSize: preferred, filePath: preferredPath };
-  }
-  return { modelSize: preferred, filePath: preferredPath };
+  return null;
 }
 
 async function requestMicrophonePermission(): Promise<boolean> {
@@ -117,18 +121,16 @@ export async function startListeningSession(
   modelSize: STTSize,
 ): Promise<{ start: () => Promise<void>; stop: () => Promise<string>; release: () => Promise<void> }> {
   const resolved = await resolveModelPath(modelSize);
-  const filePath = resolved.filePath;
   console.log(
     "[OfflineMate] STT: startListeningSession, requested model:",
     modelSize,
     "effective model:",
-    resolved.modelSize,
+    resolved?.modelSize ?? "none",
   );
-  const exists = await modelExists(filePath);
-  if (!exists) {
-    const msg = `STT model (${modelSize}) not downloaded yet.`;
-    return { start: async () => {}, stop: async () => msg, release: async () => {} };
+  if (!resolved) {
+    return { start: async () => {}, stop: async () => STT_MODEL_MISSING, release: async () => {} };
   }
+  const filePath = resolved.filePath;
 
   const hasPermission = await requestMicrophonePermission();
   if (!hasPermission) {

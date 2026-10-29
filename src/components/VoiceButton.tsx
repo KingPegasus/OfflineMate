@@ -1,6 +1,8 @@
-import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useVoice } from "@/hooks/useVoice";
+import { getTierVoiceDownloadMb } from "@/ai/model-manager";
+import { isSttModelMissing } from "@/voice/stt-engine";
 
 /** Transcripts that mean "no usable input" — do not send to chat. */
 function isNoInput(transcript: string): boolean {
@@ -22,15 +24,46 @@ interface VoiceButtonProps {
 }
 
 export function VoiceButton({ onTranscript }: VoiceButtonProps) {
-  const { startListening, stopListening, isRecording } = useVoice();
+  const { startListening, stopListening, downloadVoiceModel, isRecording, modelDownloadProgress, selectedTier } =
+    useVoice();
+  const isDownloading = modelDownloadProgress !== null;
+
+  const offerModelDownload = () => {
+    Alert.alert(
+      "Download speech model?",
+      `Voice input needs the offline Whisper speech model (~${getTierVoiceDownloadMb(selectedTier)} MB). ` +
+        "It is downloaded once and then works without internet.",
+      [
+        { text: "Not now", style: "cancel" },
+        {
+          text: "Download",
+          onPress: () => {
+            downloadVoiceModel()
+              .then(() => Alert.alert("Speech model ready", "Hold the mic button and speak."))
+              .catch((error: unknown) => {
+                const msg = error instanceof Error ? error.message : "Failed to download the speech model.";
+                Alert.alert("Download failed", msg);
+              });
+          },
+        },
+      ],
+    );
+  };
 
   const handlePressIn = () => {
+    if (isDownloading) return;
     startListening();
   };
 
   const handlePressOut = () => {
+    if (isDownloading) return;
     void (async () => {
       const transcript = await stopListening();
+      if (isSttModelMissing(transcript)) {
+        console.log("[OfflineMate] Voice: STT model missing, offering download");
+        offerModelDownload();
+        return;
+      }
       if (transcript && !isNoInput(transcript)) {
         console.log("[OfflineMate] Voice: transcript passed to chat:", transcript.slice(0, 60));
         onTranscript?.(transcript);
@@ -56,11 +89,15 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
           activeOpacity={1}
         >
           <View style={styles.content}>
-            <Ionicons
-              name={isRecording ? "mic" : "mic-outline"}
-              size={20}
-              color={isRecording ? "#f87171" : "#e5e7eb"}
-            />
+            {isDownloading ? (
+              <Text style={styles.progressText}>{Math.round((modelDownloadProgress ?? 0) * 100)}%</Text>
+            ) : (
+              <Ionicons
+                name={isRecording ? "mic" : "mic-outline"}
+                size={20}
+                color={isRecording ? "#f87171" : "#e5e7eb"}
+              />
+            )}
           </View>
         </TouchableOpacity>
       </View>
@@ -126,6 +163,11 @@ const styles = StyleSheet.create({
   content: {
     alignItems: "center",
     justifyContent: "center",
+  },
+  progressText: {
+    color: "#e5e7eb",
+    fontSize: 11,
+    fontWeight: "600",
   },
 });
 

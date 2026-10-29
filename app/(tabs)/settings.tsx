@@ -5,7 +5,7 @@ import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "rea
 import Constants from "expo-constants";
 import { useSettingsStore } from "@/stores/settings-store";
 import { getModelsForTier, getTierSpec, MODEL_TIERS, resolveModelForTier } from "@/ai/model-registry";
-import { downloadTierChatModel, getTierChatAssetReadiness } from "@/ai/model-manager";
+import { downloadTierChatModel, downloadTierVoiceModel, getTierChatAssetReadiness } from "@/ai/model-manager";
 import { useChatStore } from "@/stores/chat-store";
 import { llmEngine } from "@/ai/llm-engine";
 import type { ModelTier } from "@/types/assistant";
@@ -104,10 +104,15 @@ export default function SettingsScreen() {
     setDownloadProgress(0);
     setDownloadLabel("");
     try {
-      await downloadTierChatModel(modalTier, modalActiveModelId ?? null, (progress, label) => {
+      const onProgress = (progress: number, label?: string) => {
         setDownloadProgress(progress);
         setDownloadLabel(label ?? "");
-      });
+      };
+      await downloadTierChatModel(modalTier, modalActiveModelId ?? null, onProgress);
+      if (voiceEnabled) {
+        // Tiers use different Whisper sizes; fetch this tier's now so the mic works offline later.
+        await downloadTierVoiceModel(modalTier, onProgress);
+      }
       await refreshReadinessForTier(modalTier);
       Alert.alert("Model downloaded", `${modalActiveModel.family} ${modalActiveModel.size} is ready for chat.`);
     } catch (error) {
