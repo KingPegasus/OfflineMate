@@ -34,7 +34,7 @@
   "author": "",
   "license": "MIT",
   "engines": {
-    "node": ">=20.20.2"
+    "node": ">=24.0.0"
   },
   "overrides": {
     "react": "19.3.0",

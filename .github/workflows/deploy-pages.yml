@@ -29,17 +29,18 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: ".nvmrc"
           cache: npm
       - run: npm ci
       - run: npm run website:build
       - uses: actions/configure-pages@v6
-      # Stay on v3: v4 omits dotfiles (would drop .nojekyll).
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: website-dist
+          # v4+ omit dotfiles by default; keep .nojekyll.
+          include-hidden-files: true
       - id: deployment
         uses: actions/deploy-pages@v5

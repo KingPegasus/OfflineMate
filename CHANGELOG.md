@@ -2,6 +2,27 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5.1] - 2026-10-29
+
+### Added
+- Onboarding now lets you pick the chat model for the selected tier (with download sizes) and downloads that model together with the speech and search files. Before, it always downloaded the tier default, and other models could only be chosen in Settings afterwards. Tier and model are locked while files download (`app/onboarding.tsx`, `src/components/ModelDownloader.tsx`, `src/ai/model-manager.ts`).
+
+### Fixed
+- Voice input no longer fails silently when the tier's Whisper model is missing. Switching tiers in Settings only downloaded the chat model, so on Standard/Full the mic found no `whisper-base.en.bin`, skipped the microphone permission prompt, and did nothing. Now:
+  - The mic offers a one-time download of the tier's speech model (with progress on the button) instead of doing nothing (`src/components/VoiceButton.tsx`, `src/hooks/useVoice.ts`).
+  - Downloading a model in Settings also fetches that tier's Whisper model when voice is enabled (`app/(tabs)/settings.tsx`, `src/ai/model-manager.ts`).
+  - STT falls back to whichever Whisper size is on disk (e.g. tiny from a Lite onboarding) instead of requiring the tier's size (`src/voice/stt-engine.ts`).
+- Unit tests alias `whisper.rn` to a stub, since the package exports no Node entry point (`vitest.config.ts`, `tests/stubs/whisper-rn.ts`).
+
+### Changed
+- Node.js 24 everywhere: `.nvmrc` is now `24.22.2` (read by CI, the release workflow, Pages, and EAS Build), and `engines.node` is `>=24.0.0`. EAS workers previously ran Node 20.20.2 / npm 10.8, which warned `EBADENGINE` for pnpm 11 (requires Node ≥22.13) (`.nvmrc`, `package.json`).
+- GitHub Actions bumped to the latest majors: `actions/checkout@v7`, `actions/setup-node@v7`, and `actions/upload-pages-artifact@v5`. Pages keeps `.nojekyll` with `include-hidden-files: true` (`.github/workflows/`).
+- Updated CI/CD and Play Store release docs for Node 24 (`docs/deployment/`).
+- App version updated to `0.5.1` in `app.json`.
+
+### Known issues
+- **Vitest 5 is still held back:** its Node ≥22.12 requirement is now met, but the major upgrade has not been done yet.
+
 ## [0.5.0] - 2026-10-29
 
 ### Added

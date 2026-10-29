@@ -70,9 +70,9 @@ Use `- [ ]` items in your editor or copy into an issue/PR. Nothing here replaces
 
 ## Toolchain and lockfile (match EAS)
 
-EAS Build for **Expo SDK 55** uses **Node 20.19.x** and **npm 10.x** on Linux builders ([infrastructure](https://docs.expo.dev/build-reference/infrastructure/)). If `package-lock.json` is generated with a very different Node/npm, `npm ci` can fail on EAS with missing packages (e.g. nested optional deps).
+EAS Build picks the Node version from **`.nvmrc`** (currently **Node 24**, which ships **npm 11**) when the build profile does not set one ([infrastructure](https://docs.expo.dev/build-reference/infrastructure/)). If `package-lock.json` is generated with a very different Node/npm, `npm ci` can fail on EAS with missing packages (e.g. nested optional deps).
 
-- Prefer **Node 20** when refreshing the lockfile: see **`.nvmrc`** in the repo root.
+- Use the **`.nvmrc`** version (Node 24 / npm 11) when refreshing the lockfile. npm 10.8 crashes resolving the Expo SDK 58 tree, and Node 20 triggers `EBADENGINE` warnings from tooling on EAS workers (e.g. pnpm 11 requires Node ≥22.13).
 - **CI** (`.github/workflows/ci.yml`) uses `node-version-file: ".nvmrc"` so the same `npm ci` as EAS is exercised on push/PR.
 
 ## EAS CLI and Expo account

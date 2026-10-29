@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
+import { downloadTierVoiceModel } from "@/ai/model-manager";
 import { startListeningSession, transcribeFromMicrophone } from "@/voice/stt-engine";
 import { speak } from "@/voice/tts-engine";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -8,6 +9,8 @@ type SessionHandle = Awaited<ReturnType<typeof startListeningSession>>;
 
 export function useVoice() {
   const [isRecording, setIsRecording] = useState(false);
+  // 0..1 while the tier's Whisper model downloads; null otherwise.
+  const [modelDownloadProgress, setModelDownloadProgress] = useState<number | null>(null);
   const selectedTier = useSettingsStore((s) => s.selectedTier);
   const sttModel = useMemo(() => (selectedTier === "lite" ? "tiny" : "base"), [selectedTier]);
   const sessionRef = useRef<Promise<SessionHandle> | null>(null);
@@ -85,6 +88,25 @@ export function useVoice() {
     return () => sub.remove();
   }, [stopListening]);
 
+  const downloadVoiceModel = useCallback(async () => {
+    setModelDownloadProgress(0);
+    try {
+      await downloadTierVoiceModel(selectedTier, (progress) => {
+        // Only re-render on whole-percent changes; download callbacks fire many times per second.
+        const pct = Math.floor(progress * 100) / 100;
+        setModelDownloadProgress((prev) => (prev === pct ? prev : pct));
+      });
+      // The pre-warmed session may predate the download; replace it so the next press uses the new
+      // model. Release first: release() calls releaseAllWhisper(), which would also free a new context.
+      const stale = sessionRef.current;
+      sessionRef.current = null;
+      await stale?.then((handle) => handle.release()).catch(() => {});
+      sessionRef.current ??= startListeningSession(sttModel);
+    } finally {
+      setModelDownloadProgress(null);
+    }
+  }, [selectedTier, sttModel]);
+
   async function startVoiceInput() {
     console.log("[OfflineMate] Voice: startVoiceInput (mic), STT model:", sttModel);
     setIsRecording(true);
@@ -102,6 +124,15 @@ export function useVoice() {
     await speak(text);
   }
 
-  return { isRecording, startListening, stopListening, startVoiceInput, speakText };
+  return {
+    isRecording,
+    modelDownloadProgress,
+    selectedTier,
+    startListening,
+    stopListening,
+    downloadVoiceModel,
+    startVoiceInput,
+    speakText,
+  };
 }
 

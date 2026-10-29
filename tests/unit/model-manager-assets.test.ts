@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import { getTierAssets } from "@/ai/model-manager";
+import { getTierAssets, getTierChatAssets, getTierVoiceAssets } from "@/ai/model-manager";
 
 vi.mock("expo-file-system/legacy", () => ({
   documentDirectory: "file:///data/app/files/",
@@ -26,5 +26,40 @@ describe("model asset destinations", () => {
     expect(destinationOf("standard", "minicpm5-2b", "minicpm5-2b-model")).toBe(
       "file:///data/app/files/models/minicpm_5_2b_xnnpack_8da4w.pte",
     );
+  });
+});
+
+describe("voice model assets", () => {
+  it("downloads only the tier's Whisper model for voice input", () => {
+    expect(getTierVoiceAssets("lite")).toEqual([
+      expect.objectContaining({
+        id: "whisper-model",
+        destination: "file:///data/app/files/models/whisper-tiny.en.bin",
+      }),
+    ]);
+    expect(getTierVoiceAssets("standard").map((a) => a.destination)).toEqual([
+      "file:///data/app/files/models/whisper-base.en.bin",
+    ]);
+    expect(getTierVoiceAssets("full").map((a) => a.id)).toEqual(["whisper-model"]);
+  });
+
+  it("is never part of the chat-only download used when switching tiers", () => {
+    expect(getTierChatAssets("standard").some((a) => a.id.startsWith("whisper"))).toBe(false);
+  });
+});
+
+describe("onboarding download for a chosen model", () => {
+  it("downloads the selected alternate with the tier's speech and search files", () => {
+    // MiniCPM5 uses real asset URLs; executorch constants are non-URL stubs in tests.
+    const ids = getTierAssets("standard", "minicpm5-2b").map((a) => a.id);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "minicpm5-2b-model",
+        "minicpm5-2b-tokenizer",
+        "minicpm5-2b-tokenizer-config",
+        "whisper-model",
+      ]),
+    );
+    expect(ids.some((id) => id.startsWith("gemma"))).toBe(false);
   });
 });

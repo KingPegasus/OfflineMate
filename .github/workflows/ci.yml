@@ -9,11 +9,10 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      # Match EAS Build for Expo SDK 55 (Node 20.19.x + npm 10.x) so package-lock.json
-      # resolves the same as `npm ci` on build workers. See:
-      # https://docs.expo.dev/build-reference/infrastructure/
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      # Node comes from .nvmrc, which EAS Build also reads, so CI exercises the same
+      # Node/npm (24.x / npm 11) as `npm ci` on EAS workers.
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: ".nvmrc"
           cache: npm

@@ -23,8 +23,9 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "src"),
-    },
+    alias: [
+      { find: "@", replacement: path.resolve(__dirname, "src") },
+      { find: /^whisper\.rn$/, replacement: path.resolve(__dirname, "tests/stubs/whisper-rn.ts") },
+    ],
   },
 });
