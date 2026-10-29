@@ -16,7 +16,7 @@ import { WEB_SEARCH_NO_RESULTS_PREFIX } from "@/tools/search-tool";
 import { useChatStore } from "@/stores/chat-store";
 import { useModelStore } from "@/stores/model-store";
 import { useSettingsStore } from "@/stores/settings-store";
-import { getTierChatAssetReadiness } from "@/ai/model-manager";
+import { downloadTierChatModel, getTierChatAssetReadiness, isTokenizerAssetId } from "@/ai/model-manager";
 import { speak } from "@/voice/tts-engine";
 import { isMemoryPressureHigh } from "@/utils/performance";
 import { saveImportantMemory } from "@/context/long-term-memory";
@@ -215,6 +215,12 @@ async function assertChatAssetsReady(tier: ModelTier, modelId?: string | null): 
   }
   const readiness = await getTierChatAssetReadiness(tier, modelId);
   if (readiness.ready) return;
+  if (readiness.missingAssets.every((asset) => isTokenizerAssetId(asset.id))) {
+    // Weights are on disk but tokenizer files are not (e.g. installs from before tokenizers were
+    // stored per model). Fetch the small JSON files instead of sending the user back to onboarding.
+    await downloadTierChatModel(tier, modelId);
+    return;
+  }
   const missing = readiness.missingAssets
     .map((asset) => asset.id)
     .slice(0, 4)

@@ -1,374 +1,220 @@
 # On-Device Model Compatibility Research
 
 **Document type:** Technical research  
-**Author:** Senior tech lead research  
-**Last updated:** May 2026 (rechecked against npm + installed package)  
-**Scope:** Qwen 3.5 migration for OfflineMate, plus third-party model families (Moonshot, DeepSeek, MiniMax, Zhipu, Mistral, Google, and react-native-executorch catalog updates).  
-**Status:** npm **latest is v0.9.2** (Jun 2026) — **no new LLM exports** since v0.9.1; bug fixes only. OfflineMate pins **`^0.9.1`** on **Expo SDK 56 / RN 0.85.3**. **Qwen 3.5 0.8B/2B** and **Gemma 4 E2B** remain the newest phone-tier LLM families in the registry. Standard-tier **Qwen 3.5 2B** and **Gemma 4 E2B** are wired as Settings alternates for side-by-side testing. Keep `QWEN35_MIGRATION_FLAG` disabled until device benchmarks confirm acceptable prefill latency. **Qwen 3.5 4B/9B** and **Gemma 4 E4B** are still not exported.
+**Last updated:** October 29, 2026 (rechecked against npm, the installed package, Hugging Face, and vendor announcements)  
+**Scope:** Which current small LLMs OfflineMate can run through `react-native-executorch`, the Qwen 3.5 migration, newer model families (LFM3, MiniCPM5, Gemma 4 E4B, Qwen 3.6–3.8), and vendors that remain server-only.  
+**Status:** OfflineMate now pins **`react-native-executorch@^0.11.0`** (released Oct 27, 2026) on **Expo SDK 57 / RN 0.86.3**, still through the `legacy` entry point. 0.11.0 adds **MiniCPM5 2B** and **LFM 2.5 2.6B**; both are wired as alternates. **Qwen 3.5 4B**, **Gemma 4 E4B**, and **LFM3** still have no ExecuTorch exports.
 
 ---
 
 ## Executive Summary
 
-Qwen 3.5 (Alibaba, Feb–Mar 2026) uses a **hybrid architecture** (Gated DeltaNet + Gated Attention) that blocked mobile export in April 2026. **Since late April 2026**, Software Mansion merged Qwen 3.5 support into react-native-executorch (**PR #1096**, milestone **v0.9.0**) with pre-exported `.pte` assets for **0.8B and 2B** on Hugging Face. Support is **experimental** — Gated DeltaNet requires sequential prefill fallback, which makes **prefill very slow**.
-
-**OfflineMate stack (May 2026):** Expo SDK **56**, React Native **0.85.3**, `react-native-executorch@^0.9.1` (installed **0.9.1**), ExecuTorch runtime **v1.2.0** (Qwen 3.5) / **v1.3.0** (Gemma 4 exports).
-
-**npm latest (v0.9.2):** LLM vision-cache fix, faster top-p sampling, RF-DETR keypoint preview — **same LLM catalog as v0.9.1**. Safe to bump pin when convenient.
-
-**Third-party vendors (Moonshot, DeepSeek, MiniMax, Zhipu):** Unchanged — flagship MoE/server models only; no new phone-tier RN pre-exports.
-
-**New since v0.9.0:** Qwen 3.5 0.8B/2B, Bielik v3.0 1.5B, typed `models` registry, Whisper/VAD improvements. **New in v0.9.1:** **Gemma 4 E2B** (XNNPACK/Vulkan/MLX; multimodal `models.llm.gemma4_e2b_multimodal()` with vision+audio). **v0.9.2:** no additional LLM families.
-
-**Near-term registry candidates:** Qwen 3 0.6B or Qwen 3.5 0.8B (Lite), Qwen 3.5 2B or Gemma 4 E2B (Standard), Phi 4 Mini 4B or Qwen 3 4B (Full), Hammer 2.1 (tools), Bielik (Polish locale).
+- **Runtime:** react-native-executorch went 0.9.2 → 0.10.x → **0.11.0**. 0.10.6 added RN 0.87/0.88 + Expo SDK 58 support and allows `react-native-worklets` 0.13, which **removes the SDK 58 upgrade blocker** recorded in the 0.4.0 changelog. 0.11.0 moves LLM generation to TypeScript runners (llama.cpp-style sampler, constrained decoding), re-exports LLMs with up to **16K context**, and adds `enable_thinking` chat-template support.
+- **New phone-tier LLMs since the May recheck:** **MiniCPM5 2B** (OpenBMB, 0.11.0), **LFM 2.5 2.6B** (Liquid AI, 0.11.0), plus **Gemma 4 E2B Omni** (vision + audio).
+- **Qwen 3.5:** 0.8B and 2B exports exist but are **legacy-only** — they are not in the new `models.llm` registry in 0.10 or 0.11, and the legacy API is deprecated. The 0.8B 8da4w file is **~1.4 GB** (large 248K-token vocabulary), so it is not a Lite-tier fit. 4B/9B are still not exported.
+- **Newest families with no ExecuTorch path yet:** **LFM3** (Oct 27, 2026; GGUF/MLX/ONNX only), **Gemma 4 E4B**, and **Qwen 3.6/3.7/3.8** (server-class sizes only).
+- **Server-only vendors** (Moonshot Kimi, DeepSeek V3/V4, MiniMax M2, Zhipu GLM, Mistral Small) are unchanged: not practical for phone tiers.
 
 ---
 
-## May 2026 Compatibility Snapshot (recheck)
+## October 2026 Compatibility Snapshot
 
-| Family | Mobile-runtime status | OfflineMate action |
-|--------|----------------------|--------------------|
-| **Qwen 3** | ✅ 0.6B, 1.7B, 4B (8da4w) in v0.9.1 | Keep primary path; evaluate **0.6B for Lite** |
-| **Qwen 3.5** | ⚠️ **0.8B, 2B** in v0.9.1; experimental slow prefill | **Runtime ready** — benchmark before enabling flag |
-| **Qwen 3.5 4B / 9B** | ❌ No RN pre-exports | Full tier stays on Qwen 3 4B |
-| **Qwen 3.6** | ❌ 27B+ only; server/GGUF paths | Track only |
-| **Gemma 4 E2B** | ✅ v0.9.1 — XNNPACK (Android default path), Vulkan, MLX | Evaluate Standard tier; PLE memory model |
-| **Gemma 4 E4B** | ❌ Not in RN registry yet | Track; upstream ExecuTorch text-only exists |
-| **Hammer 2.1** | ✅ 0.5B, 1.5B, 3B | Evaluate for tool-calling tiers |
-| **LFM 2.5** | ✅ 350M, 1.2B, VL-450M, VL-1.6B | Evaluate Standard / multimodal |
-| **Phi 4 Mini 4B** | ✅ Quantized | Evaluate Full-tier alternate |
-| **Bielik v3.0 1.5B** | ✅ v0.9.1 (Polish) | Locale-specific Standard candidate |
-| **DeepSeek R1 distill** | ⚠️ DIY export only (Qwen/Llama base); no SM pre-exports | Not recommended until SM ships assets |
-| **DeepSeek V3/V4** | ❌ 671B+ MoE | Not phone-class |
-| **Moonshot Kimi K2.x/K2.6** | ❌ 1T MoE / 32B active; API/cloud only | Not suitable for on-device |
-| **MiniMax M2/M2.7** | ❌ 230B+ MoE; smallest quant ~100 GB+ | Not suitable for on-device |
-| **Zhipu GLM-4-9B** | ❌ No RN ExecuTorch export; 9B too large for Lite | Track; no mobile path |
-| **Mistral Small 3 (24B)** | ❌ No RN pre-export; too large for phone tiers | Server/desktop only |
+| Family | Mobile-runtime status (RNE 0.11.0) | In OfflineMate registry | Action |
+|--------|-----------------------------------|-------------------------|--------|
+| **Gemma 4 E2B** | ✅ XNNPACK / Vulkan / MLX; re-exported at v0.11.0 | ✅ Standard **primary** | Keep |
+| **Gemma 4 E2B Omni** | ✅ New API only (`GEMMA4_OMNI_E2B`); legacy has `gemma4_e2b_multimodal` | ❌ | Candidate for image/voice input features |
+| **Gemma 4 E4B** | ❌ Not exported | ❌ | Track |
+| **MiniCPM5 2B** | ✅ New in 0.11.0 (new API only), 8K context, ~1.3 GB | ✅ Standard alternate | **Benchmark on device** vs Gemma 4 E2B |
+| **LFM 2.5 2.6B** | ✅ New in 0.11.0 (new API only), ~1.7 GB | ✅ Full alternate | **Benchmark on device** vs Qwen 3 4B |
+| **LFM 2.5 350M** | ✅ Legacy + new API, ~435 MB | ✅ Lite alternate | Benchmark vs SmolLM2 360M |
+| **LFM 2.5 1.2B** | ✅ | ❌ | Standard candidate |
+| **LFM3 (1.7B, VL/Omni/Audio 2B)** | ❌ GGUF/MLX/ONNX only; no `.pte` | ❌ | Track — likely next SM export given LFM2 history |
+| **Qwen 3** (0.6B, 1.7B, 4B) | ✅ | ✅ 1.7B (Standard alt), 4B (Full primary) | Keep |
+| **Qwen 3.5** (0.8B, 2B) | ⚠️ Legacy-only exports (v0.9.0 assets); slow prefill | ✅ 2B Standard alt | Keep 2B as test alternate; **do not** add 0.8B to Lite (~1.4 GB) |
+| **Qwen 3.5 4B / 9B** | ❌ Not exported | ❌ | Full tier stays on Qwen 3 4B |
+| **Qwen 3.6 / 3.7 / 3.8** | ❌ 27B+ dense, MoE, or API-only | ❌ | Not phone-class |
+| **Phi 4 Mini 3.8B** | ✅ 8da4w | ❌ | Full candidate |
+| **Hammer 2.1** (0.5B, 1.5B, 3B) | ✅ | ❌ | Tool-calling candidate for the planner |
+| **Llama 3.2** (1B, 3B) | ✅ | ✅ | Keep; no small Llama 4 exists |
+| **SmolLM2** (135M, 360M, 1.7B) | ✅ | ✅ | Keep; SmolLM3 3B has no `.pte` |
+| **Bielik v3 1.5B** | ✅ | ❌ | Polish locale only |
+| **Kimi, DeepSeek V3/V4, MiniMax M2, GLM, Mistral Small** | ❌ | ❌ | Not phone-class (see §5) |
 
 ---
 
-## 1. Qwen 3.5 Overview
+## 1. react-native-executorch Release History (since May 2026)
 
-### Release Timeline
+| Version | Date | Relevant changes |
+|---------|------|------------------|
+| 0.9.2 | Jun 2026 | Sampling + VLM cache fixes; no new LLMs |
+| 0.10.0–0.10.5 | Jul–Sep 2026 | New typed `models` registry; old API moved to `react-native-executorch/legacy` (OfflineMate migrated in 0.4.0) |
+| **0.10.6** | Oct 19, 2026 | **RN 0.87/0.88 + Expo SDK 58**, worklets 0.13 allowed, Vulkan crash fix on Adreno 720/740, `react-native-blob-util >=0.24.11` required |
+| 0.10.7 | Oct 21, 2026 | TTS number reading fix |
+| **0.11.0** | Oct 27, 2026 | TS LLM runners + llama.cpp-style sampler with constrained decoding; LLMs re-exported with up to 16K context; `enable_thinking`; **MiniCPM5 2B**; LFM 2.5 2.6B; `createVectorStore`; LFM2.5-ColBERT-350M; per-device [benchmarks](https://docs.swmansion.com/react-native-executorch/docs/benchmarks); unquantized XNNPACK LLM variants removed |
 
-| Date | Release |
+**Breaking changes in 0.11.0 that matter to OfflineMate:** none on the legacy path. The chat/generation APIs are unchanged; only the `@experimental` runner API changed. Legacy model constants still point at the v0.9.0 Hugging Face assets.
+
+### Legacy vs new API
+
+OfflineMate imports everything from `react-native-executorch/legacy` (`LLMModule`, `TextEmbeddingsModule`, `initExecutorch`). The legacy API is **deprecated** and will be removed in a future release (1.0.0 nightlies have started). Consequences:
+
+- New models (MiniCPM5, LFM 2.5 2.6B, Gemma 4 Omni) are only in the new registry. OfflineMate references their v0.11.0 asset URLs directly in `src/ai/model-registry.ts`.
+- The 0.11 text exports expose the standard ExecuTorch LLM interface (`get_max_context_len`, `get_eos_ids`, `use_kv_cache`, `forward(tokens, pos)`), which the legacy native runner also uses, so they are expected to load through `LLMModule`. **This must be confirmed on a device.**
+- Qwen 3.5 exists only in legacy. If legacy is removed before SM adds Qwen 3.5 to the new registry, the Qwen 3.5 2B alternate goes with it.
+- **Recommended follow-up:** migrate `src/ai/llm-engine.ts` and `src/context/embeddings.ts` to the new API before 1.0.0. That also unlocks the 16K-context re-exports, the new sampler, and constrained decoding (useful for the planner's JSON output).
+
+### Compatibility with the OfflineMate stack
+
+| Requirement | OfflineMate | RNE 0.11.0 |
+|-------------|-------------|------------|
+| React Native | 0.86.3 | ✅ (peer `*`; 0.87/0.88 supported since 0.10.6) |
+| Expo SDK | 57 | ✅ (SDK 58 supported since 0.10.6) |
+| `react-native-worklets` | 0.10.1 | ✅ `>=0.10.0 <0.14.0` |
+| `react-native-blob-util` | 0.24.11 (transitive) | ✅ `>=0.24.11` |
+| Expo resource fetcher | `react-native-executorch-expo-resource-fetcher@0.11.0` | ✅ |
+
+---
+
+## 2. Newly Available Models (in the OfflineMate registry)
+
+### MiniCPM5 2B (OpenBMB) — Standard alternate
+
+- Released alongside RNE 0.11.0 (late Oct 2026). OpenBMB claims best-in-class results at 2B and wins over some 4B models on coding/agent tasks. These are **vendor claims** that have not been independently verified.
+- Export: XNNPACK 8da4w (~1.3 GB `.pte`), MLX int4 on iOS. 8K context window.
+- Assets: [react-native-executorch-minicpm-5](https://huggingface.co/software-mansion/react-native-executorch-minicpm-5) at `resolve/v0.11.0`.
+- Supports `enable_thinking` in its chat template, but the legacy runner does not pass that option, so thinking stays at the template default.
+
+### LFM 2.5 2.6B (Liquid AI) — Full alternate
+
+- Hybrid Liquid architecture (low memory bandwidth, fast decode), aimed at instruction following and agent workloads.
+- Export: XNNPACK 8da4w (~1.7 GB), MLX int4. That is smaller than Qwen 3 4B (~2 GB), so it may be a faster Full-tier option.
+- Assets: [react-native-executorch-lfm-2.5](https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5) `2_6b/` at `resolve/v0.11.0`.
+
+### LFM 2.5 350M (Liquid AI) — Lite alternate
+
+- Legacy constant `LFM2_5_350M_QUANTIZED` (v0.9.0 assets, ~435 MB 8da4w).
+- Larger download than SmolLM2 360M (~200 MB). Liquid positions it for fast first-token response and instruction following.
+
+---
+
+## 3. Qwen 3.5 Status
+
+Qwen 3.5 small models (0.8B/2B/4B/9B, Mar 2026, Apache 2.0) use a hybrid **Gated DeltaNet + Gated Attention** architecture (3 linear-attention layers per full-attention layer). Software Mansion shipped 0.8B and 2B exports in RNE 0.9.0 ([PR #1096](https://github.com/software-mansion/react-native-executorch/pull/1096)), with a known caveat: Gated DeltaNet requires a **sequential prefill fallback**, which makes the first token slow.
+
+October 2026 findings:
+
+| Item | Finding |
 |------|---------|
-| Feb 16, 2026 | Flagship 397B-A17B |
-| Feb 24, 2026 | Medium models (35B-A3B, 122B-A10B, 27B) |
-| Mar 2, 2026 | Small models (0.8B, 2B, 4B, 9B) |
+| 0.8B export size | **1,412,986,112 bytes (~1.35 GiB)** for `qwen_3_5_0_8b_xnnpack_8da4w.pte`. That is about the same as the 2B and roughly 4× the Lite budget, because the 248K-token embedding table dominates. |
+| New-API registry | Qwen 3.5 is **absent** from `models.llm` in 0.10.x and 0.11.0. It appears only in `legacy/src/constants/modelRegistry.ts`. |
+| Re-export | Not re-exported at v0.11.0 (assets remain at v0.9.0) |
+| 4B / 9B | Not exported |
 
-_Source: [QwenLM/Qwen3.5](https://github.com/QwenLM/Qwen3.5)_
-
-### Small Model Specifications (Relevant to OfflineMate)
-
-| Model | Params | Architecture | VRAM (BF16) | VRAM (4-bit) | Context |
-|-------|--------|--------------|-------------|--------------|---------|
-| Qwen3.5-0.8B | 0.8B | Dense, Gated DeltaNet + Gated Attention | ~1.6 GB | ~0.5 GB | 262K |
-| Qwen3.5-2B | 2B | Dense, hybrid | — | — | 262K |
-| Qwen3.5-4B | 4B | Dense, hybrid | — | — | 262K |
-| Qwen3.5-9B | 9B | Dense, hybrid | — | — | 262K |
-
-- Small models use **dense architecture** (no MoE); flagship uses sparse MoE.
-- 0.8B and 2B are aimed at edge and mobile use.
-- License: Apache 2.0.
+**Decision:** Keep Qwen 3.5 2B as a Standard test alternate. Do **not** add 0.8B to Lite. Keep `QWEN35_MIGRATION_FLAG = false` (`src/ai/qwen35-migration.ts`). Given the slow prefill and the legacy-only status, Qwen 3.5 is no longer the most likely next primary. Gemma 4 E2B already holds Standard, and MiniCPM5 2B / LFM 2.5 2.6B are better-supported upgrade candidates.
 
 ---
 
-## 2. Architecture Compatibility Analysis
+## 4. Newest Families Without an ExecuTorch Path
 
-### Gated DeltaNet + Gated Attention
+### Liquid AI LFM3 (Oct 27, 2026)
 
-Qwen 3.5 small models use a **hybrid architecture** distinct from standard transformers and Qwen 3:
+- Six models on a shared 1.7B/2B backbone: **LFM3-1.7B** (text, 256K context, ~1 GB at 4-bit), LFM3-VL-2B, LFM3-Omni-2B, LFM3-Audio-2B, d1-2B, d1-Omni-2B.
+- Liquid claims LFM3-1.7B beats LFM 2.5 2.6B with 35% fewer parameters (vendor-reported). Target devices include Galaxy S26 Ultra and OnePlus 15.
+- Published formats: GGUF, MLX, ONNX, FP8/NVFP4. **No ExecuTorch `.pte`** from Liquid or Software Mansion yet.
+- Liquid has used ExecuTorch for LFM2 deployment and SM has exported every LFM 2.x release, so an RNE export is likely. **Top tracking priority**, since it could replace both LFM 2.5 alternates with a smaller, stronger model.
 
-1. **Gated DeltaNet (linear attention)** — ~75% of layers  
-2. **Gated Full Attention** — ~25% of layers  
-3. **Layer pattern:** `[linear_attention × 3, full_attention × 1]` per block.  
-4. **Model types:** `Qwen3_5ForConditionalGeneration` (dense), `Qwen3_5MoeForConditionalGeneration` (MoE).
+### Gemma 4 E4B (Google, Apr 2026)
 
-### Implications for ExecuTorch (Updated May 2026)
+- On-device "reasoning" sibling of E2B; reports put it at ~4 GB storage and ~12 GB RAM. It runs on Android through AICore / LiteRT-LM, not ExecuTorch.
+- No RNE export. Upstream ExecuTorch has text-only export code. Full-tier candidate if SM ships it.
 
-- Upstream ExecuTorch now has **dense Qwen 3.5** example code at `examples/models/qwen3_5` and MoE paths with MLX/Metal backends.
-- Software Mansion exports Qwen 3.5 `.pte` files using **ExecuTorch v1.2.0** ([HF repo](https://huggingface.co/software-mansion/react-native-executorch-qwen-3.5)).
-- **Runtime caveat:** RN ExecuTorch PR #1096 notes that Gated DeltaNet still requires **sequential prefill fallback** → **very slow prefill** on mobile. Token generation may be acceptable; first-response latency is the risk.
+### Qwen 3.6 / 3.7 / 3.8 (Alibaba, Apr–Aug 2026)
 
----
+- 3.6: 27B dense and 35B-A3B MoE. 3.7: Max/Plus closed, API-first. 3.8: 27B dense, 2.4T-A95B MoE, "Flash-Next" (Aug 2026). **No sub-4B models**, so none are phone-tier.
 
-## 3. ExecuTorch & react-native-executorch Status
+### Others checked
 
-### Version Matrix (OfflineMate-relevant)
-
-| Package | npm (May 2026 recheck) | Key LLM additions |
-|---------|------------------------|-------------------|
-| **0.8.4** | Superseded | No Qwen 3.5, no Gemma 4 |
-| **0.9.0** | Stable | Qwen 3.5 0.8B/2B, Bielik, LFM2.5-VL-450M, ExecuTorch v1.2.0 |
-| **0.9.1** | Stable — **OfflineMate pin** | **Gemma 4 E2B** (+ multimodal), Whisper iOS fp16 |
-| **0.9.2** | **npm latest** | No new LLM exports; LLM sampling + VLM cache fixes |
-
-### react-native-executorch v0.9.x — Full LLM Registry
-
-Constants / `models.llm.*` accessors in **0.9.1**:
-
-| Family | Sizes | Notes |
-|--------|-------|-------|
-| **Gemma 4** | E2B (+ multimodal) | Android: Vulkan default; iOS: MLX. No E4B yet |
-| **Qwen 3.5** | 0.8B, 2B | XNNPACK 8da4w; slow prefill |
-| **Qwen 3** | 0.6B, 1.7B, 4B | Primary OfflineMate families |
-| **Qwen 2.5** | 0.5B, 1.5B, 3B | Conservative fallbacks |
-| **Hammer 2.1** | 0.5B, 1.5B, 3B | Tool-calling |
-| **SmolLM 2** | 135M, 360M, 1.7B | Lite tier |
-| **Llama 3.2** | 1B, 3B | Spinquant / qlora variants |
-| **Phi 4 Mini** | 4B | Reasoning |
-| **LFM 2.5** | 350M, 1.2B, VL-450M, VL-1.6B | Instruction + vision |
-| **Bielik v3.0** | 1.5B | Polish |
-
-### Stack Compatibility Note (Expo SDK 56)
-
-Official [compatibility table](https://docs.swmansion.com/react-native-executorch/docs/other/compatibility) lists Expo resource fetcher support through **SDK 55** only. OfflineMate runs **SDK 56 / RN 0.85.3**, which **is** in the RN 0.9.x supported column. Treat SDK 56 as **working but not yet documented** — validate native builds after every executorch bump.
-
-| Requirement | OfflineMate | RN ExecuTorch 0.9.x |
-|-------------|-----------|---------------------|
-| React Native | 0.85.3 | ✅ 0.81–0.85 |
-| Expo SDK | 56 | ⚠️ Undocumented (table stops at 55) |
-| New Architecture | Required | Required |
-| iOS minimum | 17.0+ | 17.0+ |
-| Android minimum | API 13+ | API 13+ |
-
-### ExecuTorch Supported Models (upstream)
-
-| Model Family | Status | Notes |
-|--------------|--------|-------|
-| Llama 3.2 | ✅ | 1B, 3B spinquant |
-| Qwen 3 | ✅ | 0.6B, 1.7B, 4B (8da4w) |
-| Qwen 2.5 | ✅ | 0.5B, 1.5B, 3B |
-| Qwen 3.5 dense | ✅ | Export examples; XNNPACK mobile path via SM |
-| Qwen 3.5 MoE | ⚠️ | MLX/Metal/CUDA; not phone-class sizes |
-| Qwen 3.6 | ❌ | No small phone-class export |
-| Gemma 4 E2B | ✅ | RN v0.9.1 + upstream ([PR #18695](https://github.com/pytorch/executorch/pull/18695)) |
-| Gemma 4 E4B | ⚠️ | Upstream text-only; no RN pre-export yet |
-| Phi-4-mini | ✅ | Listed in ExecuTorch README |
-
-### Software Mansion Pre-Exports (react-native-executorch)
-
-See **Full LLM Registry** table in §3. Hugging Face repos:
-
-- [react-native-executorch-qwen-3.5](https://huggingface.co/software-mansion/react-native-executorch-qwen-3.5) — ExecuTorch **v1.2.0**
-- [react-native-executorch-gemma-4](https://huggingface.co/software-mansion/react-native-executorch-gemma-4) — ExecuTorch **v1.3.0**
-- [react-native-executorch-qwen-3](https://huggingface.co/software-mansion/react-native-executorch-qwen-3)
-- [react-native-executorch-bielik-v3.0](https://huggingface.co/software-mansion/react-native-executorch-bielik-v3.0)
-
-_Sources:_  
-- [v0.9.0 release](https://github.com/software-mansion/react-native-executorch/releases/tag/v0.9.0)  
-- [v0.9.1 release — Gemma 4](https://github.com/software-mansion/react-native-executorch/releases/tag/v0.9.1)  
-- [PR #1096 — Qwen 3.5 + Bielik](https://github.com/software-mansion/react-native-executorch/pull/1096)  
-- [Issue #935 — Qwen 3.5](https://github.com/software-mansion/react-native-executorch/issues/935)  
-- [MODEL_REGISTRY docs](https://docs.swmansion.com/react-native-executorch/docs/api-reference/variables/MODEL_REGISTRY)
+| Model | Status |
+|-------|--------|
+| SmolLM3 3B (Hugging Face) | Open, ONNX available; no `.pte` |
+| Phi-5 / small Llama 4 | Not released; Phi 4 Mini and Llama 3.2 remain the newest phone-class sizes |
+| NVIDIA Nemotron 3.5 Bolt E4B | Local NVIDIA hardware target; not a phone model |
+| MiniCPM-V 4.7 1B (OpenBMB) | GGUF only; vision model |
+| Microsoft FrogNano-4B | Released Sep 2026; no mobile export |
 
 ---
 
-## 4. Third-Party Model Vendor Research
+## 5. Server-Only Vendors (unchanged)
 
-### Moonshot AI (Kimi)
-
-| Model | Params | Mobile fit | RN ExecuTorch |
-|-------|--------|------------|---------------|
-| **Kimi K2.6** (Apr 2026) | 1T total / 32B active MoE | ❌ | ❌ API/cloud ([Workers AI](https://developers.cloudflare.com/changelog/post/2026-04-20-kimi-k2-6-workers-ai/), [Kimi platform](https://platform.kimi.ai/docs/models)) |
-| Kimi K2 (legacy) | Large MoE | ❌ | ❌ Deprecated May 2026 |
-
-**Assessment:** Moonshot targets **agentic server/cloud** deployment. Open weights exist for research, but there is **no phone-class dense model** and **no ExecuTorch `.pte` export**. Kimi WebBridge runs agents locally via browser automation, not as an on-device LLM in React Native.
-
-**OfflineMate action:** Not compatible. Do not plan tier mapping.
+| Vendor | Models | Why not on-device |
+|--------|--------|-------------------|
+| Moonshot | Kimi K2.x / K2.6 | 1T MoE / 32B active; API/cloud |
+| DeepSeek | V3/V4, R1 | 671B+ MoE. R1 distills (1.5B–8B) are Qwen/Llama fine-tunes with no SM exports and add chain-of-thought output that would need UX handling |
+| MiniMax | M2 / M2.7 | 230B MoE; smallest quant needs ~100 GB+ |
+| Zhipu | GLM-4-9B | 9B, no ExecuTorch export path |
+| Mistral | Small 3 / 3.1 (24B) | Too large for phone RAM |
 
 ---
 
-### DeepSeek
+## 6. Alternative Runtimes (not integrated)
 
-| Model | Params | Architecture base | Mobile fit | RN ExecuTorch |
-|-------|--------|-------------------|------------|---------------|
-| **DeepSeek-V3/V4** | 671B+ MoE | Custom MLA + MoE | ❌ | ❌ Server-only ([DeepSeek-V3 repo](https://github.com/deepseek-ai/DeepSeek-V3)) |
-| **DeepSeek-R1** (full) | Very large | Custom | ❌ | ❌ |
-| **R1-Distill-Qwen-1.5B** | 1.5B | Qwen 2 | ⚠️ Theoretically exportable | ❌ No SM pre-export |
-| **R1-Distill-Qwen-7B** | 7B | Qwen 2 | ⚠️ Borderline RAM | ❌ No SM pre-export |
-| **R1-Distill-Llama-8B** | 8B | Llama 3.1 | ⚠️ Full-tier RAM only | ⚠️ DIY export ([ExecuTorch #7981](https://github.com/pytorch/executorch/issues/7981)); tokenizer friction |
+These could reach models that ExecuTorch cannot, at the cost of a second native LLM runtime:
 
-**Assessment:** DeepSeek's **brand value is in R1 reasoning**, but only **distill** variants are small enough for phones — and those are fine-tunes of **Qwen/Llama**, not native DeepSeek architecture. ExecuTorch documented export for **R1-Distill-Llama-8B** (Llama export path); Qwen-based distills could use the Qwen export pipeline, but Software Mansion has **not** published `.pte` bundles. Distill models also emit chain-of-thought tokens (`` blocks) that may need prompt/UX handling.
+| Path | Format | Would unlock |
+|------|--------|--------------|
+| **llama.rn** (llama.cpp) | GGUF | LFM3, Gemma 4 E4B, SmolLM3, Qwen 3.5 4B community quants — almost every new model on day one |
+| LiteRT-LM / AICore | `.litertlm` | Gemma 4 E2B/E4B with Android NPU/GPU acceleration |
+| ONNX Runtime GenAI | ONNX | LFM3, SmolLM3 |
 
-**OfflineMate action:** Track for pre-exports; do not DIY unless benchmarking proves clear quality gain over Qwen 3 0.6B/1.7B. Qwen 3 already covers the same architectural bases.
-
----
-
-### MiniMax
-
-| Model | Params | Mobile fit | RN ExecuTorch |
-|-------|--------|------------|---------------|
-| **MiniMax-M2** | 230B total / 10B active MoE | ❌ | ❌ ([GitHub](https://github.com/MiniMax-AI/MiniMax-M2)) |
-| **MiniMax-M2.7** | Same class | ❌ Smallest MLX quant ~100 GB RAM | ❌ ([Local deploy guide](https://platform.minimax.io/docs/guides/local-deploy)) |
-
-**Assessment:** "Mini" refers to **efficiency vs frontier closed models**, not phone deployment. Even aggressive 3-bit quants need **112 GB+ unified memory**. No ExecuTorch mobile path.
-
-**OfflineMate action:** Not compatible.
-
----
-
-### Zhipu AI (GLM)
-
-| Model | Params | Mobile fit | RN ExecuTorch |
-|-------|--------|------------|---------------|
-| **GLM-4-9B-Chat** | 9B | ❌ Too large for Lite; tight for Standard | ❌ No export ([zai-org/GLM-4](https://github.com/zai-org/GLM-4)) |
-| GLM-4-9B-Chat-1M | 9B, 1M context | ❌ | ❌ |
-
-**Assessment:** GLM-4-9B is **Apache 2.0** and popular in China, but 9B exceeds OfflineMate Lite/Standard targets and there is **no** react-native-executorch integration. Would require custom ExecuTorch export (non-Llama architecture).
-
-**OfflineMate action:** Not compatible without major export investment.
-
----
-
-### Mistral AI
-
-| Model | Params | Mobile fit | RN ExecuTorch |
-|-------|--------|------------|---------------|
-| **Mistral Small 3** | 24B | ❌ Desktop/GPU (16 GB+ VRAM quantized) | ❌ No pre-export ([Mistral announcement](https://mistral.ai/news/mistral-small-3/)) |
-| Mistral Small 3.1 | 24B multimodal | ❌ | ❌ |
-
-**Assessment:** Apache 2.0 and strong for **local server** agent workflows, but 24B is above OfflineMate Full-tier RAM envelope on mid-range phones.
-
-**OfflineMate action:** Not compatible for tier mapping.
-
----
-
-### Google (Gemma)
-
-| Model | Params | Mobile fit | RN ExecuTorch |
-|-------|--------|------------|---------------|
-| **Gemma 4 E2B** | ~2B effective (PLE) | Yes, ~2.6 GB INT4 | v0.9.1 - GEMMA4_E2B |
-| **Gemma 4 E2B multimodal** | E2B + vision | Mid-range+ devices | v0.9.1 - GEMMA4_E2B_MM |
-| **Gemma 4 E4B** | ~4B effective | Full-tier RAM | Not in registry yet |
-
-**Assessment:** Gemma 4 E2B shipped in **v0.9.1** (Vulkan on Android, MLX on iOS). PLE architecture loads ~50% of params only at first token.
-
-**OfflineMate action:** Strong Standard-tier candidate; benchmark vs Qwen 3 1.7B and Qwen 3.5 2B.
-
----
-
-### Bielik (SpeakLeash — Polish)
-
-| Model | Params | Mobile fit | RN ExecuTorch |
-|-------|--------|------------|---------------|
-| **Bielik v3.0 1.5B** | 1.5B | ✅ Standard-tier size | ✅ v0.9.0+ ([HF](https://huggingface.co/software-mansion/react-native-executorch-bielik-v3.0)) |
-
-**Assessment:** Strong **Polish/CEE** regional model. Useful if OfflineMate adds locale-specific tiers; not a general English upgrade over Qwen 3.
-
-**OfflineMate action:** Consider for Polish locale; available on current v0.9.1 stack.
-
----
-
-## 5. Alternative Deployment Paths (Non-ExecuTorch)
-
-These options do **not** integrate with OfflineMate's current react-native-executorch stack:
-
-| Path | Format | Vendors / models | Use case |
-|------|--------|------------------|----------|
-| vLLM / SGLang | Native | DeepSeek V3, MiniMax M2, Kimi (server) | Server-side |
-| llama.cpp | GGUF | DeepSeek distill, Mistral, Qwen 3.5/3.6 community quants | On-device via **llama.rn** (different RN runtime) |
-| LiteRT-LM | `.litertlm` | Gemma 4 E2B | Android NPU/GPU; not ExecuTorch |
-| WebLLM (TVM) | MLC/TVM | Qwen 3.5 (early support) | In-browser WebGPU |
-| Cloud API | REST | Kimi K2.6, DeepSeek API, MiniMax API | Online-only; conflicts with offline-first unless optional |
-
----
-
-## 6. OfflineMate Integration Readiness
-
-### Current Code
-
-- `src/ai/qwen35-migration.ts`: `QWEN35_MIGRATION_FLAG = false`; target IDs defined (0.8B, 2B, 4B).
-- `src/ai/model-registry.ts`: **Qwen 3.5 2B** and **Gemma 4 E2B** registered as Standard alternates; primary remains Qwen 3 1.7B.
-- `src/stores/settings-store.ts` + Settings UI: per-tier variant picker (`tierModelIds`).
-- `src/ai/llm-engine.ts` / `useLLMChat.ts`: load resolved model spec by tier + optional `modelId`.
-- `package.json`: `react-native-executorch@^0.9.1` — constants for full v0.9.1 LLM catalog; **bump to 0.9.2** optional for sampling fixes.
-
-### Remaining Blockers for Qwen 3.5 default migration
-
-1. **Experimental performance** — slow prefill on 0.8B/2B (Gated DeltaNet sequential fallback).
-2. **No 4B export** — Full tier cannot migrate.
-3. **Device validation** — chat template, tokenizer, tier RAM envelopes, prefill latency on Lite/Standard targets.
-4. **Primary flip** — `QWEN35_MIGRATION_FLAG` still off; alternates are testable in Settings but not default primaries.
-
-### Prerequisites for Migration
-
-1. Benchmark `QWEN3_5_0_8B_QUANTIZED` / `QWEN3_5_2B_QUANTIZED` on target devices (prefill + decode).
-2. Wire constants in `model-registry.ts`; optionally evaluate `GEMMA4_E2B` as Standard alternate.
-3. Keep Full tier on Qwen 3 4B (or Phi 4 Mini) until Qwen 3.5 4B ships.
+**Recommendation:** Stay on ExecuTorch for now. OfflineMate already uses it for embeddings and LLMs, and SM has generally shipped exports for the families that matter within weeks of their release (for example, Gemma 4 and MiniCPM5). Reconsider llama.rn only if a must-have model (for example LFM3 or Gemma 4 E4B) is still unexported a quarter after release.
 
 ---
 
 ## 7. Recommendations
 
-1. **Keep** `QWEN35_MIGRATION_FLAG = false` until Lite/Standard device benchmarks pass (prefill latency is the gate).
-2. **Runtime is ready:** v0.9.1+ catalog unchanged in v0.9.2; use Settings → Standard variant to benchmark **Qwen 3.5 2B** vs **Gemma 4 E2B** vs **Qwen 3 1.7B**.
-3. **Optional bump** to `react-native-executorch@0.9.2` for top-p sampling speed (no new models).
-4. **Evaluate Gemma 4 E2B** first if prefill latency matters; **Qwen 3.5 2B** if quality wins and prefill is acceptable.
-5. **Immediate registry wins on current stack (not yet in app registry):**
-   - **Qwen 3 0.6B** for Lite (stable, no slow-prefill caveat).
-   - **Hammer 2.1 1.5B** if tool-calling quality is the bottleneck.
-   - **LFM 2.5 1.2B** for Standard instruction following.
-   - **Phi 4 Mini 4B** as Full-tier alternate.
-6. **Do not pursue** Moonshot Kimi, DeepSeek V3/V4, MiniMax M2, GLM-4-9B, or Mistral Small 3 for on-device tiers — still no SM `.pte` exports at phone sizes.
-7. **Track** Qwen 3.5 4B export and Gemma 4 E4B RN export (neither appeared in v0.9.2).
-8. **Validate SDK 56** after each executorch bump ([compatibility table](https://docs.swmansion.com/react-native-executorch/docs/other/compatibility) still lists Expo through SDK 55 only; RN **0.85** is supported).
+1. **Benchmark the new alternates on real devices** (prefill latency, tokens/s, peak RAM, JSON-plan validity): MiniCPM5 2B vs Gemma 4 E2B (Standard), LFM 2.5 2.6B vs Qwen 3 4B (Full), LFM 2.5 350M vs SmolLM2 (Lite). SM's per-device [benchmarks page](https://docs.swmansion.com/react-native-executorch/docs/benchmarks) is a useful baseline.
+2. **Plan the move off `legacy`** before RNE 1.0.0. That unlocks 16K-context exports, constrained decoding for planner JSON, `enable_thinking` control, and Gemma 4 Omni.
+3. **Expo SDK 58 is now unblocked** (RNE ≥0.10.6 accepts worklets 0.13).
+4. **Track:** LFM3 `.pte` export (highest priority), Gemma 4 E4B, Qwen 3.5 in the new registry, Qwen 3.5 4B.
+5. **Do not** add Qwen 3.5 0.8B to Lite unless a smaller export appears.
+6. **Other built-in candidates not yet wired:** Phi 4 Mini (Full), Hammer 2.1 1.5B (planner/tool calling), LFM 2.5 1.2B (Standard), Qwen 3 0.6B (Lite, ~400 MB).
 
 ---
 
 ## 8. References
 
-### Qwen & ExecuTorch
+### react-native-executorch
 
-- [QwenLM/Qwen3.5](https://github.com/QwenLM/Qwen3.5)
-- [software-mansion/react-native-executorch-qwen-3.5](https://huggingface.co/software-mansion/react-native-executorch-qwen-3.5)
-- [RN ExecuTorch Issue #935 — Qwen 3.5](https://github.com/software-mansion/react-native-executorch/issues/935)
-- [RN ExecuTorch PR #1096 — Qwen 3.5 + Bielik](https://github.com/software-mansion/react-native-executorch/pull/1096)
-- [ExecuTorch Qwen 3.5 dense examples](https://github.com/pytorch/executorch/tree/main/examples/models/qwen3_5)
-- [ExecuTorch LLM export](https://docs.pytorch.org/executorch/stable/llm/export-llm.html)
+- [v0.11.0 release](https://github.com/software-mansion/react-native-executorch/releases/tag/v0.11.0)
+- [v0.10.6 release (SDK 58 / RN 0.88)](https://github.com/software-mansion/react-native-executorch/releases/tag/v0.10.6)
+- [LLM chat & generation docs](https://docs.swmansion.com/react-native-executorch/docs/extensions/llm-chat-and-generation)
+- [Benchmarks](https://docs.swmansion.com/react-native-executorch/docs/benchmarks)
+- [Software Mansion on Hugging Face](https://huggingface.co/software-mansion)
+- [react-native-executorch-minicpm-5](https://huggingface.co/software-mansion/react-native-executorch-minicpm-5)
+- [react-native-executorch-lfm-2.5](https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5)
+- [react-native-executorch-qwen-3.5](https://huggingface.co/software-mansion/react-native-executorch-qwen-3.5)
+- [react-native-executorch-gemma-4](https://huggingface.co/software-mansion/react-native-executorch-gemma-4)
+- [PR #1096 — Qwen 3.5 + Bielik](https://github.com/software-mansion/react-native-executorch/pull/1096)
 
-### Third-party vendors
+### Model families
 
-- [Moonshot Kimi K2.6 on Workers AI](https://developers.cloudflare.com/changelog/post/2026-04-20-kimi-k2-6-workers-ai/)
-- [Kimi API model list](https://platform.kimi.ai/docs/models)
-- [DeepSeek-V3](https://github.com/deepseek-ai/DeepSeek-V3)
-- [DeepSeek-R1-Distill-Qwen-1.5B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B)
-- [ExecuTorch DeepSeek R1 Distill Llama 8B — Issue #7981](https://github.com/pytorch/executorch/issues/7981)
-- [MiniMax-M2](https://github.com/MiniMax-AI/MiniMax-M2)
-- [MiniMax local deploy guide](https://platform.minimax.io/docs/guides/local-deploy)
-- [zai-org/GLM-4](https://github.com/zai-org/GLM-4)
-- [Mistral Small 3](https://mistral.ai/news/mistral-small-3/)
+- [Liquid AI LFM3 collection](https://huggingface.co/LiquidAI) · [LFM3 launch coverage](https://aiweekly.co/alerts/liquid-ai-opens-six-model-lfm3-family-at-256k-context) · [LFM3-1.7B overview](https://www.mindstudio.ai/blog/liquidai-lfm3-1-7b-edge-model)
+- [Liquid AI on ExecuTorch (LFM2)](https://www.liquid.ai/blog/how-liquid-ai-uses-executorch-to-power-efficient-flexible-on-device-intelligence)
+- [Gemma 4 on Android (InfoQ)](https://infoq.com/news/2026/04/gemma-4-android-ai-inference) · [AICore Developer Preview](https://android-developers.googleblog.com/2026/03/AI-Core-Developer-Preview)
+- [QwenLM/Qwen3.5](https://github.com/QwenLM/Qwen3.5) · [Qwen on Hugging Face](https://huggingface.co/Qwen) · [Qwen models guide (mid-2026)](https://insiderllm.com/guides/qwen-models-guide/)
+- [ExecuTorch Qwen 3.5 examples](https://github.com/pytorch/executorch/tree/main/examples/models/qwen3_5) · [ExecuTorch Gemma 4 PR #18695](https://github.com/pytorch/executorch/pull/18695)
+- [October 2026 LLM release timeline](https://llmgateway.io/timeline)
 
-### Other mobile paths
+### Server-only vendors
 
-- [RN ExecuTorch v0.9.1 release — Gemma 4](https://github.com/software-mansion/react-native-executorch/releases/tag/v0.9.1)
-- [RN ExecuTorch v0.9.2 release](https://github.com/software-mansion/react-native-executorch/releases/tag/v0.9.2)
-- [software-mansion/react-native-executorch-gemma-4](https://huggingface.co/software-mansion/react-native-executorch-gemma-4)
-- [RN ExecuTorch compatibility table](https://docs.swmansion.com/react-native-executorch/docs/other/compatibility)
-- [ExecuTorch Gemma 4 — PR #18695](https://github.com/pytorch/executorch/pull/18695)
-- [WebLLM Qwen 3.5 — Issue #778](https://github.com/mlc-ai/web-llm/issues/778)
-- [React Native ExecuTorch MODEL_REGISTRY](https://docs.swmansion.com/react-native-executorch/docs/next/api-reference/variables/MODEL_REGISTRY)
-- [software-mansion/react-native-executorch-bielik-v3.0](https://huggingface.co/software-mansion/react-native-executorch-bielik-v3.0)
+- [Kimi K2.6 on Workers AI](https://developers.cloudflare.com/changelog/post/2026-04-20-kimi-k2-6-workers-ai/) · [DeepSeek-V3](https://github.com/deepseek-ai/DeepSeek-V3) · [MiniMax-M2](https://github.com/MiniMax-AI/MiniMax-M2) · [zai-org/GLM-4](https://github.com/zai-org/GLM-4) · [Mistral Small 3](https://mistral.ai/news/mistral-small-3/)
 
 ---
 
-## Appendix A: Tier Mapping (Qwen 3.5 — Planned)
+## Appendix: Current Tier Mapping (registry as of 0.5.0)
 
-When Qwen 3.5 migration is enabled in `qwen35-migration.ts`:
-
-| Tier | Target model | RN constant (v0.9.1) | Status |
-|------|--------------|----------------------|--------|
-| Lite | qwen3.5-0.8b | `QWEN3_5_0_8B_QUANTIZED` | ⚠️ Experimental slow prefill; runtime ready |
-| Standard | qwen3.5-2b | `QWEN3_5_2B_QUANTIZED` | ⚠️ Experimental slow prefill; runtime ready |
-| Full | qwen3.5-4b | — | ❌ Not exported yet |
-
-**Alternate Standard candidate (v0.9.1):** GEMMA4_E2B - no slow-prefill caveat; benchmark vs Qwen 3.5 2B.
-
-## Appendix B: Tier Mapping (Non-Qwen alternatives — v0.9.1)
-
-| Tier | Current primary | Alternates to evaluate |
-|------|-----------------|------------------------|
-| Lite | SmolLM2 135M | Qwen 3 0.6B, **Qwen 3.5 0.8B**, Hammer 2.1 0.5B, LFM 2.5 350M |
-| Standard | Qwen 3 1.7B | **Qwen 3.5 2B**, **Gemma 4 E2B**, Hammer 2.1 1.5B, LFM 2.5 1.2B, Bielik 1.5B |
-| Full | Qwen 3 4B | Phi 4 Mini 4B, Llama 3.2 3B |
+| Tier | Primary | Alternates (Settings) | Watching |
+|------|---------|-----------------------|----------|
+| Lite | SmolLM2 135M | SmolLM2 360M, **LFM 2.5 350M** | LFM3 (if a sub-1B variant ships), Qwen 3 0.6B |
+| Standard | Gemma 4 E2B | Qwen 3 1.7B, Qwen 3.5 2B, **MiniCPM5 2B**, SmolLM2 1.7B, Llama 3.2 1B | LFM3-1.7B |
+| Full | Qwen 3 4B | **LFM 2.5 2.6B**, Llama 3.2 3B | Gemma 4 E4B, Qwen 3.5 4B, Phi 4 Mini |

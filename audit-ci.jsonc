@@ -6,9 +6,7 @@
   // Build-time tooling advisories with no patched release yet. None of these packages ship in the app bundle.
   // Remove each entry once upstream publishes a fix (audit-ci warns about entries that no longer match).
   "allowlist": [
-    // braces <=3.0.3 (latest), via micromatch in Metro and expo/cli
-    "GHSA-vfj7-8cjw-p6xm",
-    // node-forge <=1.4.0 (latest), via @expo/code-signing-certificates in expo/cli
-    "GHSA-86w9-cpqp-85rv"
+    // zod <4.6.6 (no patched 3.x), via @expo/cli which depends on zod ^3
+    "GHSA-mrhx-c7xc-m3w5"
   ]
 }

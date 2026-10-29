@@ -16,6 +16,8 @@ async function ensureReminderChannel(): Promise<void> {
     }
     await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
       name: "Reminders",
+      // eslint-plugin-import cannot see enums re-exported from expo-notifications 58 typings; tsc checks this.
+      // eslint-disable-next-line import/namespace
       importance: Notifications.AndroidImportance.MAX,
       sound: "reminder_tone",
     });

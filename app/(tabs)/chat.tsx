@@ -12,7 +12,7 @@ import { LiveThinkingPanel } from "@/components/LiveThinkingPanel";
 import { StreamingText } from "@/components/StreamingText";
 import { useLLMChat } from "@/hooks/useLLMChat";
 import { useSettingsStore } from "@/stores/settings-store";
-import { getTierSpec } from "@/ai/model-registry";
+import { getTierSpec, resolveModelForTier } from "@/ai/model-registry";
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -30,7 +30,9 @@ export default function ChatScreen() {
     error,
   } = useLLMChat();
   const selectedTier = useSettingsStore((s) => s.selectedTier);
+  const selectedModelId = useSettingsStore((s) => s.tierModelIds[selectedTier] ?? null);
   const tierSpec = getTierSpec(selectedTier);
+  const activeModel = resolveModelForTier(selectedTier, selectedModelId);
   const [liveThinkingExpandedOverride, setLiveThinkingExpandedOverride] = useState<boolean | null>(
     null,
   );
@@ -64,7 +66,7 @@ export default function ChatScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.messagesContent}
       >
-        <ChatModelBadge modelName={tierSpec.name} modelId={tierSpec.primary.id} />
+        <ChatModelBadge modelName={tierSpec.name} modelId={activeModel.id} />
         {error ? <ErrorBanner message={error} /> : null}
         {messages.map((m) => (
           <ChatBubble key={m.id} role={m.role} content={m.content} thinking={m.thinking} />

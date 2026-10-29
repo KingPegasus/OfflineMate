@@ -146,11 +146,3 @@ declare module "whisper.rn/realtime-transcription/adapters/AudioPcmStreamAdapter
   }
 }
 
-declare module "whisper.rn/src/realtime-transcription" {
-  export * from "whisper.rn/realtime-transcription";
-}
-
-declare module "whisper.rn/src/realtime-transcription/adapters/AudioPcmStreamAdapter" {
-  export * from "whisper.rn/realtime-transcription/adapters/AudioPcmStreamAdapter";
-}
-

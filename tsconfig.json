@@ -9,6 +9,12 @@
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "whisper.rn": [
+        "node_modules/whisper.rn/lib/typescript/index.d.ts"
+      ],
+      "whisper.rn/*": [
+        "node_modules/whisper.rn/lib/typescript/*"
       ]
     }
   },

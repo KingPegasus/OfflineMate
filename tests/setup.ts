@@ -53,6 +53,7 @@ vi.mock("react-native-executorch/legacy", () => {
     QWEN3_5_2B_QUANTIZED: modelStub,
     LLAMA3_2_1B_SPINQUANT: modelStub,
     LLAMA3_2_3B_SPINQUANT: modelStub,
+    LFM2_5_350M_QUANTIZED: modelStub,
     models: { llm: { gemma4_e2b: () => modelStub } },
   };
 });

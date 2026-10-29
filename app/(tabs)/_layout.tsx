@@ -2,6 +2,10 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+export const unstable_settings = {
+  initialRouteName: "chat",
+};
+
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const tabIcon = (name: React.ComponentProps<typeof Ionicons>["name"], focused: boolean) =>
@@ -9,7 +13,6 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      initialRouteName="chat"
       screenOptions={{
         headerShown: true,
         tabBarHideOnKeyboard: true,
@@ -38,7 +41,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="chats"
         options={{
-          href: null,
+          // Hide only the tab button: since SDK 58, `href: null` marks the route hidden and
+          // redirects away from it, which breaks `router.push("/chats")`.
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: "none" },
           title: "Chats",
           tabBarIcon: ({ focused }) => tabIcon("chatbubbles-outline", focused),
         }}

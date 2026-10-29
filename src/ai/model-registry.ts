@@ -2,6 +2,7 @@ import type { ModelTier } from "@/types/assistant";
 import {
   LLAMA3_2_1B_SPINQUANT,
   LLAMA3_2_3B_SPINQUANT,
+  LFM2_5_350M_QUANTIZED,
   QWEN3_1_7B_QUANTIZED,
   QWEN3_4B_QUANTIZED,
   QWEN3_5_2B_QUANTIZED,
@@ -13,7 +14,7 @@ import {
 
 export interface ModelSpec {
   id: string;
-  provider: "qwen" | "smollm" | "llama" | "gemma";
+  provider: "qwen" | "smollm" | "llama" | "gemma" | "lfm" | "minicpm";
   family: string;
   size: string;
   quantization: "8da4w" | "int4";
@@ -38,6 +39,12 @@ export interface TierSpec {
     note: string;
   };
 }
+
+// MiniCPM5 and LFM 2.5 2.6B are only published for the new (non-legacy) API in
+// react-native-executorch 0.11, so their v0.11.0 assets are referenced directly.
+const RNE_HF_PREFIX = "https://huggingface.co/software-mansion/react-native-executorch";
+const MINICPM5_BASE_URL = `${RNE_HF_PREFIX}-minicpm-5/resolve/v0.11.0`;
+const LFM2_5_BASE_URL = `${RNE_HF_PREFIX}-lfm-2.5/resolve/v0.11.0`;
 
 const smol135m: ModelSpec = {
   id: "smollm2-135m",
@@ -70,6 +77,17 @@ const smol17b: ModelSpec = {
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-smolLm-2",
   estimatedSizeMb: 1024,
   runtime: SMOLLM2_1_1_7B_QUANTIZED,
+};
+
+const lfm25_350m: ModelSpec = {
+  id: "lfm2.5-350m",
+  provider: "lfm",
+  family: "LFM 2.5",
+  size: "350M",
+  quantization: "8da4w",
+  downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5",
+  estimatedSizeMb: 435,
+  runtime: LFM2_5_350M_QUANTIZED,
 };
 
 const qwen17b: ModelSpec = {
@@ -138,17 +156,47 @@ const gemma4_e2b: ModelSpec = {
   runtime: models.llm.gemma4_e2b(),
 };
 
+const minicpm5_2b: ModelSpec = {
+  id: "minicpm5-2b",
+  provider: "minicpm",
+  family: "MiniCPM5",
+  size: "2B",
+  quantization: "8da4w",
+  downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-minicpm-5",
+  estimatedSizeMb: 1295,
+  runtime: {
+    modelSource: `${MINICPM5_BASE_URL}/xnnpack/minicpm_5_2b_xnnpack_8da4w.pte`,
+    tokenizerSource: `${MINICPM5_BASE_URL}/tokenizer.json`,
+    tokenizerConfigSource: `${MINICPM5_BASE_URL}/tokenizer_config.json`,
+  },
+};
+
+const lfm25_2_6b: ModelSpec = {
+  id: "lfm2.5-2.6b",
+  provider: "lfm",
+  family: "LFM 2.5",
+  size: "2.6B",
+  quantization: "8da4w",
+  downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5",
+  estimatedSizeMb: 1710,
+  runtime: {
+    modelSource: `${LFM2_5_BASE_URL}/2_6b/xnnpack/lfm_2_5_2_6b_xnnpack_8da4w.pte`,
+    tokenizerSource: `${LFM2_5_BASE_URL}/2_6b/tokenizer.json`,
+    tokenizerConfigSource: `${LFM2_5_BASE_URL}/2_6b/tokenizer_config.json`,
+  },
+};
+
 export const MODEL_TIERS: TierSpec[] = [
   {
     key: "lite",
     name: "Lite",
     targetRam: "3-4 GB RAM",
-    estimatedDownload: "~210-320 MB",
+    estimatedDownload: "~210-560 MB",
     primary: smol135m,
-    alternates: [smol360m],
+    alternates: [smol360m, lfm25_350m],
     futureUpgrade: {
       id: "qwen3.5-0.8b",
-      note: "Enable when ExecuTorch exports are available.",
+      note: "Exported, but the 8da4w file is ~1.4 GB; too large for Lite until a smaller export ships.",
     },
   },
   {
@@ -157,7 +205,7 @@ export const MODEL_TIERS: TierSpec[] = [
     targetRam: "6-8 GB RAM",
     estimatedDownload: "~1.2 GB",
     primary: gemma4_e2b,
-    alternates: [qwen17b, qwen35_2b, smol17b, llama1b],
+    alternates: [qwen17b, qwen35_2b, minicpm5_2b, smol17b, llama1b],
     futureUpgrade: {
       id: "qwen3.5-2b",
       note: "Available as a Standard alternate in Settings for side-by-side testing.",
@@ -169,10 +217,10 @@ export const MODEL_TIERS: TierSpec[] = [
     targetRam: "10-12+ GB RAM",
     estimatedDownload: "~2.2 GB",
     primary: qwen4b,
-    alternates: [llama3b],
+    alternates: [lfm25_2_6b, llama3b],
     futureUpgrade: {
       id: "qwen3.5-4b",
-      note: "Enable when ExecuTorch exports are available.",
+      note: "Not exported for ExecuTorch as of react-native-executorch 0.11.0.",
     },
   },
 ];
