@@ -4,13 +4,13 @@ This document lists the target stack and why each technology is selected.
 
 ## Mobile Framework
 
-- **Expo SDK 57** + React Native 0.86 + React 19.2 + TypeScript
+- **Expo SDK 58** + React Native 0.88.1 + React 19.3 + TypeScript
 - Why:
   - rapid iteration and strong module ecosystem
   - managed native builds with **EAS** (Expo Application Services)
   - **Development builds** (custom dev client) required for native modules like ExecuTorch and whisper.rn—Expo Go is not sufficient for this stack
-- Note: SDK 57 requires the New Architecture. Use `expo-dev-client` for local and EAS development builds.
-- **ExecuTorch stack:** `react-native-executorch@^0.10.2`, consumed through the `react-native-executorch/legacy` entry point (the app's imperative `LLMModule`/`TextEmbeddingsModule` usage predates the 0.10 rewrite, which is a full API redesign). The 0.10 legacy API is the supported combination for Expo SDK 57 / RN 0.86. Prebuilt native binaries and backends are fetched at install time by `scripts/download-libs.js`; validate native builds after bumps.
+- Note: SDK 58 requires the New Architecture. Use `expo-dev-client` for local and EAS development builds.
+- **ExecuTorch stack:** `react-native-executorch@^0.11.0`, consumed through the `react-native-executorch/legacy` entry point (the app's imperative `LLMModule`/`TextEmbeddingsModule` usage predates the 0.10 rewrite, which is a full API redesign). The legacy API (deprecated, slated for removal in 1.0) still works on 0.11 with Expo SDK 58 / RN 0.88. Prebuilt native binaries and backends are fetched at install time by `scripts/download-libs.js`; validate native builds after bumps.
 
 ## On-Device AI Runtime
 
@@ -52,7 +52,7 @@ This document lists the target stack and why each technology is selected.
 ## References
 
 - [Expo Documentation](https://docs.expo.dev/)
-- [Expo SDK 57 Changelog](https://expo.dev/changelog/sdk-57)
+- [Expo SDK 58 Changelog](https://expo.dev/changelog/sdk-58)
 - [EAS Development Builds](https://docs.expo.dev/develop/development-builds/create-a-build)
 - [React Native ExecuTorch](https://docs.swmansion.com/react-native-executorch/docs)
 - [ExecuTorch (PyTorch)](https://executorch.ai/)

@@ -10,19 +10,20 @@ Standard tier (mid devices): balance quality and responsiveness
 Full tier (strong devices): maximize reasoning and richer context usage
 ```
 
-## Proposed Tier Mapping
+## Current Tier Mapping
 
 - Lite (3-4 GB RAM):
   - Primary: SmolLM2 135M quantized
-  - Alternate: SmolLM2 360M quantized
+  - Alternates: SmolLM2 360M, LFM 2.5 350M
 - Standard (6-8 GB RAM):
-  - Primary: Qwen 3 1.7B quantized
-  - Alternate: SmolLM2 1.7B quantized
-  - Fallback: Llama 3.2 1B quantized
+  - Primary: Gemma 4 E2B quantized
+  - Alternates: Qwen 3 1.7B, Qwen 3.5 2B, MiniCPM5 2B, SmolLM2 1.7B, Llama 3.2 1B
 - Full (10-12+ GB RAM):
   - Primary: Qwen 3 4B quantized
-  - Alternate: Llama 3.2 3B quantized
-  - Future target: Qwen 3.5 4B when stable on selected runtime/export path
+  - Alternates: LFM 2.5 2.6B, Llama 3.2 3B
+  - Future targets: Gemma 4 E4B or Qwen 3.5 4B once ExecuTorch exports ship
+
+See [model-comparison-and-selection.md](./model-comparison-and-selection.md) for per-model pros.
 
 ## Why This Was Chosen
 

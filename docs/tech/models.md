@@ -17,20 +17,23 @@ This document tracks model families, target tiers, and migration strategy. For u
 - Hammer 2.1 family (0.5B, 1.5B, 3B tool-calling candidates)
 - LFM 2.5 (350M, 1.2B, VL variants)
 - Phi 4 Mini 4B (Full-tier reasoning candidate)
-- Qwen 3.5 (0.8B, 2B — experimental prefill; v0.9.1+)
-- Gemma 4 E2B (Standard-tier candidate; v0.9.1+)
+- Qwen 3.5 (0.8B, 2B; legacy-only exports with experimental prefill)
+- Gemma 4 E2B (Standard primary) and E2B Omni (vision + audio)
+- MiniCPM5 2B (new in react-native-executorch 0.11.0)
+- LFM 2.5 2.6B (new in react-native-executorch 0.11.0)
 - Bielik v3.0 1.5B (Polish/CEE locale)
 
 ## Tier-Driven Model Assignment
 
 - Lite tier:
-  - SmolLM2 135M or 360M
+  - SmolLM2 135M (primary)
+  - Settings alternates: SmolLM2 360M, LFM 2.5 350M
 - Standard tier:
-  - Qwen 3 1.7B (primary)
-  - Settings alternates: Qwen 3.5 2B, Gemma 4 E2B, SmolLM2 1.7B, Llama 3.2 1B
+  - Gemma 4 E2B (primary)
+  - Settings alternates: Qwen 3 1.7B, Qwen 3.5 2B, MiniCPM5 2B, SmolLM2 1.7B, Llama 3.2 1B
 - Full tier:
-  - Qwen 3 4B
-  - fallback to Llama 3.2 3B class
+  - Qwen 3 4B (primary)
+  - Settings alternates: LFM 2.5 2.6B, Llama 3.2 3B
 
 ## Quantization and Performance
 
@@ -66,18 +69,20 @@ low-end devices.
 
 ## Qwen 3.5 Path
 
-- Qwen 3.5 **0.8B and 2B** pre-exports are available in `react-native-executorch@^0.9.1` (`QWEN3_5_*_QUANTIZED`).
-- Support is **experimental** — Gated DeltaNet causes slow prefill; benchmark before enabling `QWEN35_MIGRATION_FLAG`.
+- Qwen 3.5 **0.8B and 2B** pre-exports exist only in the deprecated `react-native-executorch/legacy` registry (`QWEN3_5_*_QUANTIZED`). They are not in the new 0.11 `models` registry.
+- Support is **experimental**: Gated DeltaNet causes slow prefill. Benchmark before enabling `QWEN35_MIGRATION_FLAG`.
+- The 0.8B 8da4w export is **~1.4 GB**, too large for Lite.
 - **Qwen 3.5 4B** is still not exported; Full tier stays on Qwen 3 4B.
 - **Detailed research:** See [qwen35-compatibility-research.md](./qwen35-compatibility-research.md)
 
-## 2026 Compatibility Watchlist (May recheck)
+## 2026 Compatibility Watchlist (October recheck)
 
-- **react-native-executorch v0.9.2:** npm latest; no new LLM exports vs v0.9.1.
-- **Gemma 4 E2B:** In registry + Standard Settings alternate; multimodal variant available via `models.llm.gemma4_e2b_multimodal()`. E4B not exported yet.
-- **Qwen 3.5:** 0.8B/2B only; 4B/9B still missing; Standard alternate wired for 2B.
-- **Kimi K2.x / DeepSeek V3/V4 / MiniMax M2 / GLM-4-9B / Mistral Small 3:** Not practical for phone tiers (see research doc).
-- **Prefer built-in options for tier experiments:** Qwen 3 0.6B, Qwen 3.5 0.8B/2B, Gemma 4 E2B, Hammer 2.1, LFM 2.5, Phi 4 Mini 4B, Bielik v3.0.
+- **react-native-executorch v0.11.0:** installed. OfflineMate still uses the deprecated `legacy` entry point. MiniCPM5 2B and LFM 2.5 2.6B are new-API-only, so the registry references their v0.11.0 asset URLs directly. Migrating to the new API unlocks 16K-context re-exports, constrained decoding, and `enable_thinking`.
+- **Gemma 4:** E2B is the Standard primary; E2B Omni available; E4B not exported.
+- **Qwen 3.5:** 2B wired as Standard alternate; 0.8B too large for Lite; 4B/9B still missing; Qwen 3.6–3.8 have no phone-class sizes.
+- **LFM3 (Oct 2026):** strongest new phone-class family, but GGUF/MLX/ONNX only. Track for an ExecuTorch export.
+- **Kimi K2.x / DeepSeek V3/V4 / MiniMax M2 / GLM-4-9B / Mistral Small 3:** not practical for phone tiers (see research doc).
+- **Built-in options not yet wired:** Qwen 3 0.6B, LFM 2.5 1.2B, Hammer 2.1, Phi 4 Mini, Bielik v3.0.
 
 ## ExecuTorch Deployment (Best Practices)
 

@@ -101,7 +101,7 @@ This document tracks current implementation status against product goals, plus p
 
 ### Longer term
 
-7. Qwen 3.5 tier migration once stable mobile exports are available.
+7. Migrate LLM/embeddings off the deprecated `react-native-executorch/legacy` API before RNE 1.0.0. Then track LFM3, Gemma 4 E4B, and Qwen 3.5 4B ExecuTorch exports (Qwen 3.5 0.8B/2B are exported but legacy-only and slow at prefill; see [qwen35-compatibility-research.md](tech/qwen35-compatibility-research.md)).
 8. Add robust device-level E2E automation on Android emulator/device farm.
 9. Expand release engineering docs and app-store readiness checklist.
 

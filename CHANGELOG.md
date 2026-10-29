@@ -2,6 +2,40 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5.0] - 2026-10-29
+
+### Added
+- New on-device model alternates from `react-native-executorch` 0.11.0: MiniCPM5 2B (Standard) and LFM 2.5 2.6B (Full), plus LFM 2.5 350M (Lite) (`src/ai/model-registry.ts`).
+
+### Fixed
+- Model tokenizer files are now stored per model (`models/<model-id>-tokenizer.json`, `-tokenizer-config.json`) instead of a shared `tokenizer.json`. Before, a downloaded alternate reused the previous model's tokenizer and produced garbage output. Installs that already have model weights fetch only the small tokenizer files on the next chat (`src/ai/model-manager.ts`, `src/hooks/useLLMChat.ts`).
+- "Open chats" works again on SDK 58: the hidden Chats tab hides only its tab button, since `href: null` now redirects away from the route (`app/(tabs)/_layout.tsx`).
+- The chat "Active model" badge shows the model selected for the tier instead of always showing the tier primary (`app/(tabs)/chat.tsx`).
+
+### Changed
+- Upgraded to Expo SDK 58 (React Native 0.88.1, React 19.3) and aligned Expo/React Native native deps: reanimated 4.7, worklets 0.13, gesture-handler 3.3, screens 4.30, safe-area-context 5.10, keyboard-controller 1.22 (`package.json`, `eas.json` build image `sdk-58`).
+- Bumped `react-native-executorch` and `react-native-executorch-expo-resource-fetcher` to 0.11.0, still through the `legacy` entry point (`package.json`).
+- Bumped `whisper.rn` to 0.7.4 (RN 0.87+ fix) and switched the PCM adapter import to its exported subpath; TypeScript now resolves `whisper.rn` to its shipped `.d.ts` files (`src/voice/stt-engine.ts`, `src/types/whisper-rn.d.ts`, `tsconfig.json`).
+- Bumped `react-native-nitro-modules` to 0.37.
+- Tabs initial route moved to expo-router's `unstable_settings`, since SDK 58 removed the `initialRouteName` prop from `<Tabs>` (`app/(tabs)/_layout.tsx`).
+- Regenerated `package-lock.json` from scratch; this also picks up a patched `vite` (GHSA-587h-7wmj-h5pm).
+- Rebased the `react-native-keyboard-controller` patch onto 1.22.7 (`patches/`).
+- Added an Expo config plugin that caps `CMAKE_OBJECT_PATH_MAX` at 250. Without it, Windows Android builds fail with "Filename longer than 260 characters" on gesture-handler 3 codegen objects (`plugins/with-cmake-object-path-max.js`, `app.json`).
+- Refreshed model research for October 2026 (LFM3, MiniCPM5, Gemma 4 E4B, Qwen 3.5–3.8 status) and updated tier docs and roadmap (`docs/tech/qwen35-compatibility-research.md`, `docs/tech/models.md`, `docs/architecture/model-comparison-and-selection.md`, `docs/architecture/model-and-capability-tiers.md`, `docs/ROADMAP_AND_GAPS.md`).
+- App version updated to `0.5.0` in `app.json`.
+
+### Known issues
+- **MiniCPM5 2B and LFM 2.5 2.6B are not yet validated on a device:** they are only published for the new `react-native-executorch` API and are loaded through the legacy `LLMModule` via their v0.11.0 asset URLs.
+- **`react-native-executorch/legacy` is deprecated** and will be removed in a future release (1.0.0 nightlies exist); the LLM and embeddings code needs to move to the new API before then.
+- **Qwen 3.5 0.8B not added to Lite:** its 8da4w export is ~1.4 GB. Qwen 3.5 4B is still not exported.
+- **Allowlisted build-tooling advisory (no patched release yet):** `zod` <4.6.6 ([GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)) via `@expo/cli`, which still depends on zod 3.x. It is CLI-only and not bundled into the app. The previous `braces` and `node-forge` allowlist entries no longer match and were removed (`audit-ci.jsonc`).
+- **npm 10.8 crashes resolving the SDK 58 tree** (`Cannot read properties of null (reading 'edgesOut')`). Use npm 11 (bundled with Node 24, as in CI) to install or update dependencies.
+- **Held back:** TypeScript 7, ESLint 10, `@types/node` 26, and Vitest/`@vitest/coverage-v8` 5. Vitest 5 requires Node ≥22.12, but the project's `engines` and `.nvmrc` target Node 20.
+- **LFM 2.5 350M (Lite alternate) handles plain chat but gives poor tool-call follow-ups:** on the emulator it answered direct questions correctly, but after a reminder tool call it emitted a raw `<|endoftext|>` token followed by unrelated text. SmolLM2 135M handled the same request cleanly. Keep it as an opt-in alternate.
+- **Existing installs re-download a selected alternate once:** with the per-model tokenizer names, the first chat on a previously downloaded alternate falls back to ExecuTorch's downloader for all of that model's files. Tier primaries fetch only the tokenizer files.
+- **Tool timeouts include time spent on OS permission prompts** (pre-existing): the first reminder request timed out while the notification prompt was open, then scheduled after permission was granted.
+- **`whisper.rn` 0.7.4 source does not type-check against RN 0.88 typings** (`ResolvedAssetSource.uri`), so `tsconfig.json` maps it to the package's prebuilt `.d.ts` files instead.
+
 ## [0.4.0] - 2026-10-17
 
 ### Changed

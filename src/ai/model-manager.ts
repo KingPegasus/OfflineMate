@@ -38,6 +38,10 @@ function urlToFilename(url: string) {
   return sanitizeFilename(basename || `asset-${Date.now()}.bin`);
 }
 
+export function isTokenizerAssetId(id: string) {
+  return id.endsWith("-tokenizer") || id.endsWith("-tokenizer-config");
+}
+
 function asHttpUrl(value: unknown): string | null {
   if (typeof value !== "string") return null;
   if (!value.startsWith("http://") && !value.startsWith("https://")) return null;
@@ -73,7 +77,11 @@ export function getTierAssets(tier: ModelTier, modelId?: string | null): AssetTo
         ? sttFile
         : it.id === "whisper-vad-model"
           ? "ggml-silero-v6.2.0.bin"
-          : urlToFilename(it.url)
+          : isTokenizerAssetId(it.id)
+            ? // Every model publishes `tokenizer.json` / `tokenizer_config.json`; key by asset id so
+              // alternates (and the embedding model) never reuse another model's tokenizer file.
+              sanitizeFilename(`${it.id}.json`)
+            : urlToFilename(it.url)
     }`,
   }));
 }

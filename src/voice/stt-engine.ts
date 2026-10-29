@@ -145,7 +145,7 @@ export async function startListeningSession(
 
   ensureLiveAudioStreamEmitterCompat();
   const { AudioPcmStreamAdapter } = await import(
-    "whisper.rn/src/realtime-transcription/adapters/AudioPcmStreamAdapter"
+    "whisper.rn/realtime-transcription/adapters/AudioPcmStreamAdapter"
   );
   const audioStream = new AudioPcmStreamAdapter();
 
