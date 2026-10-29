@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5.2] - 2026-10-30
+
+### Changed
+- Removed the `WRITE_CONTACTS` and `SYSTEM_ALERT_WINDOW` Android permissions with `android.blockedPermissions`. The `expo-contacts` plugin added `WRITE_CONTACTS` although the contacts tool only searches, and Google Play's October 29, 2026 policy update restricts the Manage Contacts permission to apps that need it. `SYSTEM_ALERT_WINDOW` (draw over other apps) was never used (`app.json`).
+- App version updated to `0.5.2` in `app.json`.
+
+### Known issues
+- `READ_CONTACTS` is still requested for contact search. If Play classes reading contacts under the same restriction, the contacts tool will need a Play Console declaration or a switch to the system contact picker.
+- The 16 KB page-size warning for expo-sqlite's prebuilt `vec.so` is still open.
+
 ## [0.5.1] - 2026-10-29
 
 ### Added
