@@ -16,10 +16,14 @@ function hintForDownloadError(message: string): string {
 
 interface Props {
   tier: ModelTier;
+  /** Chat model chosen for the tier; null/undefined means the tier default. */
+  modelId?: string | null;
   onReadinessChange?: (ready: boolean) => void;
+  /** Lets the parent lock tier/model selection while files download. */
+  onDownloadingChange?: (downloading: boolean) => void;
 }
 
-export function ModelDownloader({ tier, onReadinessChange }: Props) {
+export function ModelDownloader({ tier, modelId = null, onReadinessChange, onDownloadingChange }: Props) {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("Idle");
   const [isChecking, setIsChecking] = useState(true);
@@ -37,8 +41,10 @@ export function ModelDownloader({ tier, onReadinessChange }: Props) {
         setProgress(1);
         setStatus("Ready");
       } else if (readiness.presentAssets.length > 0) {
+        setProgress(0);
         setStatus("Partial");
       } else {
+        setProgress(0);
         setStatus("Not downloaded");
       }
     },
@@ -48,7 +54,7 @@ export function ModelDownloader({ tier, onReadinessChange }: Props) {
   const refreshReadiness = useCallback(async () => {
     setIsChecking(true);
     try {
-      const readiness = await getTierAssetReadiness(tier);
+      const readiness = await getTierAssetReadiness(tier, modelId);
       applyReadiness(readiness);
     } catch {
       setStatus("Unknown");
@@ -56,12 +62,12 @@ export function ModelDownloader({ tier, onReadinessChange }: Props) {
     } finally {
       setIsChecking(false);
     }
-  }, [applyReadiness, onReadinessChange, tier]);
+  }, [applyReadiness, modelId, onReadinessChange, tier]);
 
   useEffect(() => {
     let cancelled = false;
 
-    getTierAssetReadiness(tier)
+    getTierAssetReadiness(tier, modelId)
       .then((readiness) => {
         if (cancelled) return;
         applyReadiness(readiness);
@@ -79,7 +85,7 @@ export function ModelDownloader({ tier, onReadinessChange }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [applyReadiness, onReadinessChange, tier]);
+  }, [applyReadiness, modelId, onReadinessChange, tier]);
 
   const isReady = missingAssets === 0 && requiredAssets > 0;
   const downloadedAssets = Math.max(0, requiredAssets - missingAssets);
@@ -101,14 +107,19 @@ export function ModelDownloader({ tier, onReadinessChange }: Props) {
             await refreshReadiness();
             return;
           }
-          console.log("[OfflineMate] Onboarding: download button pressed", { tier });
+          console.log("[OfflineMate] Onboarding: download button pressed", { tier, modelId });
           setIsDownloading(true);
+          onDownloadingChange?.(true);
           setStatus("Downloading");
           try {
-            await downloadTierPrimaryModel(tier, (value, label) => {
-              setProgress(value);
-              if (label) setCurrentAsset(label);
-            });
+            await downloadTierPrimaryModel(
+              tier,
+              (value, label) => {
+                setProgress(value);
+                if (label) setCurrentAsset(label);
+              },
+              modelId,
+            );
             await refreshReadiness();
             console.log("[OfflineMate] Onboarding: tier model download finished", { tier });
           } catch (e) {
@@ -118,6 +129,7 @@ export function ModelDownloader({ tier, onReadinessChange }: Props) {
             Alert.alert("Download failed", `${hintForDownloadError(raw)}\n\n${raw}`);
           } finally {
             setIsDownloading(false);
+            onDownloadingChange?.(false);
           }
         }}
       >

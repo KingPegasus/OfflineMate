@@ -272,14 +272,17 @@ async function downloadAsset(
     : new Error(String(lastErr ?? "Download failed"));
 }
 
+/** Full onboarding download for a tier: chat model (the tier's selected one), embeddings and speech. */
 export async function downloadTierPrimaryModel(
   tier: ModelTier,
   onProgress?: (progress: number, label?: string) => void,
+  modelId?: string | null,
 ) {
   await ensureModelsDirectory();
-  const assets = getTierAssets(tier);
+  const assets = getTierAssets(tier, modelId);
   console.log("[OfflineMate] Onboarding: downloadTierPrimaryModel", {
     tier,
+    modelId: resolveModelForTier(tier, modelId).id,
     assetCount: assets.length,
     assetIds: assets.map((a) => a.id),
   });

@@ -4,6 +4,9 @@ All notable changes to this project are documented in this file.
 
 ## [0.5.1] - 2026-10-29
 
+### Added
+- Onboarding now lets you pick the chat model for the selected tier (with download sizes) and downloads that model together with the speech and search files. Before, it always downloaded the tier default, and other models could only be chosen in Settings afterwards. Tier and model are locked while files download (`app/onboarding.tsx`, `src/components/ModelDownloader.tsx`, `src/ai/model-manager.ts`).
+
 ### Fixed
 - Voice input no longer fails silently when the tier's Whisper model is missing. Switching tiers in Settings only downloaded the chat model, so on Standard/Full the mic found no `whisper-base.en.bin`, skipped the microphone permission prompt, and did nothing. Now:
   - The mic offers a one-time download of the tier's speech model (with progress on the button) instead of doing nothing (`src/components/VoiceButton.tsx`, `src/hooks/useVoice.ts`).

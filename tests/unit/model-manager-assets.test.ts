@@ -47,3 +47,19 @@ describe("voice model assets", () => {
     expect(getTierChatAssets("standard").some((a) => a.id.startsWith("whisper"))).toBe(false);
   });
 });
+
+describe("onboarding download for a chosen model", () => {
+  it("downloads the selected alternate with the tier's speech and search files", () => {
+    // MiniCPM5 uses real asset URLs; executorch constants are non-URL stubs in tests.
+    const ids = getTierAssets("standard", "minicpm5-2b").map((a) => a.id);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "minicpm5-2b-model",
+        "minicpm5-2b-tokenizer",
+        "minicpm5-2b-tokenizer-config",
+        "whisper-model",
+      ]),
+    );
+    expect(ids.some((id) => id.startsWith("gemma"))).toBe(false);
+  });
+});
