@@ -11,7 +11,7 @@ This document defines the planned CI/CD checks and release gates for OfflineMate
 ## GitHub Actions runner
 
 - Workflow: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
-- Uses **`actions/checkout@v6`** and **`actions/setup-node@v6`** (Node **24** for the job) so action runtimes stay on supported Node versions ([deprecation of Node 20 on Actions](https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/)).
+- Uses **`actions/checkout@v7`** and **`actions/setup-node@v7`**, with the job's Node version read from **`.nvmrc`** (Node **24**, shared with EAS Build), so action runtimes stay on supported Node versions ([deprecation of Node 20 on Actions](https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/)).
 
 ## CI Stages
 
