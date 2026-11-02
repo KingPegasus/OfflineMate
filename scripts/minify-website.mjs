@@ -27,11 +27,14 @@ const htmlOptions = {
 };
 
 async function main() {
+  fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
 
-  for (const name of ["index.html", "privacy.html"]) {
+  // Search Console verification files must ship byte-for-byte, so they are copied below, not minified.
+  const htmlFiles = fs.readdirSync(srcDir).filter((name) => name.endsWith(".html") && !/^google[0-9a-f]+\.html$/.test(name));
+
+  for (const name of htmlFiles) {
     const p = path.join(srcDir, name);
-    if (!fs.existsSync(p)) continue;
     const html = fs.readFileSync(p, "utf8");
     const result = await minify(html, htmlOptions);
     fs.writeFileSync(path.join(outDir, name), result);
@@ -47,7 +50,7 @@ async function main() {
     });
   }
 
-  const skipRootFiles = new Set(["index.html", "privacy.html", "styles.css", "README.md"]);
+  const skipRootFiles = new Set([...htmlFiles, "styles.css", "README.md"]);
   for (const ent of fs.readdirSync(srcDir, { withFileTypes: true })) {
     const name = ent.name;
     const from = path.join(srcDir, name);

@@ -3,49 +3,51 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OfflineMate — On-device AI assistant for Android</title>
+    <title>OfflineMate: Private Offline AI Assistant for Android</title>
     <meta
       name="description"
-      content="OfflineMate is a privacy-first on-device AI assistant for Android (not on iOS yet): local LLM tiers, RAG memory, voice, and device tools. Optional network for model downloads and web search."
+      content="OfflineMate is a free, open-source AI assistant that runs on your Android phone. Chat, voice, notes and reminders work offline, with no account and no cloud."
     />
     <meta name="author" content="OfflineMate" />
     <meta name="theme-color" content="#020617" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <link rel="canonical" href="https://offlinemate.com/" />
 
-    <link rel="icon" href="offlinemate-s.png" type="image/png" sizes="any" />
-    <link rel="apple-touch-icon" href="offlinemate.png" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="OfflineMate" />
-    <meta property="og:title" content="OfflineMate — On-device AI assistant" />
+    <meta property="og:title" content="OfflineMate: Private Offline AI Assistant for Android" />
     <meta
       property="og:description"
-      content="Privacy-first on-device assistant for Android. Local models, semantic memory, voice, and device tools. Open source."
+      content="A free, open-source AI assistant that runs on your phone. Chat, voice, notes and reminders work offline, with no account and no cloud."
     />
     <meta property="og:url" content="https://offlinemate.com/" />
-    <meta property="og:image" content="https://offlinemate.com/offlinemate.png" />
-    <meta property="og:image:width" content="1024" />
-    <meta property="og:image:height" content="1024" />
-    <meta property="og:image:alt" content="OfflineMate logo" />
+    <meta property="og:image" content="https://offlinemate.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="OfflineMate logo with the text: Private AI assistant that runs offline on Android" />
     <meta property="og:locale" content="en_US" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="OfflineMate — On-device AI assistant" />
+    <meta name="twitter:title" content="OfflineMate: Private Offline AI Assistant for Android" />
     <meta
       name="twitter:description"
-      content="Privacy-first on-device assistant for Android. Local models, memory, voice, and tools. Open source."
+      content="A free, open-source AI assistant that runs on your phone. Works offline, with no account and no cloud."
     />
-    <meta name="twitter:image" content="https://offlinemate.com/offlinemate.png" />
-    <meta name="twitter:image:alt" content="OfflineMate logo" />
+    <meta name="twitter:image" content="https://offlinemate.com/og-image.jpg" />
+    <meta name="twitter:image:alt" content="OfflineMate logo with the text: Private AI assistant that runs offline on Android" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Outfit:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="/styles.css" />
 
     <script type="application/ld+json">
       {
@@ -53,9 +55,10 @@
         "@graph": [
           {
             "@type": "WebSite",
+            "@id": "https://offlinemate.com/#website",
             "name": "OfflineMate",
             "url": "https://offlinemate.com/",
-            "description": "Privacy-first on-device AI assistant for Android.",
+            "description": "Private, offline AI assistant for Android.",
             "publisher": { "@id": "https://offlinemate.com/#organization" }
           },
           {
@@ -63,22 +66,109 @@
             "@id": "https://offlinemate.com/#organization",
             "name": "OfflineMate",
             "url": "https://offlinemate.com/",
-            "logo": "https://offlinemate.com/offlinemate.png",
+            "logo": "https://offlinemate.com/icon-512.png",
             "sameAs": ["https://github.com/KingPegasus/OfflineMate"]
           },
           {
-            "@type": "SoftwareApplication",
+            "@type": "MobileApplication",
+            "@id": "https://offlinemate.com/#app",
             "name": "OfflineMate",
             "applicationCategory": "UtilitiesApplication",
-            "operatingSystem": "Android",
-            "description": "On-device AI assistant with local models, RAG memory, voice, and device tools.",
+            "operatingSystem": "Android 7.0 or later",
+            "description": "Free, open-source AI assistant that runs language models on your Android phone, with offline chat, voice input, semantic notes search, and device tools.",
             "url": "https://offlinemate.com/",
-            "image": "https://offlinemate.com/offlinemate.png",
+            "image": "https://offlinemate.com/icon-512.png",
+            "screenshot": [
+              "https://offlinemate.com/screenshots/offline-ai-chat-android.jpeg",
+              "https://offlinemate.com/screenshots/model-tier-settings.jpeg",
+              "https://offlinemate.com/screenshots/device-tools-list.jpeg"
+            ],
+            "featureList": [
+              "On-device AI chat",
+              "Lite, Standard and Full model tiers",
+              "Semantic search over your notes",
+              "Voice input with on-device speech-to-text",
+              "Calendar, reminders, alarms, contacts and notes tools",
+              "Optional web search"
+            ],
+            "isAccessibleForFree": true,
+            "license": "https://github.com/KingPegasus/OfflineMate/blob/main/LICENSE.md",
+            "publisher": { "@id": "https://offlinemate.com/#organization" },
             "offers": {
               "@type": "Offer",
               "price": "0",
               "priceCurrency": "USD"
             }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://offlinemate.com/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Does OfflineMate really work without internet?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, once a model is downloaded. Chat, notes search and device tools run on your phone, so they keep working in airplane mode. You need a connection for the first model download and for web search."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Are my chats sent to a server?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. OfflineMate has no cloud service that stores your chats, and responses are generated on your device. When web search runs, the search query goes to the search provider. Web search is on by default and can be turned off in Settings."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is OfflineMate free?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. OfflineMate is free and open source under the MIT license. It needs no account and no subscription."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which Android phones can run it?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "OfflineMate supports Android 7.0 and later. The model tier you can use depends on memory: Lite targets 3 to 4 GB of RAM, Standard targets 6 to 8 GB, and Full targets 10 to 12 GB or more."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How much storage does it need?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The model download is about 210 to 560 MB for Lite, about 1.2 GB for Standard, and about 2.2 GB for Full."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which AI models does it use?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The defaults are SmolLM2 135M on Lite, Gemma 4 E2B on Standard, and Qwen 3 4B on Full. Each tier also offers alternatives, including Llama 3.2, LFM 2.5, MiniCPM5 and Qwen 3.5."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is it as capable as a cloud AI assistant?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. Models small enough for a phone are less capable than large cloud models and can make mistakes, so check anything important. In exchange, your conversations stay on your device and work without a connection."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is OfflineMate available on iPhone?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Not yet. OfflineMate is Android only today."
+                }
+              }
+            ]
           }
         ]
       }
@@ -94,13 +184,14 @@
       <div class="shell">
         <header class="site-nav">
           <a class="nav-brand" href="/">
-            <img class="nav-logo" src="offlinemate-s.png" width="32" height="32" alt="" decoding="async" />
+            <img class="nav-logo" src="/offlinemate-s.png" width="32" height="32" alt="" decoding="async" />
             OfflineMate
           </a>
           <nav class="nav-links" aria-label="Primary">
             <a href="#features">Features</a>
+            <a href="/models.html">Models</a>
+            <a href="/run-ai-offline-on-android.html">Guide</a>
             <a href="/privacy.html">Privacy</a>
-            <a href="/terms.html">Terms</a>
             <a class="nav-cta" href="https://github.com/KingPegasus/OfflineMate">GitHub</a>
           </nav>
         </header>
@@ -111,26 +202,27 @@
               <div class="badge-row">
                 <span class="badge">On-device AI</span>
                 <span class="badge badge--muted">Android</span>
-                <span class="badge badge--muted">Open source</span>
+                <span class="badge badge--muted">Free and open source</span>
               </div>
-              <h1 id="hero-title">Your assistant, on your phone</h1>
+              <h1 id="hero-title">The private AI assistant that runs offline on your Android phone</h1>
               <p class="hero-tagline">
-                OfflineMate runs language models and memory locally—so your everyday chat, notes, and tools stay
-                private. Network use is explicit: model downloads and optional web search when you allow it.
+                OfflineMate runs language models on your phone, so your chats, notes, and reminders work without a cloud
+                service or an account. Download a model once, then keep using it in airplane mode.
               </p>
-              <p class="availability-note">Not available on iOS yet—the shipping build targets <strong>Android</strong> only.</p>
+              <p class="availability-note">For <strong>Android 7.0 and later</strong>. Not available on iOS yet.</p>
               <div class="actions">
-                <a class="btn btn-primary" href="https://github.com/KingPegasus/OfflineMate">View on GitHub</a>
-                <a class="btn" href="/privacy.html">Privacy</a>
+                <a class="btn btn-primary" href="#get">Get OfflineMate</a>
+                <a class="btn" href="/run-ai-offline-on-android.html">How offline AI works</a>
               </div>
             </div>
-            <div class="hero-visual" aria-hidden="true">
+            <div class="hero-visual">
               <img
                 class="logo-hero"
-                src="offlinemate.png"
+                src="/offlinemate.png"
                 width="176"
                 height="176"
-                alt=""
+                alt="OfflineMate app icon: a chat bubble with a padlock"
+                fetchpriority="high"
                 decoding="async"
               />
             </div>
@@ -138,11 +230,11 @@
 
           <section id="features" aria-labelledby="features-heading">
             <div class="section-head">
-              <p class="section-kicker">Capabilities</p>
-              <h2 id="features-heading">What it does</h2>
+              <p class="section-kicker">Features</p>
+              <h2 id="features-heading">An offline AI assistant that can do more than chat</h2>
               <p class="section-intro">
-                Inference and personal context stay on your device. You choose a <strong>model tier</strong> at setup
-                (one-time download per tier); if a model fails to load, the app can fall back to a lighter tier.
+                Inference and personal context stay on your device. You choose a <strong>model tier</strong> at setup, and
+                if a model fails to load, the app can fall back to a lighter tier.
               </p>
             </div>
 
@@ -150,7 +242,7 @@
               <article class="bento-card bento-card--wide">
                 <div class="bento-card-header">
                   <span class="bento-icon" aria-hidden="true">💬</span>
-                  <h3 class="bento-card-title">Tiered on-device chat</h3>
+                  <h3 class="bento-card-title">Offline AI chat in three tiers</h3>
                 </div>
                 <p class="feature-detail">
                   <strong>Lite</strong>, <strong>Standard</strong>, and <strong>Full</strong> use progressively larger
@@ -163,11 +255,11 @@
               <article class="bento-card">
                 <div class="bento-card-header">
                   <span class="bento-icon" aria-hidden="true">🧠</span>
-                  <h3 class="bento-card-title">Semantic memory (RAG)</h3>
+                  <h3 class="bento-card-title">Private memory for your notes</h3>
                 </div>
                 <p class="feature-detail">
-                  On <strong>Standard</strong> and <strong>Full</strong>, questions can trigger local embedding + vector
-                  search over your indexed notes (sqlite-vec). <strong>Lite</strong> skips retrieval for speed.
+                  On <strong>Standard</strong> and <strong>Full</strong>, questions can trigger local embedding and vector
+                  search (RAG) over your indexed notes. <strong>Lite</strong> skips retrieval for speed.
                 </p>
                 <p class="feature-example"><em>Example</em> “What did I save about the dentist?”</p>
               </article>
@@ -175,38 +267,37 @@
               <article class="bento-card">
                 <div class="bento-card-header">
                   <span class="bento-icon" aria-hidden="true">⚡</span>
-                  <h3 class="bento-card-title">Device tools</h3>
+                  <h3 class="bento-card-title">Calendar, reminders, and alarms</h3>
                 </div>
                 <p class="feature-detail">
-                  A validated planner can run allow-listed tools: calendar, reminders, alarms, contacts, notes—only with
-                  the permissions you grant.
+                  A validated planner can run allow-listed tools for your calendar, reminders, alarms, contacts, and notes,
+                  only with the permissions you grant.
                 </p>
                 <p class="feature-example"><em>Examples</em> “Remind me in 20 minutes to stretch”; “What’s on my calendar tomorrow?”</p>
               </article>
 
               <article class="bento-card">
                 <div class="bento-card-header">
-                  <span class="bento-icon" aria-hidden="true">🌐</span>
-                  <h3 class="bento-card-title">Optional web search</h3>
+                  <span class="bento-icon" aria-hidden="true">🎙</span>
+                  <h3 class="bento-card-title">Voice input on your device</h3>
                 </div>
                 <p class="feature-detail">
-                  When enabled in settings, prompts that match web-style phrases—for example <strong>search for</strong>,
-                  <strong>look up</strong>, or <strong>what is the current</strong> …—can trigger a DuckDuckGo-backed
-                  fetch—not on every message.
+                  Push-to-talk speech recognition uses Whisper on your phone, then follows the same path as typed text.
+                  Replies can be read aloud with your device’s text-to-speech voices.
                 </p>
-                <p class="feature-example"><em>Example</em> “Search for population of Tokyo”</p>
+                <p class="feature-example"><em>Example</em> “Add a note to pick up bread” after you release the mic button.</p>
               </article>
 
               <article class="bento-card">
                 <div class="bento-card-header">
-                  <span class="bento-icon" aria-hidden="true">🎙</span>
-                  <h3 class="bento-card-title">Voice in &amp; out</h3>
+                  <span class="bento-icon" aria-hidden="true">🌐</span>
+                  <h3 class="bento-card-title">Web search you can turn off</h3>
                 </div>
                 <p class="feature-detail">
-                  Push-to-talk transcription (Whisper-based path when configured), then the same pipelines as text.
-                  Replies can use system text-to-speech.
+                  For questions that need current information, OfflineMate can fetch DuckDuckGo-backed results. It doesn’t
+                  run on every message. It’s on by default, and one setting turns it off.
                 </p>
-                <p class="feature-example"><em>Example</em> “Add a note to pick up bread” after you release the mic button.</p>
+                <p class="feature-example"><em>Example</em> “Search for population of Tokyo”</p>
               </article>
 
               <article class="bento-card">
@@ -215,8 +306,8 @@
                   <h3 class="bento-card-title">Fast intent routing</h3>
                 </div>
                 <p class="feature-detail">
-                  Keyword routing steers reminders, memory lookup, or general chat without an extra router model—saving
-                  latency and battery on small devices.
+                  Keyword routing steers reminders, memory lookup, or general chat without an extra router model, which
+                  saves latency and battery on small devices.
                 </p>
                 <p class="feature-example"><em>Example</em> “Remind me…” is steered toward reminders early.</p>
               </article>
@@ -224,13 +315,93 @@
               <article class="bento-card">
                 <div class="bento-card-header">
                   <span class="bento-icon" aria-hidden="true">🗂</span>
-                  <h3 class="bento-card-title">Multi-chat with private retention</h3>
+                  <h3 class="bento-card-title">Multiple chats, kept only if you choose</h3>
                 </div>
                 <p class="feature-detail">
                   Keep separate conversations, reopen any previous thread, and delete chats when you want. Chat retention
-                  is optional in settings and defaults to off for privacy-first behavior.
+                  is optional in settings and defaults to off.
                 </p>
                 <p class="feature-example"><em>Examples</em> “Open chats”; “Delete this conversation”; “Keep chat history on device.”</p>
+              </article>
+            </div>
+          </section>
+
+          <section id="how-it-works" aria-labelledby="how-heading">
+            <div class="section-head">
+              <p class="section-kicker">How it works</p>
+              <h2 id="how-heading">From install to airplane mode in three steps</h2>
+            </div>
+            <ol class="steps">
+              <li>
+                <h3>Choose a tier for your phone</h3>
+                <p>Pick Lite, Standard, or Full based on your phone’s memory, then choose a model for that tier.</p>
+              </li>
+              <li>
+                <h3>Download the model once</h3>
+                <p>The chat, speech, and search files download to your phone. This is the step that needs a connection.</p>
+              </li>
+              <li>
+                <h3>Use it anywhere</h3>
+                <p>Chat, search your notes, and set reminders with or without a signal. Your phone does the processing.</p>
+              </li>
+            </ol>
+          </section>
+
+          <section id="tiers" aria-labelledby="tiers-heading">
+            <div class="section-head">
+              <p class="section-kicker">Requirements</p>
+              <h2 id="tiers-heading">Which tier and models fit your phone?</h2>
+              <p class="section-intro">
+                RAM decides what your phone can run well. Each tier has a default model and alternatives you can download.
+                Sizes are estimates for the chat model file. Models download from Hugging Face, so select a name to see its
+                source. <a href="/models.html">Learn how to choose a model</a>.
+              </p>
+            </div>
+            <div class="tier-grid">
+              <article class="tier-card">
+                <h3>Lite</h3>
+                <dl class="tier-facts">
+                  <div><dt>Phone RAM</dt><dd>3–4 GB</dd></div>
+                  <div><dt>Total download</dt><dd>~210–560 MB</dd></div>
+                  <div><dt>Semantic notes search</dt><dd>Not included</dd></div>
+                </dl>
+                <p class="tier-models-label">Models you can download</p>
+                <ul class="tier-models">
+                  <li><span><a href="https://huggingface.co/software-mansion/SmolLM2-ExecuTorch">SmolLM2 135M</a> <span class="tier-default">Default</span></span><span>~90 MB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/SmolLM2-ExecuTorch">SmolLM2 360M</a></span><span>~200 MB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/LFM2.5-ExecuTorch">LFM 2.5 350M</a></span><span>~435 MB</span></li>
+                </ul>
+              </article>
+              <article class="tier-card">
+                <h3>Standard</h3>
+                <dl class="tier-facts">
+                  <div><dt>Phone RAM</dt><dd>6–8 GB</dd></div>
+                  <div><dt>Total download</dt><dd>~1.2 GB with the default</dd></div>
+                  <div><dt>Semantic notes search</dt><dd>Included</dd></div>
+                </dl>
+                <p class="tier-models-label">Models you can download</p>
+                <ul class="tier-models">
+                  <li><span><a href="https://huggingface.co/software-mansion/gemma-4-E2B-it-text-ExecuTorch">Gemma 4 E2B</a> <span class="tier-default">Default</span></span><span>~900 MB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/Llama-3.2-ExecuTorch">Llama 3.2 1B</a></span><span>~700 MB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/Qwen3-ExecuTorch">Qwen 3 1.7B</a></span><span>~1 GB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/SmolLM2-ExecuTorch">SmolLM2 1.7B</a></span><span>~1 GB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/Qwen3.5-ExecuTorch">Qwen 3.5 2B</a></span><span>~1.1 GB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/MiniCPM5-2B-ExecuTorch">MiniCPM5 2B</a></span><span>~1.3 GB</span></li>
+                </ul>
+              </article>
+              <article class="tier-card">
+                <h3>Full</h3>
+                <dl class="tier-facts">
+                  <div><dt>Phone RAM</dt><dd>10–12+ GB</dd></div>
+                  <div><dt>Total download</dt><dd>~2.2 GB with the default</dd></div>
+                  <div><dt>Semantic notes search</dt><dd>Included</dd></div>
+                </dl>
+                <p class="tier-models-label">Models you can download</p>
+                <ul class="tier-models">
+                  <li><span><a href="https://huggingface.co/software-mansion/Qwen3-ExecuTorch">Qwen 3 4B</a> <span class="tier-default">Default</span></span><span>~2 GB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/LFM2.5-ExecuTorch">LFM 2.5 2.6B</a></span><span>~1.7 GB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/Llama-3.2-ExecuTorch">Llama 3.2 3B</a></span><span>~1.8 GB</span></li>
+                </ul>
               </article>
             </div>
           </section>
@@ -239,17 +410,16 @@
             <div class="section-head">
               <p class="section-kicker">Preview</p>
               <h2 id="app-preview-heading">See OfflineMate in action</h2>
-              <p class="section-intro">
-                Real screenshots from the Android app. Multi-chat management, private on-device chat flow, and settings are
-                shown exactly as they appear in the product.
-              </p>
+              <p class="section-intro">Screenshots from the Android app.</p>
             </div>
             <div class="screenshot-grid">
               <figure class="shot-card">
                 <img
                   class="shot"
-                  src="screenshots/1.jpeg"
-                  alt="OfflineMate chat screen with on-device conversation."
+                  src="/screenshots/offline-ai-chat-android.jpeg"
+                  width="655"
+                  height="1280"
+                  alt="OfflineMate chat screen on Android showing an on-device model answering a question about business ideas."
                   loading="lazy"
                   decoding="async"
                 />
@@ -258,8 +428,10 @@
               <figure class="shot-card">
                 <img
                   class="shot"
-                  src="screenshots/2.jpeg"
-                  alt="OfflineMate settings screen with Lite, Standard, and Full model tier selection."
+                  src="/screenshots/model-tier-settings.jpeg"
+                  width="662"
+                  height="1280"
+                  alt="OfflineMate settings screen with Lite, Standard, and Full model tiers and the RAM each one targets."
                   loading="lazy"
                   decoding="async"
                 />
@@ -268,8 +440,10 @@
               <figure class="shot-card">
                 <img
                   class="shot"
-                  src="screenshots/5-standard-model-options.jpeg"
-                  alt="OfflineMate standard model options dialog with downloadable variants such as Gemma, Qwen, and SmolLM2."
+                  src="/screenshots/standard-model-options.jpeg"
+                  width="662"
+                  height="1280"
+                  alt="OfflineMate Standard model options dialog listing Gemma 4, Qwen 3, Qwen 3.5, SmolLM2, and Llama 3.2."
                   loading="lazy"
                   decoding="async"
                 />
@@ -278,8 +452,10 @@
               <figure class="shot-card">
                 <img
                   class="shot"
-                  src="screenshots/3.jpeg"
-                  alt="OfflineMate chats screen showing multiple saved conversations and delete actions."
+                  src="/screenshots/saved-chats-list.jpeg"
+                  width="655"
+                  height="1280"
+                  alt="OfflineMate chats screen showing multiple saved conversations with delete buttons."
                   loading="lazy"
                   decoding="async"
                 />
@@ -288,25 +464,102 @@
               <figure class="shot-card">
                 <img
                   class="shot"
-                  src="screenshots/4.jpeg"
-                  alt="OfflineMate tools screen listing available local and web tools."
+                  src="/screenshots/device-tools-list.jpeg"
+                  width="656"
+                  height="1280"
+                  alt="OfflineMate tools screen listing alarms, web search, contacts, notes, and reminders tools."
                   loading="lazy"
                   decoding="async"
                 />
-                <figcaption>Built-in tool registry</figcaption>
+                <figcaption>Built-in tools</figcaption>
               </figure>
+            </div>
+          </section>
+
+          <section id="get" aria-labelledby="get-heading">
+            <div class="section-head">
+              <p class="section-kicker">Get the app</p>
+              <h2 id="get-heading">Get OfflineMate</h2>
+            </div>
+            <div class="card">
+              <p>
+                OfflineMate isn’t on Google Play yet. It’s open source under the MIT license, so you can read the code and
+                build the Android app yourself today.
+              </p>
+              <p class="card-cta">
+                <a class="btn btn-primary" href="https://github.com/KingPegasus/OfflineMate/blob/main/BUILDING.md">Build it from source</a>
+              </p>
+            </div>
+          </section>
+
+          <section id="faq" aria-labelledby="faq-heading">
+            <div class="section-head">
+              <p class="section-kicker">FAQ</p>
+              <h2 id="faq-heading">Common questions about offline AI on Android</h2>
+            </div>
+            <div class="faq">
+              <details open>
+                <summary>Does OfflineMate really work without internet?</summary>
+                <p>
+                  Yes, once a model is downloaded. Chat, notes search and device tools run on your phone, so they keep
+                  working in airplane mode. You need a connection for the first model download and for web search.
+                </p>
+              </details>
+              <details>
+                <summary>Are my chats sent to a server?</summary>
+                <p>
+                  No. OfflineMate has no cloud service that stores your chats, and responses are generated on your device.
+                  When web search runs, the search query goes to the search provider. Web search is on by default and can
+                  be turned off in Settings. Read the <a href="/privacy.html">privacy summary</a>.
+                </p>
+              </details>
+              <details>
+                <summary>Is OfflineMate free?</summary>
+                <p>Yes. OfflineMate is free and open source under the MIT license. It needs no account and no subscription.</p>
+              </details>
+              <details>
+                <summary>Which Android phones can run it?</summary>
+                <p>
+                  OfflineMate supports Android 7.0 and later. The model tier you can use depends on memory: Lite targets 3
+                  to 4 GB of RAM, Standard targets 6 to 8 GB, and Full targets 10 to 12 GB or more.
+                </p>
+              </details>
+              <details>
+                <summary>How much storage does it need?</summary>
+                <p>The model download is about 210 to 560 MB for Lite, about 1.2 GB for Standard, and about 2.2 GB for Full.</p>
+              </details>
+              <details>
+                <summary>Which AI models does it use?</summary>
+                <p>
+                  The defaults are SmolLM2 135M on Lite, Gemma 4 E2B on Standard, and Qwen 3 4B on Full. Each tier also
+                  offers alternatives, including Llama 3.2, LFM 2.5, MiniCPM5 and Qwen 3.5.
+                  <a href="/models.html">Compare all models</a>.
+                </p>
+              </details>
+              <details>
+                <summary>Is it as capable as a cloud AI assistant?</summary>
+                <p>
+                  No. Models small enough for a phone are less capable than large cloud models and can make mistakes, so
+                  check anything important. In exchange, your conversations stay on your device and work without a
+                  connection.
+                </p>
+              </details>
+              <details>
+                <summary>Is OfflineMate available on iPhone?</summary>
+                <p>Not yet. OfflineMate is Android only today.</p>
+              </details>
             </div>
           </section>
 
           <section aria-labelledby="transparency-heading">
             <div class="section-head">
               <p class="section-kicker">Trust</p>
-              <h2 id="transparency-heading">Built in the open</h2>
+              <h2 id="transparency-heading">Open source, so you can check the claims</h2>
             </div>
             <div class="card">
               <p>
-                Documentation, privacy policy, and terms live in the repository so you can verify behavior, permissions,
-                and data flows—not just marketing copy.
+                The source code, documentation, privacy policy, and terms all live in the repository, so you can verify
+                the app’s behavior, permissions, and data flows yourself.
               </p>
               <p>
                 <a href="https://github.com/KingPegasus/OfflineMate/blob/main/docs/legal/privacy-policy.md"
@@ -321,23 +574,23 @@
           <div class="footer-grid">
             <div>
               <div class="footer-brand">OfflineMate</div>
-              <p class="footer-note">Private, on-device AI assistant for Android. Explore the source and build it yourself.</p>
+              <p class="footer-note">Private, on-device AI assistant for Android. Free and open source.</p>
             </div>
             <div class="footer-col">
-              <h3>Product</h3>
+              <p class="footer-heading">Product</p>
               <ul>
-                <li><a href="#features">Features</a></li>
-                <li><a href="/privacy.html">Privacy</a></li>
-                <li><a href="https://offlinemate.com/sitemap.xml">Sitemap</a></li>
+                <li><a href="/#features">Features</a></li>
+                <li><a href="/models.html">AI models</a></li>
+                <li><a href="/run-ai-offline-on-android.html">Run AI offline on Android</a></li>
+                <li><a href="/#faq">FAQ</a></li>
               </ul>
             </div>
             <div class="footer-col">
-              <h3>Project</h3>
+              <p class="footer-heading">Project</p>
               <ul>
                 <li><a href="https://github.com/KingPegasus/OfflineMate">GitHub</a></li>
-                <li>
-                  <a href="/terms.html">Terms</a>
-                </li>
+                <li><a href="/privacy.html">Privacy</a></li>
+                <li><a href="/terms.html">Terms</a></li>
               </ul>
             </div>
           </div>

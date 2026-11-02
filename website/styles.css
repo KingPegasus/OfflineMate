@@ -177,6 +177,30 @@ a:focus-visible {
   }
 }
 
+/* Links wrap on phones, so a sticky bar would cover too much of the screen */
+@media (max-width: 640px) {
+  .site-nav {
+    position: static;
+    flex-wrap: wrap;
+    padding-bottom: 0.75rem;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .nav-links .nav-cta {
+    padding: 0.3rem 0.7rem;
+  }
+
+  section[id] {
+    scroll-margin-top: 1rem;
+  }
+}
+
 .nav-brand {
   display: inline-flex;
   align-items: center;
@@ -490,6 +514,21 @@ h2 {
   color: var(--muted);
 }
 
+.section-intro--spaced {
+  margin-bottom: 1rem;
+}
+
+.breadcrumb {
+  margin: 1rem 0 1.5rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+/* Keep anchor targets clear of the sticky nav */
+section[id] {
+  scroll-margin-top: calc(var(--nav-h) + 1rem);
+}
+
 .section-intro strong {
   color: var(--text-secondary);
   font-weight: 600;
@@ -629,6 +668,252 @@ h2 {
   margin-bottom: 0;
 }
 
+/* ——— Steps ——— */
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .steps {
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  }
+}
+
+.steps li {
+  counter-increment: step;
+  padding: 1.35rem 1.4rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.steps li::before {
+  content: counter(step);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 0.75rem;
+  border-radius: 50%;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.steps h3 {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.steps p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.steps a,
+.section-intro a,
+.faq a {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+
+/* ——— Model tiers ——— */
+.tier-grid {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .tier-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tier-card {
+  padding: 1.35rem 1.4rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.tier-card h3 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tier-facts {
+  margin: 0 0 1.1rem;
+  font-size: 0.9rem;
+}
+
+.tier-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0;
+}
+
+.tier-facts dt {
+  color: var(--muted);
+}
+
+.tier-facts dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.tier-models-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tier-models {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.92rem;
+}
+
+.tier-models li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.tier-models li > span:first-child {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tier-models li > span:last-child {
+  white-space: nowrap;
+}
+
+.tier-default {
+  margin-left: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #b8e8ff;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(90, 200, 250, 0.35);
+}
+
+.tier-models a,
+tbody th a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--accent);
+}
+
+.tier-models a:hover,
+tbody th a:hover {
+  color: var(--accent-hover);
+}
+
+/* ——— Tables ——— */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+th,
+td {
+  padding: 0.8rem 1.1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr:last-child th,
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+thead th {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+tbody th {
+  font-weight: 600;
+  color: var(--text);
+}
+
+td {
+  color: var(--muted);
+}
+
+/* ——— FAQ ——— */
+.faq {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 48rem;
+}
+
+.faq details {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.faq summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.faq details p {
+  margin: 0.6rem 0 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
 /* ——— Footer ——— */
 .site-footer {
   margin-top: 2rem;
@@ -665,7 +950,7 @@ h2 {
   max-width: 22rem;
 }
 
-.footer-col h3 {
+.footer-heading {
   margin: 0 0 0.75rem;
   font-size: 0.7rem;
   font-weight: 700;
