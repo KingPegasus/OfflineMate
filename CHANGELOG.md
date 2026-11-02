@@ -17,7 +17,8 @@ All notable changes to this project are documented in this file.
 - Moved the Terms link from the main nav to the footer, except on the Terms page itself (`website/`).
 - Added `scripts/generate-website-images.cjs` to regenerate the website icons and social image.
 - Added a unit test that checks the website's model lists against the model registry and its FAQ structured data against the visible answers (`tests/unit/website-content.test.ts`).
-- App version updated to `0.6.0` in `app.json`. This release changes only the website.
+- Bumped `expo` to 58.0.22, `expo-dev-client` to 58.0.18, `expo-router` to 58.0.29, and `expo-sqlite` to 58.0.15, because `expo-doctor` in CI fails on newer patch releases (`package.json`).
+- App version updated to `0.6.0` in `app.json`. The app has no feature changes in this release.
 
 ### Fixed
 - Website copy said web search runs only when you allow it, but the setting is on by default. The site now says so and explains how to turn it off (`website/index.html`).
