@@ -18,6 +18,7 @@ All notable changes to this project are documented in this file.
 - Added `scripts/generate-website-images.cjs` to regenerate the website icons and social image.
 - Added a unit test that checks the website's model lists against the model registry and its FAQ structured data against the visible answers (`tests/unit/website-content.test.ts`).
 - Bumped `expo` to 58.0.22, `expo-dev-client` to 58.0.18, `expo-router` to 58.0.29, and `expo-sqlite` to 58.0.15, because `expo-doctor` in CI fails on newer patch releases (`package.json`).
+- Removed the `zod` advisory GHSA-mrhx-c7xc-m3w5 from the audit allowlist, because `@expo/cli` 58.1.18 no longer installs the vulnerable zod 3.x copy (`audit-ci.jsonc`).
 - App version updated to `0.6.0` in `app.json`. The app has no feature changes in this release.
 
 ### Fixed
