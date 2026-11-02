@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How to Run AI Offline on Android | OfflineMate</title>
+    <meta
+      name="description"
+      content="What you need to run an AI model offline on an Android phone: how much RAM and storage, how setup works, what still needs internet, and the real trade-offs."
+    />
+    <meta name="theme-color" content="#020617" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <link rel="canonical" href="https://offlinemate.com/run-ai-offline-on-android.html" />
+
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="OfflineMate" />
+    <meta property="og:title" content="How to Run AI Offline on Android" />
+    <meta
+      property="og:description"
+      content="How much RAM and storage you need, how setup works, what still needs internet, and the real trade-offs."
+    />
+    <meta property="og:url" content="https://offlinemate.com/run-ai-offline-on-android.html" />
+    <meta property="og:image" content="https://offlinemate.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="OfflineMate logo with the text: Private AI assistant that runs offline on Android" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="How to Run AI Offline on Android" />
+    <meta name="twitter:description" content="How much RAM and storage you need, what still needs internet, and the real trade-offs." />
+    <meta name="twitter:image" content="https://offlinemate.com/og-image.jpg" />
+    <meta name="twitter:image:alt" content="OfflineMate logo with the text: Private AI assistant that runs offline on Android" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Article",
+            "headline": "How to run AI offline on Android",
+            "description": "What you need to run an AI model offline on an Android phone, how setup works, what still needs internet, and the trade-offs.",
+            "url": "https://offlinemate.com/run-ai-offline-on-android.html",
+            "image": "https://offlinemate.com/og-image.jpg",
+            "datePublished": "2026-11-02",
+            "dateModified": "2026-11-02",
+            "author": { "@type": "Organization", "name": "OfflineMate", "url": "https://offlinemate.com/" },
+            "publisher": {
+              "@type": "Organization",
+              "name": "OfflineMate",
+              "logo": { "@type": "ImageObject", "url": "https://offlinemate.com/icon-512.png" }
+            }
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://offlinemate.com/" },
+              { "@type": "ListItem", "position": 2, "name": "Run AI offline on Android", "item": "https://offlinemate.com/run-ai-offline-on-android.html" }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-glow" aria-hidden="true"></div>
+
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="page">
+      <div class="shell">
+        <header class="site-nav">
+          <a class="nav-brand" href="/">
+            <img class="nav-logo" src="/offlinemate-s.png" width="32" height="32" alt="" decoding="async" />
+            OfflineMate
+          </a>
+          <nav class="nav-links" aria-label="Primary">
+            <a href="/#features">Features</a>
+            <a href="/models.html">Models</a>
+            <a href="/run-ai-offline-on-android.html" aria-current="page">Guide</a>
+            <a href="/privacy.html">Privacy</a>
+            <a class="nav-cta" href="https://github.com/KingPegasus/OfflineMate">GitHub</a>
+          </nav>
+        </header>
+
+        <main id="main">
+          <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a> / <span aria-current="page">Run AI offline on Android</span></nav>
+
+          <article>
+            <header class="page-header">
+              <h1>How to run AI offline on Android</h1>
+              <p class="lead">
+                You can run an AI model directly on an Android phone with no internet connection. You need enough RAM, some
+                free storage, and an app that runs the model on your device. Here’s what that involves.
+              </p>
+            </header>
+
+            <section aria-labelledby="what-heading">
+              <h2 id="what-heading">What “offline AI” means</h2>
+              <div class="prose card">
+                <p>
+                  Most AI assistants send your message to a server, which generates the reply and sends it back. Offline AI
+                  skips that trip: a language model is stored on your phone, and your phone’s own processor generates the
+                  reply. Your message doesn’t need to leave the device, and airplane mode doesn’t stop it working.
+                </p>
+              </div>
+            </section>
+
+            <section aria-labelledby="need-heading">
+              <h2 id="need-heading">What your phone needs</h2>
+              <div class="prose card">
+                <p>
+                  <strong>RAM matters most.</strong> The model has to fit in memory while it runs. OfflineMate’s smallest
+                  tier targets phones with 3–4 GB of RAM, and its largest targets 10–12 GB or more.
+                </p>
+                <p>
+                  <strong>Free storage.</strong> Model files are large. Expect about 210–560 MB for the Lite tier, 1.2 GB
+                  for Standard, and 2.2 GB for Full.
+                </p>
+                <p>
+                  <strong>An Android version the app supports.</strong> OfflineMate runs on Android 7.0 and later.
+                </p>
+                <p>To find your RAM, open Settings and look under <strong>About phone</strong>. The exact location varies by manufacturer.</p>
+              </div>
+            </section>
+
+            <section aria-labelledby="setup-heading">
+              <h2 id="setup-heading">How to set it up with OfflineMate</h2>
+              <ol class="steps">
+                <li>
+                  <h3>Install the app</h3>
+                  <p>OfflineMate isn’t on Google Play yet, so <a href="https://github.com/KingPegasus/OfflineMate/blob/main/BUILDING.md">build it from source</a> for now.</p>
+                </li>
+                <li>
+                  <h3>Pick a tier and model</h3>
+                  <p>Choose the tier that matches your RAM. Each has a default model. <a href="/models.html">Compare the models</a> if you want a different one.</p>
+                </li>
+                <li>
+                  <h3>Download on Wi-Fi</h3>
+                  <p>Setup downloads the chat model along with speech and search files. Wi-Fi is the better choice for files this large.</p>
+                </li>
+                <li>
+                  <h3>Turn on airplane mode and test it</h3>
+                  <p>Ask a question. If a reply appears, the model is running entirely on your phone.</p>
+                </li>
+              </ol>
+            </section>
+
+            <section aria-labelledby="internet-heading">
+              <h2 id="internet-heading">What works offline and what doesn’t</h2>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th scope="col">Feature</th><th scope="col">Needs internet?</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><th scope="row">AI chat</th><td>No, after the model download</td></tr>
+                    <tr><th scope="row">Semantic notes search (Standard and Full)</th><td>No, after the download</td></tr>
+                    <tr><th scope="row">Voice input</th><td>No, after the speech model download</td></tr>
+                    <tr><th scope="row">Calendar, reminders, alarms, contacts, and notes</th><td>No</td></tr>
+                    <tr><th scope="row">Read replies aloud</th><td>Depends on your phone’s text-to-speech voices</td></tr>
+                    <tr><th scope="row">Web search</th><td>Yes</td></tr>
+                    <tr><th scope="row">Downloading or changing models</th><td>Yes</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section aria-labelledby="tradeoffs-heading">
+              <h2 id="tradeoffs-heading">The trade-offs compared with cloud AI</h2>
+              <div class="prose card">
+                <p>
+                  <strong>You gain privacy and independence.</strong> Replies are generated on your phone, there’s no account,
+                  and a dropped connection doesn’t stop anything.
+                </p>
+                <p>
+                  <strong>You give up some capability.</strong> A model small enough for a phone is less capable than a large
+                  cloud model, and it can get things wrong. Check anything important.
+                </p>
+                <p>
+                  <strong>Your phone does the work.</strong> Generating replies is demanding, so a long session can use
+                  noticeable battery, and speed depends on your hardware.
+                </p>
+                <p>
+                  <strong>Answers can be out of date.</strong> A model only knows what it learned before release. Web search
+                  can fill the gap when you’re online.
+                </p>
+              </div>
+            </section>
+          </article>
+        </main>
+
+        <footer class="site-footer">
+          <div class="footer-grid">
+            <div>
+              <div class="footer-brand">OfflineMate</div>
+              <p class="footer-note">Private, on-device AI assistant for Android. Free and open source.</p>
+            </div>
+            <div class="footer-col">
+              <p class="footer-heading">Product</p>
+              <ul>
+                <li><a href="/#features">Features</a></li>
+                <li><a href="/models.html">AI models</a></li>
+                <li><a href="/run-ai-offline-on-android.html">Run AI offline on Android</a></li>
+                <li><a href="/#faq">FAQ</a></li>
+              </ul>
+            </div>
+            <div class="footer-col">
+              <p class="footer-heading">Project</p>
+              <ul>
+                <li><a href="https://github.com/KingPegasus/OfflineMate">GitHub</a></li>
+                <li><a href="/privacy.html">Privacy</a></li>
+                <li><a href="/terms.html">Terms</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="footer-bottom">© OfflineMate</div>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>

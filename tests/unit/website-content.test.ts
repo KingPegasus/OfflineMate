@@ -1,0 +1,54 @@
+import fs from "node:fs";
+import path from "node:path";
+
+import { getModelsForTier, MODEL_TIERS } from "@/ai/model-registry";
+
+const readPage = (name: string) => fs.readFileSync(path.join(process.cwd(), "website", name), "utf8");
+
+const displaySize = (mb: number) => (mb < 1000 ? `~${mb} MB` : `~${Number((mb / 1000).toFixed(1))} GB`);
+
+const expectedRows = (tier: (typeof MODEL_TIERS)[number]) =>
+  getModelsForTier(tier.key)
+    .map((m) => `${m.family} ${m.size}: ${displaySize(m.estimatedSizeMb)}`)
+    .sort();
+
+describe("website content", () => {
+  const home = readPage("index.html");
+  const modelsPage = readPage("models.html");
+
+  it.each(MODEL_TIERS.map((tier) => [tier.name, tier] as const))("homepage lists the %s models from the registry", (name, tier) => {
+    const card = home.match(new RegExp(`<article class="tier-card">\\s*<h3>${name}</h3>([\\s\\S]*?)</article>`))?.[1] ?? "";
+    const rows = [...card.matchAll(/<li><span><a href="[^"]*">([^<]+)<\/a>(.*?)<\/span><span>([^<]+)<\/span><\/li>/g)];
+
+    expect(rows.map((r) => `${r[1]}: ${r[3]}`).sort()).toEqual(expectedRows(tier));
+    expect(rows.filter((r) => r[2].includes("tier-default")).map((r) => r[1])).toEqual([
+      `${tier.primary.family} ${tier.primary.size}`,
+    ]);
+  });
+
+  it.each(MODEL_TIERS.map((tier) => [tier.name, tier] as const))("models page lists the %s models from the registry", (name, tier) => {
+    const section = modelsPage.match(new RegExp(`id="${tier.key}-heading"([\\s\\S]*?)</section>`))?.[1] ?? "";
+    const rows = [
+      ...section.matchAll(/<tr><th scope="row"><a href="[^"]*">([^<]+)<\/a><\/th><td>([^<]+)<\/td><td>(Default|Alternative)<\/td><\/tr>/g),
+    ];
+
+    expect(rows.map((r) => `${r[1]}: ${r[2]}`).sort(), name).toEqual(expectedRows(tier));
+    expect(rows.filter((r) => r[3] === "Default").map((r) => r[1])).toEqual([`${tier.primary.family} ${tier.primary.size}`]);
+  });
+
+  it("FAQ structured data matches the visible answers", () => {
+    const jsonLd = JSON.parse(home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? "{}");
+    const faq = jsonLd["@graph"].find((item: { "@type": string }) => item["@type"] === "FAQPage");
+    const visible = new Map(
+      [...home.matchAll(/<summary>([^<]+)<\/summary>\s*<p>([\s\S]*?)<\/p>/g)].map((m) => [
+        m[1],
+        m[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim(),
+      ]),
+    );
+
+    expect(faq.mainEntity).toHaveLength(visible.size);
+    for (const entry of faq.mainEntity) {
+      expect(visible.get(entry.name), entry.name).toContain(entry.acceptedAnswer.text);
+    }
+  });
+});

@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.6.0] - 2026-11-02
+
+### Added
+- Website pages for search: a guide to running AI offline on Android and a model comparison (`website/run-ai-offline-on-android.html`, `website/models.html`).
+- Homepage sections for setup steps, tier requirements, getting the app, and an FAQ with matching structured data (`website/index.html`).
+- Every downloadable model listed by tier, with each name linking to its Hugging Face page (`website/index.html`, `website/models.html`).
+- Google Search Console verification file, a custom 404 page, and a web manifest (`website/`).
+
+### Changed
+- Rewrote website titles, descriptions, and headings around what people search for, such as "offline AI assistant for Android" (`website/`).
+- Replaced the social image with a 1200x630 card and the 38px favicon with 48px and 192px icons. Compressed the logos and the largest screenshot, and gave screenshots descriptive filenames and fixed dimensions (`website/`).
+- Removed unused font weights, and the website build now minifies every HTML page and clears old output first (`website/`, `scripts/minify-website.mjs`).
+- Moved the Terms link from the main nav to the footer, except on the Terms page itself (`website/`).
+- Added `scripts/generate-website-images.cjs` to regenerate the website icons and social image.
+- Added a unit test that checks the website's model lists against the model registry and its FAQ structured data against the visible answers (`tests/unit/website-content.test.ts`).
+- Bumped `expo` to 58.0.22, `expo-dev-client` to 58.0.18, `expo-router` to 58.0.29, and `expo-sqlite` to 58.0.15, because `expo-doctor` in CI fails on newer patch releases (`package.json`).
+- Removed the `zod` advisory GHSA-mrhx-c7xc-m3w5 from the audit allowlist, because `@expo/cli` 58.1.18 no longer installs the vulnerable zod 3.x copy (`audit-ci.jsonc`).
+- App version updated to `0.6.0` in `app.json`. The app has no feature changes in this release.
+
+### Fixed
+- Website copy said web search runs only when you allow it, but the setting is on by default. The site now says so and explains how to turn it off (`website/index.html`).
+- The social image tags declared 1024x1024 for a 379x382 image (`website/`).
+
+### Known issues
+- The website has no install link because the app isn't publicly available on Google Play yet. It points visitors to build from source until then.
+
 ## [0.5.1] - 2026-10-29
 
 ### Added

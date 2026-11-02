@@ -5,8 +5,5 @@
   "report-type": "summary",
   // Build-time tooling advisories with no patched release yet. None of these packages ship in the app bundle.
   // Remove each entry once upstream publishes a fix (audit-ci warns about entries that no longer match).
-  "allowlist": [
-    // zod <4.6.6 (no patched 3.x), via @expo/cli which depends on zod ^3
-    "GHSA-mrhx-c7xc-m3w5"
-  ]
+  "allowlist": []
 }

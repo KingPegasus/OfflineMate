@@ -26,11 +26,17 @@ Propagation can take up to 48 hours.
 
 ## Favicon (browser tab)
 
-**`offlinemate-s.png`** is the **favicon** (small PNG for browser tabs). **`offlinemate.png`** is used for the hero, Apple touch icon, and Open Graph / Twitter images.
+**`favicon.ico`** (48x48) and **`icon-192.png`** are the favicons, because Google Search requires a square icon sized in multiples of 48px. **`apple-touch-icon.png`** and **`icon-512.png`** cover iOS, the web manifest, and the JSON-LD logo.
 
 ## Logo / social image
 
-**`website/offlinemate.png`** is the main logo on the site (hero, privacy page, Open Graph / Twitter, JSON-LD). Replace that file when you update branding. The mobile app icon in `assets/icon.png` can differ; keep them in sync manually if you want parity.
+**`offlinemate.png`** is the hero logo and **`offlinemate-s.png`** is the nav logo. **`og-image.jpg`** (1200x630) is the Open Graph / Twitter image on every page. All of these, plus the favicons, are generated from `assets/icon.png`. To regenerate them after a branding change, run `npm install --no-save sharp`, then `node scripts/generate-website-images.cjs`.
+
+## Search Console
+
+**`google2f9bf60a126ee13b.html`** proves ownership of the site to Google Search Console. Don't delete it, or the site loses its verified status. The build copies it without minifying it.
+
+When you add a page, add it to **`sitemap.xml`** and link to it from the nav or footer. Update `lastmod` when a page's content changes.
 
 ## Production build (minify)
 
@@ -51,7 +57,7 @@ npx --yes serve website -p 3333
 
 ## Repo links in HTML
 
-`index.html` and `privacy.html` link to [`https://github.com/KingPegasus/OfflineMate`](https://github.com/KingPegasus/OfflineMate).
+Every page links to [`https://github.com/KingPegasus/OfflineMate`](https://github.com/KingPegasus/OfflineMate).
 
 ## Play / App Store
 
