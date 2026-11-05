@@ -126,7 +126,8 @@ a:focus-visible {
 /* Distinguish links from body text (WCAG use of color) */
 .card a,
 .prose a,
-.footer-col a {
+.footer-col a,
+.footer-bottom a {
   text-decoration: underline;
   text-underline-offset: 0.2em;
   text-decoration-thickness: 1px;
@@ -983,6 +984,14 @@ td {
   border-top: 1px solid var(--border);
   font-size: 0.8125rem;
   color: var(--muted);
+}
+
+.footer-bottom a {
+  color: var(--muted-dim);
+}
+
+.footer-bottom a:hover {
+  color: var(--accent-hover);
 }
 
 /* ——— Privacy / inner ——— */

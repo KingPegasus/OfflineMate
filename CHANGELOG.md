@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.6.1] - 2026-11-05
+
+### Added
+- Website footer credit "Built by Rhyme Solutions" on every page, linking to https://rhymesolutions.com/ (`website/`).
+- Rhyme Solutions listed as `creator` and `publisher` of the homepage `WebSite` and `MobileApplication` structured data (`website/index.html`).
+- README line saying OfflineMate is built and maintained by Rhyme Solutions (`README.md`).
+
+### Changed
+- Bumped `expo` to 58.0.23, `expo-linking` to 58.0.16, `expo-notifications` to 58.1.8, `expo-router` to 58.0.30, `expo-splash-screen` to 58.0.13, and `react-native-safe-area-context` to 5.11.1 (with `expo-asset` 58.0.20 and `expo-constants` 58.0.15 in the lockfile), because `expo-doctor` in CI fails on newer SDK 58 releases (`package.json`, `package-lock.json`).
+- App version updated to `0.6.1` in `app.json`. The app has no feature changes in this release.
+
 ## [0.6.0] - 2026-11-02
 
 ### Added

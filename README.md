@@ -68,3 +68,5 @@ Full index: **[`docs/README.md`](docs/README.md)** — architecture, model tiers
 |--|--|
 | **Security** | [`SECURITY.md`](SECURITY.md) |
 | **Privacy & terms** | [`docs/legal/README.md`](docs/legal/README.md) (store-ready markdown in [`docs/legal/`](docs/legal/)) |
+
+OfflineMate is built and maintained by [Rhyme Solutions](https://rhymesolutions.com/).
