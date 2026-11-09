@@ -32,3 +32,8 @@ expo-env.d.ts
 #Ignore cursor AI rules
 .cursor/rules/codacy.mdc
 tmp-logcat.txt
+
+# Marketing recordings and intermediates (see marketing/README.md)
+marketing/raw/
+marketing/out/store/
+marketing/out/web/

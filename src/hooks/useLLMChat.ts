@@ -26,7 +26,7 @@ import { speak } from "@/voice/tts-engine";
 import { isMemoryPressureHigh } from "@/utils/performance";
 import { saveImportantMemory } from "@/context/long-term-memory";
 import { executePlanSteps, planStepsFromPrompt } from "@/ai/agent-planner";
-import { cleanModelOutput } from "@/ai/output-guard";
+import { cleanModelOutput, looksLikeToolEcho } from "@/ai/output-guard";
 import { ragAnswerOrFallback } from "@/ai/rag-grounding";
 import { parseThinkTaggedContent, toThinkingLines } from "@/ai/think-parser";
 import { buildSearchSynthesisMessages, runAgenticSearchFlow } from "@/ai/agentic-search-flow";
@@ -856,8 +856,10 @@ export function useLLMChat() {
           if (
             isPlannerLeak(cleanedOutput) ||
             parseToolActionDecision(cleanedOutput) !== null ||
-            looksLikeAgenticDecisionLeak(cleanedOutput)
+            looksLikeAgenticDecisionLeak(cleanedOutput) ||
+            looksLikeToolEcho(cleanedOutput)
           ) {
+            // Tool messages are full sentences ("Reminder set for tomorrow at 9:00 AM: call the bank."), so show that.
             finalOutput =
               summarizeToolResult(toolResult) ??
               "Done. I executed your request, but the model returned planner JSON instead of a natural response.";

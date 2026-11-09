@@ -242,7 +242,7 @@ So validation ensures we only execute **allow-listed** tools with **sanitized** 
 2. For each **step** in order:
    - If the step has no **toolName**, skip (no tool to run).
    - Otherwise call **executeTool(step.toolName, step.args ?? {})**.
-   - The chat hook resolves **getToolByName(toolName)** and runs **tool.execute({ query, text, ...args })** with a 15 s timeout. The returned string is the tool’s message (e.g. “Reminder scheduled.”).
+   - The chat hook resolves **getToolByName(toolName)** and runs **tool.execute({ query, text, ...args })** with a 15 s timeout. The returned string is the tool’s message (e.g. “Reminder set for tomorrow at 9:00 AM: call the bank.”).
 3. Collect each result as `"toolName: message"` and join with newlines → **toolSummary**.
 4. Return **{ toolSummary, planSummary }**.
 

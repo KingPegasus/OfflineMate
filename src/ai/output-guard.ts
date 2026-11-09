@@ -58,3 +58,13 @@ export function cleanModelOutput(text: string): string {
   return sentenceTrimmed.trim();
 }
 
+/**
+ * The model repeated the tool output instead of replying: it starts with a tool name such as
+ * "reminders.set" or "notes.create: ...", or it copies the "Payload: {...}" line. Small models do this.
+ */
+export function looksLikeToolEcho(text: string): boolean {
+  const t = text.trim();
+  if (/^[a-z]+\.[a-z]+[A-Za-z]*(?::|\s*$)/.test(t)) return true;
+  return /\bpayload:\s*\{/i.test(t);
+}
+

@@ -95,20 +95,12 @@ Google Play **Main store listing** requires assets that meet their current size 
 | **Phone screenshots** | PNG or JPEG, ≤ **8 MB** each, **16:9 or 9:16**, sides **320–3840** px |
 | **Tablet (e.g. 7-inch)** | Same screenshot rules; use **emulator** if you have no physical tablet (see below) |
 
-### Generate listing icon and feature graphic from this repo
+### Listing icon, feature graphic and screenshots
 
-On **Windows**, from the repo root:
+Everything to upload is in **`assets/play-store-listing/`**, and its [README](../../assets/play-store-listing/README.md) lists which file goes in which Play Console slot.
 
-```powershell
-.\scripts\generate-play-store-assets.ps1
-```
-
-Outputs (upload paths in Play Console):
-
-- `assets/play-store-listing/store-icon-512.png`
-- `assets/play-store-listing/feature-graphic-1024x500.png`
-
-The script downscales **`assets/icon.png`** to 512×512 and composes a simple feature graphic from **`website/offlinemate.png`**. Replace the feature graphic with a designed asset from Figma/Canva if you want a stronger marketing look.
+- **Icon:** on **Windows**, from the repo root, run `.\scripts\generate-play-store-assets.ps1`. It writes `store-icon-512.png` from the inner tile of **`assets/icon.png`** (Play adds its own rounded mask).
+- **Feature graphic and phone/tablet screenshots:** rendered from real emulator captures by **`marketing/`** (see [marketing/README.md](../../marketing/README.md)). The script's plain feature graphic is still available with `-FeatureGraphic`.
 
 **Note:** The marketing site uses **`website/offlinemate.png`** separately; keep branding aligned manually if you change either.
 

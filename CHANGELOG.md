@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.1] - 2026-11-09
+
+### Fixed
+- "Remind me tomorrow at 9 AM to call the bank" now fires tomorrow at 9:00 AM. Before, any "tomorrow" or "tonight" meant a flat 24 or 12 hours from now, and the clock time was ignored. Reminders with a clock time ("at 9", "9:30pm", "21:30", "noon") are read with chrono first. The reminder text is now just the action ("call the bank") when the time comes before it, and "call 911" keeps its number (`src/tools/reminder-parser.ts`).
+- Reminder and note confirmations are full sentences, such as "Reminder set for tomorrow at 9:00 AM: call the bank." and "Note saved: pack passport and charger". When the model repeats the tool name or its payload instead of replying (small models such as LFM 2.5 350M do this), chat shows that sentence. Before, the reply was "reminders.set" or a raw payload (`src/tools/reminders-tool.ts`, `src/tools/notes-tool.ts`, `src/ai/output-guard.ts`, `src/hooks/useLLMChat.ts`).
+- The download sizes in the model picker, onboarding and website now match the files on Hugging Face. Eight were too low, for example SmolLM2 360M (200 MB, really 1.3 GB), Gemma 4 E2B (900 MB, really 2.5 GB) and Qwen 3.5 2B (1.1 GB, really 2.9 GB). The tier totals are now about 430 MB–1.3 GB for Lite, 2.5 GB for Standard and 2.6 GB for Full (`src/ai/model-registry.ts`, `website/index.html`, `website/models.html`, `website/run-ai-offline-on-android.html`, `docs/architecture/model-comparison-and-selection.md`).
+
+### Added
+- A 35-second demo video recorded on the release build: airplane mode on, an on-device answer at real speed, a private note, and the model tiers. It comes in vertical 1080×1920, 16:9 1920×1080 and square 1080×1080, with an `.srt` caption file. Captions and voiceover say only what the recording shows (`marketing/out/`).
+- `marketing/`: the scripts and templates that make the video and stills. The emulator is driven over adb, the screen track is cut at real speed, the voiceover is Kokoro `af_heart` (Apache-2.0), and the music is generated in code (`marketing/README.md`).
+- New Play Store graphics: six 1080×1920 phone screenshots with headlines, a new 1024×500 feature graphic, and a README that maps each file to its Play Console slot (`assets/play-store-listing/`).
+
+### Changed
+- The homepage's preview section now has the demo video. It is self-hosted (WebM and H.264 MP4 with faststart), muted, loads nothing until played, and has a poster and WebVTT captions. The five old JPEG screenshots are replaced by six framed WebP screens (`website/index.html`, `website/styles.css`, `website/media/`, `website/screenshots/`).
+- `og-image.jpg` now shows the app's chat and notes screens beside the logo, and the alt text on every page describes it (`website/*.html`).
+- `scripts/generate-website-images.cjs` no longer writes `og-image.jpg`, since `marketing/` makes it now.
+- `scripts/generate-play-store-assets.ps1` makes the 512×512 icon from the inner tile (Play adds its own rounded mask) and writes its plain feature graphic only with `-FeatureGraphic`.
+- App version updated to `0.7.1` in `app.json`. This is a patch release: bug fixes plus the website and listing assets.
+
+### Known issues
+- The demo video was recorded before the reminder and size fixes, so it shows chat, notes and tiers but no reminder flow.
+- On a tablet (Pixel Tablet emulator, 2560×1600), the app shows the phone layout stretched to full width, with small text and long lines. There is no tablet layout yet, and the tablet screenshots show that stretched layout.
+- On a 4 GB tablet, setup says "Recommended tier: Lite (3-4 GB RAM)" but highlights Standard (`app/onboarding.tsx`).
+
 ## [0.7.0] - 2026-11-09
 
 ### Fixed

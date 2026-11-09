@@ -1,4 +1,18 @@
-import { cleanModelOutput } from "@/ai/output-guard";
+import { cleanModelOutput, looksLikeToolEcho } from "@/ai/output-guard";
+
+describe("looksLikeToolEcho", () => {
+  it("catches a reply that repeats the tool name or payload", () => {
+    expect(looksLikeToolEcho("reminders.set")).toBe(true);
+    expect(looksLikeToolEcho('notes.create: Note added\npayload: {"id":"note-1"}')).toBe(true);
+    expect(looksLikeToolEcho('Done! Payload: {"id":"x"}')).toBe(true);
+  });
+
+  it("leaves normal replies alone", () => {
+    expect(looksLikeToolEcho("Reminder set for tomorrow at 9:00 AM: call the bank.")).toBe(false);
+    expect(looksLikeToolEcho("I saved your note about the trip.")).toBe(false);
+    expect(looksLikeToolEcho("e.g. you can say more")).toBe(false);
+  });
+});
 
 describe("output guard", () => {
   it("collapses repeated lines", () => {

@@ -19,6 +19,7 @@ export interface ModelSpec {
   size: string;
   quantization: "8da4w" | "int4";
   downloadUrl: string;
+  /** Size of the .pte file in MiB, as served by Hugging Face (x-linked-size / 1048576). */
   estimatedSizeMb: number;
   runtime: {
     modelSource: string;
@@ -53,7 +54,7 @@ const smol135m: ModelSpec = {
   size: "135M",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-smolLm-2",
-  estimatedSizeMb: 535,
+  estimatedSizeMb: 534,
   runtime: SMOLLM2_1_135M_QUANTIZED,
 };
 
@@ -64,7 +65,7 @@ const smol360m: ModelSpec = {
   size: "360M",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-smolLm-2",
-  estimatedSizeMb: 200,
+  estimatedSizeMb: 1300,
   runtime: SMOLLM2_1_360M_QUANTIZED,
 };
 
@@ -75,7 +76,7 @@ const smol17b: ModelSpec = {
   size: "1.7B",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-smolLm-2",
-  estimatedSizeMb: 1024,
+  estimatedSizeMb: 970,
   runtime: SMOLLM2_1_1_7B_QUANTIZED,
 };
 
@@ -86,7 +87,7 @@ const lfm25_350m: ModelSpec = {
   size: "350M",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5",
-  estimatedSizeMb: 435,
+  estimatedSizeMb: 432,
   runtime: LFM2_5_350M_QUANTIZED,
 };
 
@@ -97,7 +98,7 @@ const qwen17b: ModelSpec = {
   size: "1.7B",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-qwen-3",
-  estimatedSizeMb: 1024,
+  estimatedSizeMb: 1243,
   runtime: QWEN3_1_7B_QUANTIZED,
 };
 
@@ -108,7 +109,7 @@ const qwen4b: ModelSpec = {
   size: "4B",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-qwen-3",
-  estimatedSizeMb: 2048,
+  estimatedSizeMb: 2557,
   runtime: QWEN3_4B_QUANTIZED,
 };
 
@@ -119,7 +120,7 @@ const llama1b: ModelSpec = {
   size: "1B",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-llama-3.2",
-  estimatedSizeMb: 700,
+  estimatedSizeMb: 1083,
   runtime: LLAMA3_2_1B_SPINQUANT,
 };
 
@@ -130,7 +131,7 @@ const llama3b: ModelSpec = {
   size: "3B",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-llama-3.2",
-  estimatedSizeMb: 1800,
+  estimatedSizeMb: 2435,
   runtime: LLAMA3_2_3B_SPINQUANT,
 };
 
@@ -141,7 +142,7 @@ const qwen35_2b: ModelSpec = {
   size: "2B",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-qwen-3.5",
-  estimatedSizeMb: 1100,
+  estimatedSizeMb: 2873,
   runtime: QWEN3_5_2B_QUANTIZED,
 };
 
@@ -152,7 +153,7 @@ const gemma4_e2b: ModelSpec = {
   size: "E2B",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-gemma-4",
-  estimatedSizeMb: 900,
+  estimatedSizeMb: 2451,
   runtime: models.llm.gemma4_e2b(),
 };
 
@@ -163,7 +164,7 @@ const minicpm5_2b: ModelSpec = {
   size: "2B",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-minicpm-5",
-  estimatedSizeMb: 1295,
+  estimatedSizeMb: 1292,
   runtime: {
     modelSource: `${MINICPM5_BASE_URL}/xnnpack/minicpm_5_2b_xnnpack_8da4w.pte`,
     tokenizerSource: `${MINICPM5_BASE_URL}/tokenizer.json`,
@@ -178,7 +179,7 @@ const lfm25_2_6b: ModelSpec = {
   size: "2.6B",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5",
-  estimatedSizeMb: 1710,
+  estimatedSizeMb: 1706,
   runtime: {
     modelSource: `${LFM2_5_BASE_URL}/2_6b/xnnpack/lfm_2_5_2_6b_xnnpack_8da4w.pte`,
     tokenizerSource: `${LFM2_5_BASE_URL}/2_6b/tokenizer.json`,
@@ -191,7 +192,7 @@ export const MODEL_TIERS: TierSpec[] = [
     key: "lite",
     name: "Lite",
     targetRam: "3-4 GB RAM",
-    estimatedDownload: "~210-560 MB",
+    estimatedDownload: "~430 MB-1.3 GB",
     primary: smol135m,
     alternates: [smol360m, lfm25_350m],
     futureUpgrade: {
@@ -203,7 +204,7 @@ export const MODEL_TIERS: TierSpec[] = [
     key: "standard",
     name: "Standard",
     targetRam: "6-8 GB RAM",
-    estimatedDownload: "~1.2 GB",
+    estimatedDownload: "~2.5 GB",
     primary: gemma4_e2b,
     alternates: [qwen17b, qwen35_2b, minicpm5_2b, smol17b, llama1b],
     futureUpgrade: {
@@ -215,7 +216,7 @@ export const MODEL_TIERS: TierSpec[] = [
     key: "full",
     name: "Full",
     targetRam: "10-12+ GB RAM",
-    estimatedDownload: "~2.2 GB",
+    estimatedDownload: "~2.6 GB",
     primary: qwen4b,
     alternates: [lfm25_2_6b, llama3b],
     futureUpgrade: {

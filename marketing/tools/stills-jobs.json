@@ -1,0 +1,256 @@
+[
+  {
+    "out": "../out/store/phone/01-offline-chat.png",
+    "w": 1080,
+    "h": 1920,
+    "params": {
+      "layout": "store",
+      "shot": "chat",
+      "kicker": "Works offline",
+      "head": "Your AI assistant, <em>no internet needed</em>",
+      "sub": "Answers are generated on your phone."
+    }
+  },
+  {
+    "out": "../out/store/phone/02-private-notes.png",
+    "w": 1080,
+    "h": 1920,
+    "params": {
+      "layout": "store",
+      "shot": "notes",
+      "kicker": "Private",
+      "head": "Notes stay <em>on your device</em>",
+      "sub": "No cloud sync and no account."
+    }
+  },
+  {
+    "out": "../out/store/phone/03-pick-a-tier.png",
+    "w": 1080,
+    "h": 1920,
+    "params": {
+      "layout": "store",
+      "shot": "onboarding",
+      "kicker": "Set up once",
+      "head": "A tier that <em>fits your phone</em>",
+      "sub": "Lite, Standard and Full, matched to your RAM."
+    }
+  },
+  {
+    "out": "../out/store/phone/04-choose-a-model.png",
+    "w": 1080,
+    "h": 1920,
+    "params": {
+      "layout": "store",
+      "shot": "picker-lite",
+      "kicker": "Open models",
+      "head": "Choose your <em>model</em>",
+      "sub": "SmolLM2, LFM, Gemma, Qwen, Llama and more."
+    }
+  },
+  {
+    "out": "../out/store/phone/05-built-in-tools.png",
+    "w": 1080,
+    "h": 1920,
+    "params": {
+      "layout": "store",
+      "shot": "tools",
+      "kicker": "Built-in tools",
+      "head": "More than <em>chat</em>",
+      "sub": "Calendar, alarms, reminders, contacts and notes."
+    }
+  },
+  {
+    "out": "../out/store/phone/06-privacy.png",
+    "w": 1080,
+    "h": 1920,
+    "params": {
+      "layout": "store",
+      "shot": "settings",
+      "kicker": "Transparent",
+      "head": "Clear <em>privacy</em> boundaries",
+      "sub": "Settings show when the app uses the network."
+    }
+  },
+  {
+    "out": "../out/store/feature-graphic-1024x500.png",
+    "w": 1024,
+    "h": 500,
+    "params": {
+      "layout": "feature",
+      "shot": "notes"
+    }
+  },
+  {
+    "out": "../out/web/og-image.png",
+    "w": 1200,
+    "h": 630,
+    "params": {
+      "layout": "og",
+      "shot": "notes"
+    }
+  },
+  {
+    "out": "../out/web/frame-chat.png",
+    "w": 640,
+    "h": 1320,
+    "transparent": true,
+    "params": {
+      "layout": "device",
+      "shot": "chat"
+    }
+  },
+  {
+    "out": "../out/web/frame-notes.png",
+    "w": 640,
+    "h": 1320,
+    "transparent": true,
+    "params": {
+      "layout": "device",
+      "shot": "notes"
+    }
+  },
+  {
+    "out": "../out/web/frame-onboarding.png",
+    "w": 640,
+    "h": 1320,
+    "transparent": true,
+    "params": {
+      "layout": "device",
+      "shot": "onboarding"
+    }
+  },
+  {
+    "out": "../out/web/frame-picker-lite.png",
+    "w": 640,
+    "h": 1320,
+    "transparent": true,
+    "params": {
+      "layout": "device",
+      "shot": "picker-lite"
+    }
+  },
+  {
+    "out": "../out/web/frame-tools.png",
+    "w": 640,
+    "h": 1320,
+    "transparent": true,
+    "params": {
+      "layout": "device",
+      "shot": "tools"
+    }
+  },
+  {
+    "out": "../out/web/frame-settings.png",
+    "w": 640,
+    "h": 1320,
+    "transparent": true,
+    "params": {
+      "layout": "device",
+      "shot": "settings"
+    }
+  },
+  {
+    "out": "../out/store/tablet7/01-offline-chat.png",
+    "w": 1920,
+    "h": 1200,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet-chat",
+      "ar": "1.6",
+      "kicker": "Works offline",
+      "head": "Your AI assistant, <em>no internet needed</em>",
+      "sub": "Answers are generated on the device."
+    }
+  },
+  {
+    "out": "../out/store/tablet7/02-private-notes.png",
+    "w": 1920,
+    "h": 1200,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet-notes",
+      "ar": "1.6",
+      "kicker": "Private",
+      "head": "Notes stay <em>on your device</em>",
+      "sub": "No cloud sync and no account."
+    }
+  },
+  {
+    "out": "../out/store/tablet7/03-pick-a-tier.png",
+    "w": 1920,
+    "h": 1200,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet-onboarding",
+      "ar": "1.6",
+      "kicker": "Set up once",
+      "head": "A tier that <em>fits your device</em>",
+      "sub": "Lite, Standard and Full, matched to your RAM."
+    }
+  },
+  {
+    "out": "../out/store/tablet7/04-choose-a-model.png",
+    "w": 1920,
+    "h": 1200,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet-picker-lite",
+      "ar": "1.6",
+      "kicker": "Open models",
+      "head": "Choose your <em>model</em>",
+      "sub": "SmolLM2, LFM, Gemma, Qwen, Llama and more."
+    }
+  },
+  {
+    "out": "../out/store/tablet10/01-offline-chat.png",
+    "w": 2560,
+    "h": 1600,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet-chat",
+      "ar": "1.6",
+      "kicker": "Works offline",
+      "head": "Your AI assistant, <em>no internet needed</em>",
+      "sub": "Answers are generated on the device."
+    }
+  },
+  {
+    "out": "../out/store/tablet10/02-private-notes.png",
+    "w": 2560,
+    "h": 1600,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet-notes",
+      "ar": "1.6",
+      "kicker": "Private",
+      "head": "Notes stay <em>on your device</em>",
+      "sub": "No cloud sync and no account."
+    }
+  },
+  {
+    "out": "../out/store/tablet10/03-pick-a-tier.png",
+    "w": 2560,
+    "h": 1600,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet-onboarding",
+      "ar": "1.6",
+      "kicker": "Set up once",
+      "head": "A tier that <em>fits your device</em>",
+      "sub": "Lite, Standard and Full, matched to your RAM."
+    }
+  },
+  {
+    "out": "../out/store/tablet10/04-choose-a-model.png",
+    "w": 2560,
+    "h": 1600,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet-picker-lite",
+      "ar": "1.6",
+      "kicker": "Open models",
+      "head": "Choose your <em>model</em>",
+      "sub": "SmolLM2, LFM, Gemma, Qwen, Llama and more."
+    }
+  }
+]

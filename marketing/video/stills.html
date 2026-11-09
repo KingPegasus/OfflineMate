@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>OfflineMate stills</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700;800&display=block" rel="stylesheet" />
+<style>
+  :root { --bg: #020617; --bg2: #0b1530; --text: #f8fafc; --muted: #c4ced9; --accent: #5ac8fa; --line: rgba(180,198,216,.16); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }
+  body { font-family: Inter, system-ui, sans-serif; color: var(--text); }
+  .canvas { position: absolute; inset: 0; overflow: hidden;
+    background: radial-gradient(60% 45% at 80% 12%, rgba(47,140,255,.30), transparent 70%),
+                radial-gradient(55% 40% at 10% 92%, rgba(90,200,250,.18), transparent 70%),
+                linear-gradient(160deg, var(--bg2), var(--bg) 62%); }
+  .grid { position: absolute; inset: 0; opacity: .45;
+    background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 64px 64px; -webkit-mask-image: radial-gradient(70% 55% at 50% 35%, #000, transparent); }
+  .phone { position: absolute; overflow: hidden; background: #0b1020;
+    box-shadow: 0 0 0 var(--bz) #0f172a, 0 0 0 calc(var(--bz) + 2px) #334155, 0 40px 120px rgba(0,0,0,.55), 0 0 90px rgba(47,140,255,.22); }
+  .phone img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .text { position: absolute; display: flex; flex-direction: column; gap: 18px; }
+  .kicker { font: 600 26px/1 Inter; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+  .head { font: 800 76px/1.05 Outfit; letter-spacing: -.02em; }
+  .head em { font-style: normal; color: var(--accent); }
+  .sub { font: 500 34px/1.35 Inter; color: var(--muted); }
+  .brand { position: absolute; display: flex; align-items: center; gap: 18px; font: 700 40px/1 Outfit; }
+  .brand img { border-radius: 22%; box-shadow: 0 0 40px rgba(47,140,255,.4); }
+  .chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+  .chip { font: 600 22px/1 Inter; padding: 12px 18px; border-radius: 999px; border: 1px solid var(--line); background: rgba(15,23,42,.7); }
+</style>
+</head>
+<body>
+<div class="canvas" id="c"><div class="grid"></div></div>
+<script>
+// Layouts, sized from the viewport. Query: ?layout=store|feature|og|device&shot=chat&head=...&sub=...&kicker=...
+const q = new URLSearchParams(location.search);
+const W = innerWidth, H = innerHeight, c = document.getElementById('c');
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const phone = (shot, x, y, h) => {
+  const w = Math.round(h * 0.45), p = el('div', 'phone');
+  const r = Math.round(w * 0.085), bz = Math.max(8, Math.round(w * 0.024));
+  Object.assign(p.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', borderRadius: r + 'px' });
+  p.style.setProperty('--bz', bz + 'px');
+  const img = el('img'); img.src = `shots/${shot}.png`; p.appendChild(img); c.appendChild(p);
+  return { w, h, img };
+};
+const text = (x, y, w, scale = 1) => {
+  const t = el('div', 'text');
+  Object.assign(t.style, { left: x + 'px', top: y + 'px', width: w + 'px' });
+  if (q.get('kicker')) t.appendChild(el('div', 'kicker', q.get('kicker')));
+  t.appendChild(el('div', 'head', q.get('head') || ''));
+  if (q.get('sub')) t.appendChild(el('div', 'sub', q.get('sub')));
+  t.style.transform = `scale(${scale})`; t.style.transformOrigin = 'top left';
+  c.appendChild(t); return t;
+};
+const imgs = [];
+const layout = q.get('layout') || 'store';
+if (layout === 'store') {
+  // Portrait store screenshot: headline on top, phone below, bleeding off the bottom edge.
+  const s = W / 1080;
+  text(80 * s, 110 * s, 920, s);
+  const h = Math.round(H * 0.86), w = Math.round(h * 0.45);
+  imgs.push(phone(q.get('shot'), Math.round((W - w) / 2), Math.round(H * 0.25), h).img);
+} else if (layout === 'tablet') {
+  // Landscape tablet store screenshot: headline left, a tablet capture right.
+  const s = H / 1080;
+  const t = text(100 * s, 360 * s, 560, s);
+  t.querySelector('.head').style.fontSize = '62px';
+  t.querySelector('.sub') && (t.querySelector('.sub').style.fontSize = '30px');
+  const p = el('div', 'phone'); const tw = Math.round(W * 0.56), th = Math.round(tw / (q.get('ar') ? Number(q.get('ar')) : 1.6));
+  Object.assign(p.style, { left: Math.round(W * 0.405) + 'px', top: Math.round((H - th) / 2) + 'px', width: tw + 'px', height: th + 'px', borderRadius: Math.round(tw * .03) + 'px' });
+  p.style.setProperty('--bz', Math.round(tw * .012) + 'px');
+  const img = el('img'); img.src = `shots/${q.get('shot')}.png`; p.appendChild(img); c.appendChild(p); imgs.push(img);
+} else if (layout === 'feature' || layout === 'og') {
+  // Wide banner: logo + name + tagline left, two phones right, content kept away from the edges.
+  const s = Math.min(H / 500, W / 1024);
+  const b = el('div', 'brand', `<img src="logo.png" width="${Math.round(84 * s)}" height="${Math.round(84 * s)}" alt=""><span>OfflineMate</span>`);
+  Object.assign(b.style, { left: 64 * s + 'px', top: 92 * s + 'px', fontSize: 50 * s + 'px' });
+  c.appendChild(b); imgs.push(b.querySelector('img'));
+  const t = el('div', 'text');
+  Object.assign(t.style, { left: 64 * s + 'px', top: 210 * s + 'px', width: 470 * s + 'px', gap: 14 * s + 'px' });
+  const hd = el('div', 'head', q.get('head') || 'Private AI that works <em>offline</em>'); hd.style.fontSize = 46 * s + 'px';
+  const sb = el('div', 'sub', q.get('sub') || 'Chat, notes and tools on your Android phone. No cloud, no account.'); sb.style.fontSize = 21 * s + 'px';
+  t.append(hd, sb); c.appendChild(t);
+  const ph = Math.round(500 * s * 0.98);
+  imgs.push(phone('chat', Math.round(W - 64 * s - ph * 0.45 * 1.85), Math.round(H - ph * 0.86), ph).img);
+  imgs.push(phone(q.get('shot') || 'settings', Math.round(W - 64 * s - ph * 0.45), Math.round(H - ph * 0.94), ph).img);
+} else if (layout === 'device') {
+  // Just the framed screen on a transparent background (website gallery).
+  c.style.background = 'none'; c.innerHTML = '';
+  const pad = Math.round(W * 0.06), h = H - pad * 2;
+  imgs.push(phone(q.get('shot'), Math.round((W - h * 0.45) / 2), pad, h).img);
+}
+window.READY = document.fonts.ready.then(() => Promise.all(imgs.map(i => i.complete ? 1 : new Promise(r => { i.onload = r; i.onerror = r; })))).then(() => true);
+</script>
+</body>
+</html>
