@@ -53,7 +53,7 @@ const smol135m: ModelSpec = {
   size: "135M",
   quantization: "8da4w",
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-smolLm-2",
-  estimatedSizeMb: 90,
+  estimatedSizeMb: 535,
   runtime: SMOLLM2_1_135M_QUANTIZED,
 };
 

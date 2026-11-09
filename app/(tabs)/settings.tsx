@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Constants from "expo-constants";
 import { useSettingsStore } from "@/stores/settings-store";
 import { getModelsForTier, getTierSpec, MODEL_TIERS, resolveModelForTier } from "@/ai/model-registry";
-import { downloadTierChatModel, downloadTierVoiceModel, getTierChatAssetReadiness } from "@/ai/model-manager";
+import {
+  downloadTierChatModel,
+  downloadTierVoiceModel,
+  getTierChatAssetReadiness,
+  getTierVoiceDownloadMb,
+  redownloadTierChatModel,
+} from "@/ai/model-manager";
 import { useChatStore } from "@/stores/chat-store";
 import { llmEngine } from "@/ai/llm-engine";
 import type { ModelTier } from "@/types/assistant";
@@ -88,6 +94,20 @@ export default function SettingsScreen() {
     void refreshReadinessForTier(tier);
   };
 
+  // Chat's model error links here with ?tier=<key>: open that tier's picker so the user can download.
+  const { tier: tierParam, at: tierParamAt } = useLocalSearchParams<{ tier?: string; at?: string }>();
+  useEffect(() => {
+    if (!tierParam) return;
+    const target = MODEL_TIERS.find((t) => t.key === tierParam)?.key;
+    const timeoutId = setTimeout(() => {
+      if (target) handleOpenTierPicker(target);
+      // Clear the params; `at` (a timestamp per tap) also re-triggers this effect if clearing is ignored.
+      router.setParams({ tier: undefined, at: undefined } as never);
+    }, 0);
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per incoming link
+  }, [tierParam, tierParamAt]);
+
   const handleSelectModelInModal = (tier: ModelTier, modelId: string) => {
     if (isDownloadingSelected) return;
     const spec = getTierSpec(tier);
@@ -98,8 +118,8 @@ export default function SettingsScreen() {
     setTierModelId(tier, nextId);
   };
 
-  const handleDownloadModalModel = async () => {
-    if (modalSelectedReady || isDownloadingSelected) return;
+  const handleDownloadModalModel = async (redownload = false) => {
+    if ((modalSelectedReady && !redownload) || isDownloadingSelected) return;
     setIsDownloadingSelected(true);
     setDownloadProgress(0);
     setDownloadLabel("");
@@ -108,13 +128,33 @@ export default function SettingsScreen() {
         setDownloadProgress(progress);
         setDownloadLabel(label ?? "");
       };
-      await downloadTierChatModel(modalTier, modalActiveModelId ?? null, onProgress);
-      if (voiceEnabled) {
-        // Tiers use different Whisper sizes; fetch this tier's now so the mic works offline later.
-        await downloadTierVoiceModel(modalTier, onProgress);
+      if (redownload) {
+        // Free the model before deleting its files.
+        llmEngine.cancelPendingLoad();
+        llmEngine.unload();
+        // Files are deleted first; show that instead of a stale "Downloaded" badge.
+        setModelReadinessByTier((prev) => ({
+          ...prev,
+          [modalTier]: { ...prev[modalTier], [modalActiveModel.id]: false },
+        }));
+        await redownloadTierChatModel(modalTier, modalActiveModelId ?? null, onProgress);
+      } else {
+        await downloadTierChatModel(modalTier, modalActiveModelId ?? null, onProgress);
+      }
+      // Tiers use different Whisper sizes; fetch this tier's now so the mic works offline later.
+      // Independent of the TTS toggle (voiceEnabled), which only controls spoken replies.
+      let voiceNote = "";
+      try {
+        await downloadTierVoiceModel(modalTier, (progress) => onProgress(progress, "voice model"));
+      } catch (voiceError) {
+        console.warn("[OfflineMate] Settings: voice model download failed", voiceError);
+        voiceNote = " The voice input model did not download; the mic will offer to retry.";
       }
       await refreshReadinessForTier(modalTier);
-      Alert.alert("Model downloaded", `${modalActiveModel.family} ${modalActiveModel.size} is ready for chat.`);
+      Alert.alert(
+        "Model downloaded",
+        `${modalActiveModel.family} ${modalActiveModel.size} is ready for chat.${voiceNote}`,
+      );
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Failed to download model files.";
       Alert.alert("Download failed", msg);
@@ -224,7 +264,7 @@ export default function SettingsScreen() {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{modalTierSpec.name} model options</Text>
             <Text style={styles.modalHint}>
-              Pick a model for {modalTierSpec.name}. Non-default variants can be downloaded now.
+              Pick a model for {modalTierSpec.name}, then tap Download now if it is not downloaded yet.
             </Text>
             <Text style={styles.modalHint}>
               Last checked: {lastReadinessCheckByTier[modalTier]?.toLocaleTimeString() ?? "Not checked yet"}
@@ -263,7 +303,24 @@ export default function SettingsScreen() {
                 );
               })}
             </View>
-            {!modalSelectedReady && (
+            {modalSelectedReady && !isDownloadingSelected && (
+              <Text
+                style={styles.modalAction}
+                onPress={() =>
+                  Alert.alert(
+                    "Re-download model",
+                    `Delete and download ${modalActiveModel.family} ${modalActiveModel.size} again (${modalActiveModel.estimatedSizeMb} MB)? Use this if chat says the model could not load.`,
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      { text: "Re-download", onPress: () => void handleDownloadModalModel(true) },
+                    ],
+                  )
+                }
+              >
+                Re-download (fixes a damaged download)
+              </Text>
+            )}
+            {(!modalSelectedReady || isDownloadingSelected) && (
               <Text
                 style={[styles.modalAction, isDownloadingSelected && styles.disabledLink]}
                 onPress={() => void handleDownloadModalModel()}
@@ -272,7 +329,7 @@ export default function SettingsScreen() {
                   ? `Downloading... ${Math.round(downloadProgress * 100)}%${
                       downloadLabel ? ` (${downloadLabel})` : ""
                     }`
-                  : `Download now (${modalActiveModel.estimatedSizeMb} MB)`}
+                  : `Download now (${modalActiveModel.estimatedSizeMb} MB + ${getTierVoiceDownloadMb(modalTier)} MB voice)`}
               </Text>
             )}
             <Text style={styles.modalClose} onPress={() => setModelPickerTier(null)}>

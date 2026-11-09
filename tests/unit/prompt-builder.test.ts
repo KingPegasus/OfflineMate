@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 import { buildPrompt } from "@/ai/prompt-builder";
+import { formatTokPerSec, stripTokPerSecLines } from "@/utils/tok-per-sec";
 import type { ChatMessage } from "@/types/assistant";
 
 vi.mock("@/context/long-term-memory", () => ({
@@ -48,5 +49,32 @@ describe("buildPrompt", () => {
       contextSnippets: ["x".repeat(2000)],
     });
     expect(result[0].content).not.toContain("Context:");
+  });
+
+  it("keeps the UI speed line out of earlier assistant replies", () => {
+    const now = Date.now();
+    const messages: ChatMessage[] = [
+      { id: "u1", role: "user", content: "Hello", createdAt: now },
+      { id: "a1", role: "assistant", content: "Hi there.\n\n(18.3 tok/s)", createdAt: now },
+      { id: "u2", role: "user", content: "What is LLM", createdAt: now },
+    ];
+    const result = buildPrompt({ tier: "lite", messages });
+    const assistant = result.find((m) => m.role === "assistant");
+    expect(assistant?.content).toBe("Hi there.");
+    expect(result.map((m) => m.content).join("\n")).not.toContain("tok/s");
+  });
+});
+
+describe("stripTokPerSecLines", () => {
+  it("removes copied and real speed lines but keeps other text", () => {
+    expect(stripTokPerSecLines("Answer.\n\n(18.3 tok/s)\n\n(10.1 tok/s)")).toBe("Answer.");
+    expect(stripTokPerSecLines("Answer.\n\n(n/a tok/s)")).toBe("Answer.");
+    expect(stripTokPerSecLines("Speed was 18 tok/s (fast).")).toBe("Speed was 18 tok/s (fast).");
+  });
+
+  it("strips exactly the lines formatTokPerSec produces", () => {
+    for (const speed of [18.25, null, 0]) {
+      expect(stripTokPerSecLines(`Answer.\n\n${formatTokPerSec(speed)}`)).toBe("Answer.");
+    }
   });
 });

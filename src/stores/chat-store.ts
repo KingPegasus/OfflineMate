@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import * as SecureStore from "expo-secure-store";
-import type { ChatConversation, ChatMessage } from "@/types/assistant";
+import type { ChatConversation, ChatMessage, ModelTier } from "@/types/assistant";
 import { useSettingsStore } from "@/stores/settings-store";
 
 const DEFAULT_CONVERSATION_TITLE = "New chat";
@@ -24,6 +24,8 @@ interface ChatState {
   streamingThinkClosed: boolean;
   isLoading: boolean;
   error: string | null;
+  /** Tier whose model must be downloaded/fixed in Settings to clear `error`, if any. */
+  errorTier: ModelTier | null;
   createConversation: (seedTitle?: string) => string;
   selectConversation: (conversationId: string) => void;
   deleteConversation: (conversationId: string) => void;
@@ -35,7 +37,7 @@ interface ChatState {
   setStreamingHasThinkTag: (value: boolean) => void;
   setStreamingThinkClosed: (value: boolean) => void;
   setLoading: (value: boolean) => void;
-  setError: (error: string | null) => void;
+  setError: (error: string | null, errorTier?: ModelTier | null) => void;
 }
 
 const secureStorage = {
@@ -56,6 +58,7 @@ export const useChatStore = create<ChatState>()(
       streamingThinkClosed: false,
       isLoading: false,
       error: null,
+      errorTier: null,
       createConversation: (seedTitle) => {
         const now = Date.now();
         const id = `conv-${now}-${Math.random().toString(36).slice(2, 8)}`;
@@ -68,6 +71,7 @@ export const useChatStore = create<ChatState>()(
           streamingHasThinkTag: false,
           streamingThinkClosed: false,
           error: null,
+          errorTier: null,
         }));
         return id;
       },
@@ -81,6 +85,7 @@ export const useChatStore = create<ChatState>()(
             streamingHasThinkTag: false,
             streamingThinkClosed: false,
             error: null,
+            errorTier: null,
           };
         });
       },
@@ -101,6 +106,7 @@ export const useChatStore = create<ChatState>()(
             streamingHasThinkTag: false,
             streamingThinkClosed: false,
             error: null,
+            errorTier: null,
           };
         });
       },
@@ -184,6 +190,7 @@ export const useChatStore = create<ChatState>()(
             streamingHasThinkTag: false,
             streamingThinkClosed: false,
             error: null,
+            errorTier: null,
           };
         }),
       setStreamingResponse: (streamingResponse) => set({ streamingResponse }),
@@ -191,7 +198,7 @@ export const useChatStore = create<ChatState>()(
       setStreamingHasThinkTag: (streamingHasThinkTag) => set({ streamingHasThinkTag }),
       setStreamingThinkClosed: (streamingThinkClosed) => set({ streamingThinkClosed }),
       setLoading: (isLoading) => set({ isLoading }),
-      setError: (error) => set({ error }),
+      setError: (error, errorTier = null) => set({ error, errorTier }),
     }),
     {
       name: "offlinemate-chat",

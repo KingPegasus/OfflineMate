@@ -11,6 +11,7 @@ import { ExpoResourceFetcher } from "react-native-executorch-expo-resource-fetch
 import { runMigrations } from "@/db/migrations";
 import { registerBackgroundUnload } from "@/utils/performance";
 import { llmEngine } from "@/ai/llm-engine";
+import { cleanupStalePartFiles } from "@/ai/model-manager";
 
 initExecutorch({
   resourceFetcher: ExpoResourceFetcher,
@@ -33,6 +34,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     runMigrations();
+    // Nothing is downloading yet at launch, so any .part file is from an interrupted download.
+    cleanupStalePartFiles().catch((e) => console.warn("[OfflineMate] Partial download cleanup failed:", e));
     const sub = registerBackgroundUnload(() => llmEngine.unload());
     return () => sub.remove();
   }, []);

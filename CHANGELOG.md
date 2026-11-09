@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.0] - 2026-11-09
+
+### Fixed
+- Model downloads now go to a temporary `.part` file and are moved into place only after they finish. Before, an interrupted or still-running download left a short file that counted as downloaded, so chat failed with ExecuTorch error 35 ("File size is too small") and Settings offered no way to fetch it again. Two screens asking for the same file now share one download, and each of them sees its progress (`src/ai/model-manager.ts`).
+- Downloads that fail with HTTP 408, 429 or a 5xx error are retried like network errors. A 404 still fails at once (`src/ai/model-manager.ts`).
+- Partial `.part` files left by a download that was interrupted (for example, the app was closed) are deleted when the app starts (`src/ai/model-manager.ts`, `app/_layout.tsx`).
+- When a model fails to load, the app compares its file with the server's size. A shorter file, such as one truncated by an earlier version, is deleted and the error asks you to download it again, so Settings no longer shows it as Downloaded. This needs a connection; offline, use Re-download (`src/ai/model-manager.ts`, `src/hooks/useLLMChat.ts`).
+- When the model files are not downloaded at all, chat now says so instead of "Could not load the model" (`src/hooks/useLLMChat.ts`).
+- Replies no longer show two speed lines such as "(18.3 tok/s)" and "(10.1 tok/s)". The speed was saved inside each reply's text, so it went back to the model with the chat history and small models copied it. The speed is now stored separately and shown under the reply, so it is not sent to the model, read aloud, or copied with the Copy button. Speed lines in chats saved by earlier versions are removed before history is sent to the model (`src/utils/tok-per-sec.ts`, `src/types/assistant.ts`, `src/components/ChatBubble.tsx`, `src/ai/prompt-builder.ts`, `src/hooks/useLLMChat.ts`, `app/(tabs)/chat.tsx`).
+- The model picker in Settings has a "Re-download (fixes a damaged download)" action for models that show Downloaded but will not load, such as a truncated file from an earlier version (`app/(tabs)/settings.tsx`, `src/ai/model-manager.ts`).
+
+### Changed
+- When chat cannot load a model, the error card now has an "Open <Tier> in Settings" button. It opens Settings with that tier's model picker already open, every time you tap it, so you can pick a model and tap Download now. The error text gives the same steps instead of pointing to Onboarding (`src/hooks/useLLMChat.ts`, `src/components/ErrorBanner.tsx`, `src/stores/chat-store.ts`, `app/(tabs)/chat.tsx`, `app/(tabs)/settings.tsx`).
+- Download now in Settings also fetches the tier's Whisper voice model. Before, it was only fetched when "Speak responses (TTS)" was on, which is off by default, so the mic had no model. If only the voice download fails, the chat model still counts as downloaded and the mic offers to retry (`app/(tabs)/settings.tsx`).
+- SmolLM2 135M (Lite default) now shows its real download size, 535 MB instead of 90 MB, in the app and on the website (`src/ai/model-registry.ts`, `website/index.html`, `website/models.html`).
+- Bumped `@tanstack/react-query` to 5.107.1, `zustand` to 5.1.0 and `react-native-nitro-modules` to 0.37.2 (`package.json`, `package-lock.json`).
+- Upgraded `vitest` and `@vitest/coverage-v8` from 4 to 5.1.0. Its Node requirement is met now that the project pins Node 24 (`package.json`, `package-lock.json`).
+- App version updated to `0.7.0` in `app.json`. This is a minor release because it adds user-facing features (the error-card button, Re-download, and Whisper downloaded with the chat model).
+
+### Known issues
+- **Held back:** TypeScript 7 (`typescript-eslint` 8.72 supports TypeScript `<6.1`), ESLint 10 (`eslint-plugin-import`, used by `eslint-config-expo`, supports ESLint up to 9), and `@types/node` 26 (the project runs on Node 24).
+- Expo-managed packages (`react`, `react-native-gesture-handler`, `react-native-keyboard-controller`, `react-native-worklets` and the `expo-*` modules) stay at the versions Expo SDK 58 expects, although newer releases exist.
+- The 16 KB page-size warning for expo-sqlite's prebuilt `vec.so` is still open.
+
 ## [0.6.2] - 2026-11-05
 
 ### Changed
