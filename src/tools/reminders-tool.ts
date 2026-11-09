@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import type { Tool } from "@/tools/tool-registry";
-import { resolveReminderSeconds, resolveReminderText } from "@/tools/reminder-parser";
+import { describeReminderTime, resolveReminderSeconds, resolveReminderText } from "@/tools/reminder-parser";
 
 const REMINDER_CHANNEL_ID = "offlinemate-reminders-v2";
 const REMINDER_CHANNEL_LEGACY = "offlinemate-reminders";
@@ -66,7 +66,8 @@ export const setReminderTool: Tool = {
       trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds },
     });
     console.log("[OfflineMate] Reminder scheduled in", seconds, "seconds:", text);
-    return { ok: true, message: "Reminder scheduled." };
+    // A full sentence, because chat shows it as-is when the model can't phrase a confirmation.
+    return { ok: true, message: `Reminder set for ${describeReminderTime(seconds)}: ${text}.` };
   },
 };
 

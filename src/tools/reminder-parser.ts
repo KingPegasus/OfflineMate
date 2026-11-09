@@ -51,11 +51,16 @@ function parseFlexibleNumber(value?: string): number | null {
   return null;
 }
 
+/** A clock time: "at 9", "9 AM", "9:30pm", "21:30", "noon", "midnight". */
+const TIME_OF_DAY =
+  /\b(?:at\s+\d{1,2}(?::\d{2})?|\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)|\d{1,2}:\d{2}|noon|midnight)(?=\W|$)/i;
+
 function parseSecondsWithChrono(text: string): number | null {
   const ref = new Date();
   const parsed = chrono.parseDate(text, ref, { forwardDate: true });
   if (!parsed) return null;
-  const seconds = Math.floor((parsed.getTime() - ref.getTime()) / 1000);
+  // Round up so "at 9 AM" fires at 9:00, not 8:59:59.
+  const seconds = Math.ceil((parsed.getTime() - ref.getTime()) / 1000);
   if (!Number.isFinite(seconds) || seconds <= 0) return null;
   return seconds;
 }
@@ -79,7 +84,12 @@ export function resolveReminderSeconds(explicitSeconds?: string, naturalLanguage
       return value;
     }
   }
-  // Relative phrases: "tomorrow (same time)", "tomorrow morning", "next day"
+  // A clock time ("tomorrow at 9 AM", "tonight at 8pm", "Friday 14:30") wins over the flat offsets below.
+  if (TIME_OF_DAY.test(text)) {
+    const atTime = parseSecondsWithChrono(text);
+    if (atTime) return atTime;
+  }
+  // Relative phrases without a clock time: "tomorrow (same time)", "next day"
   if (/\b(?:tomorrow|same time|next day|in a day)\b/i.test(text)) return 86400; // ~24h
   if (/\b(?:tonight|this evening)\b/i.test(text)) return 43200; // ~12h
 
@@ -98,17 +108,41 @@ function stripTrailingTime(text: string): string {
       /\s+(?:in|after)\s+(?:(?:\d+)|(?:[a-z-]+))\s*(?:seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d)\.?\s*$/i,
       "",
     )
-    .replace(/\s+(?:tomorrow(?:\s+(?:same\s+time|morning|evening))?|same\s+time|next\s+day)\.?\s*$/i, "")
+    // "... at 9 AM", "... tomorrow at 9", "... tonight at 8pm" (needs "at" or am/pm, so "call 911" is kept)
+    .replace(
+      /\s+(?:(?:today|tomorrow|tonight)\s+)?(?:at\s+\d{1,2}(?::\d{2})?(?:\s*(?:a\.?m\.?|p\.?m\.?))?|\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?))\.?\s*$/i,
+      "",
+    )
+    .replace(/\s+(?:tomorrow(?:\s+(?:same\s+time|morning|evening))?|tonight|same\s+time|next\s+day)\.?\s*$/i, "")
     .trim();
 }
 
 export function resolveReminderText(explicitText?: string, queryText?: string): string {
   const source = (explicitText || queryText || "").trim();
   if (!source) return "Reminder";
-  const match = source.match(
-    /\b(?:remind me|set (?:a )?reminder)(?:\s+(?:in|after)\s+(?:(?:\d+)|(?:[a-z-]+))\s*\w+)?\s+to\s+(.+)$/i,
-  );
+  // Anything between "remind me" and the first "to" is timing ("in 5 minutes", "tomorrow at 9 AM").
+  const match = source.match(/\b(?:remind me|set (?:a )?reminder)\b.*?\bto\s+(.+)$/i);
   if (match?.[1]) return stripTrailingTime(match[1].trim());
   return stripTrailingTime(source);
+}
+
+/** Human wording for when a reminder fires, e.g. "in 10 minutes", "tomorrow at 9:00 AM", "Fri, Nov 13 at 9:00 AM". */
+export function describeReminderTime(seconds: number, now: Date = new Date()): string {
+  if (seconds < 3600) {
+    const minutes = Math.max(1, Math.round(seconds / 60));
+    return `in ${minutes} minute${minutes === 1 ? "" : "s"}`;
+  }
+  // Nearest minute, so a reminder computed a moment earlier still reads "9:00" rather than "8:59".
+  const when = new Date(Math.round((now.getTime() + seconds * 1000) / 60000) * 60000);
+  const time = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(when);
+  const dayOffset = Math.round(
+    (new Date(when.getFullYear(), when.getMonth(), when.getDate()).getTime() -
+      new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) /
+      86400000,
+  );
+  if (dayOffset === 0) return `today at ${time}`;
+  if (dayOffset === 1) return `tomorrow at ${time}`;
+  const day = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" }).format(when);
+  return `${day} at ${time}`;
 }
 

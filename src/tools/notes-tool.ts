@@ -57,7 +57,7 @@ export const createNoteTool: Tool = {
       [id, title, content, Date.now()],
     );
     indexNoteForRetrieval(id, title, content);
-    return { ok: true, message: "Note created.", payload: { id } };
+    return { ok: true, message: `Note saved: ${title}`, payload: { id } };
   },
 };
 

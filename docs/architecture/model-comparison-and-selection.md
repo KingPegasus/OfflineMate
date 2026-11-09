@@ -23,9 +23,9 @@ Target: weak devices. Prioritize speed, battery, and minimal RAM. No RAG retriev
 
 | Model | Size | Download | Pros |
 |-------|------|----------|------|
-| **SmolLM2 135M** (primary) | 135M | ~90 MB | Smallest, fastest; lowest RAM use; ideal for low-end phones |
-| **SmolLM2 360M** (alternate) | 360M | ~200 MB | Better chat quality than 135M; still fast and efficient |
-| **LFM 2.5 350M** (alternate) | 350M | ~435 MB | Liquid hybrid architecture; fast first token; stronger instruction following |
+| **SmolLM2 135M** (primary) | 135M | ~534 MB | Smallest, fastest; lowest RAM use; ideal for low-end phones |
+| **SmolLM2 360M** (alternate) | 360M | ~1.3 GB | Better chat quality than 135M; still fast and efficient |
+| **LFM 2.5 350M** (alternate) | 350M | ~432 MB | Liquid hybrid architecture; fast first token; stronger instruction following |
 
 **Available but not in the app registry:**
 
@@ -41,12 +41,12 @@ Target: mid-range devices. Full RAG, tools, and speech. Balanced quality and res
 
 | Model | Size | Download | Pros |
 |-------|------|----------|------|
-| **Gemma 4 E2B** (primary) | E2B | ~900 MB | Google PLE model; good prefill latency; strongest general quality at this size |
-| **Qwen 3 1.7B** (alternate) | 1.7B | ~1 GB | Strong chat and tool use |
-| **Qwen 3.5 2B** (alternate) | 2B | ~1.1 GB | Newer Qwen line; experimental slow prefill |
+| **Gemma 4 E2B** (primary) | E2B | ~2.5 GB | Google PLE model; good prefill latency; strongest general quality at this size |
+| **Qwen 3 1.7B** (alternate) | 1.7B | ~1.2 GB | Strong chat and tool use |
+| **Qwen 3.5 2B** (alternate) | 2B | ~2.9 GB | Newer Qwen line; experimental slow prefill |
 | **MiniCPM5 2B** (alternate) | 2B | ~1.3 GB | New in RNE 0.11.0; vendor claims strong coding/agent results; 8K context |
-| **SmolLM2 1.7B** (alternate) | 1.7B | ~1 GB | Fast; efficient |
-| **Llama 3.2 1B** (alternate) | 1B | ~700 MB | Smallest Standard option |
+| **SmolLM2 1.7B** (alternate) | 1.7B | ~970 MB | Fast; efficient |
+| **Llama 3.2 1B** (alternate) | 1B | ~1.1 GB | Smallest Standard option |
 
 **Available but not in the app registry:**
 
@@ -65,9 +65,9 @@ Target: strong devices. Longer context (8K), advanced planner, richer RAG.
 
 | Model | Size | Download | Pros |
 |-------|------|----------|------|
-| **Qwen 3 4B** (primary) | 4B | ~2 GB | Strongest general quality; best for complex requests |
+| **Qwen 3 4B** (primary) | 4B | ~2.6 GB | Strongest general quality; best for complex requests |
 | **LFM 2.5 2.6B** (alternate) | 2.6B | ~1.7 GB | New in RNE 0.11.0; hybrid architecture for fast decode; aimed at instruction following and agents |
-| **Llama 3.2 3B** (alternate) | 3B | ~1.8 GB | Strong reasoning at this size |
+| **Llama 3.2 3B** (alternate) | 3B | ~2.4 GB | Strong reasoning at this size |
 
 **Available but not in the app registry:**
 

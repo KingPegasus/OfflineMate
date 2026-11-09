@@ -1,4 +1,49 @@
-import { resolveReminderSeconds, resolveReminderText } from "@/tools/reminder-parser";
+import { afterEach, beforeEach, vi } from "vitest";
+import { describeReminderTime, resolveReminderSeconds, resolveReminderText } from "@/tools/reminder-parser";
+
+describe("reminder clock times", () => {
+  // Monday 9 Nov 2026, 23:00 local time.
+  const now = new Date(2026, 10, 9, 23, 0, 0);
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  const fireTime = (text: string) => new Date(now.getTime() + resolveReminderSeconds(undefined, text) * 1000);
+
+  it("uses the clock time with tomorrow instead of a flat 24 hours", () => {
+    const when = fireTime("Remind me tomorrow at 9 AM to call the bank");
+    expect([when.getDate(), when.getHours(), when.getMinutes()]).toEqual([10, 9, 0]);
+    expect(fireTime("remind me to call the bank tomorrow at 9:30pm").getHours()).toBe(21);
+    expect(fireTime("remind me tomorrow at 14:15 to stretch").getMinutes()).toBe(15);
+  });
+
+  it("uses the clock time with tonight", () => {
+    const at = new Date(2026, 10, 9, 18, 0, 0);
+    vi.setSystemTime(at);
+    const seconds = resolveReminderSeconds(undefined, "remind me tonight at 8pm to water the plants");
+    expect(new Date(at.getTime() + seconds * 1000).getHours()).toBe(20);
+  });
+
+  it("keeps the 24-hour offset when there is no clock time", () => {
+    expect(resolveReminderSeconds(undefined, "remind me tomorrow")).toBe(86400);
+  });
+
+  it("extracts the action when the time comes before or after it", () => {
+    expect(resolveReminderText(undefined, "Remind me tomorrow at 9 AM to call the bank")).toBe("call the bank");
+    expect(resolveReminderText(undefined, "remind me to call the bank tomorrow at 9:30pm")).toBe("call the bank");
+    expect(resolveReminderText(undefined, "remind me to go to the store tonight")).toBe("go to the store");
+    expect(resolveReminderText(undefined, "remind me in 5 minutes to call 911 back")).toBe("call 911 back");
+  });
+
+  it("describes when the reminder fires", () => {
+    expect(describeReminderTime(600, now)).toBe("in 10 minutes");
+    expect(describeReminderTime(60, now)).toBe("in 1 minute");
+    expect(describeReminderTime(10 * 3600, now)).toMatch(/^tomorrow at 9:00\s?AM$/i);
+    expect(describeReminderTime(3 * 86400, now)).toMatch(/Nov 12 at 11:00\s?PM$/i);
+  });
+});
 
 describe("reminder parser", () => {
   it("uses explicit seconds when provided", () => {
