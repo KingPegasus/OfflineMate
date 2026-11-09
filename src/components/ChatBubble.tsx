@@ -2,14 +2,17 @@ import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { MarkdownText } from "@/components/MarkdownText";
+import { formatTokPerSec } from "@/utils/tok-per-sec";
 
 interface Props {
   role: "user" | "assistant" | "system";
   content: string;
   thinking?: string[];
+  /** Assistant replies: generation speed (null shows "n/a"); undefined hides the line. */
+  tokensPerSecond?: number | null;
 }
 
-export function ChatBubble({ role, content, thinking }: Props) {
+export function ChatBubble({ role, content, thinking, tokensPerSecond }: Props) {
   const isUser = role === "user";
   const isAssistant = role === "assistant";
   const [isThinkingOpen, setIsThinkingOpen] = useState(false);
@@ -48,6 +51,9 @@ export function ChatBubble({ role, content, thinking }: Props) {
           </View>
         ) : null}
         <MarkdownText text={content} style={styles.text} boldStyle={styles.textBold} />
+        {isAssistant && tokensPerSecond !== undefined ? (
+          <Text style={styles.metric}>{formatTokPerSec(tokensPerSecond)}</Text>
+        ) : null}
         {isAssistant ? (
           <View style={styles.actions}>
             <TouchableOpacity style={styles.copyBtn} onPress={() => void copyResponse()}>
@@ -75,6 +81,7 @@ const styles = StyleSheet.create({
   },
   text: { color: "#e5e7eb", lineHeight: 24 },
   textBold: { fontWeight: "700", color: "#f3f4f6" },
+  metric: { color: "#9ca3af", fontSize: 12, marginTop: 8 },
   thinkingWrap: {
     marginBottom: 8,
     borderWidth: 1,

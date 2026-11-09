@@ -215,8 +215,23 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Non-2xx response while downloading a model asset. */
+export class DownloadHttpError extends Error {
+  constructor(
+    readonly assetId: string,
+    readonly status: number | null,
+  ) {
+    super(`Download failed for ${assetId} (HTTP ${status ?? "no response"})`);
+    this.name = "DownloadHttpError";
+  }
+}
+
 /** HF often redirects to xethub; DNS can fail transiently on some networks / emulators. */
 function isTransientDownloadFailure(err: unknown): boolean {
+  if (err instanceof DownloadHttpError) {
+    // Rate limits, request timeouts and server/CDN errors usually clear on retry; 4xx like 404 do not.
+    return err.status === null || err.status === 408 || err.status === 429 || err.status >= 500;
+  }
   const msg = err instanceof Error ? err.message : String(err);
   const lower = msg.toLowerCase();
   return (
@@ -234,28 +249,65 @@ function isTransientDownloadFailure(err: unknown): boolean {
   );
 }
 
-async function downloadAsset(
+const PART_SUFFIX = ".part";
+
+interface InFlightDownload {
+  promise: Promise<string>;
+  listeners: Set<(progress: number) => void>;
+}
+
+// One download per destination at a time; Settings, onboarding and voice can request the same file.
+// Every caller waiting on it receives progress, not only the one that started it.
+const inFlightDownloads = new Map<string, InFlightDownload>();
+
+function downloadAsset(asset: AssetToDownload, onProgress?: (progress: number) => void): Promise<string> {
+  const existing = inFlightDownloads.get(asset.destination);
+  if (existing) {
+    if (onProgress) existing.listeners.add(onProgress);
+    return existing.promise;
+  }
+  const listeners = new Set<(progress: number) => void>();
+  if (onProgress) listeners.add(onProgress);
+  const promise = downloadAssetOnce(asset, (progress) => {
+    listeners.forEach((listener) => listener(progress));
+  }).finally(() => {
+    inFlightDownloads.delete(asset.destination);
+  });
+  inFlightDownloads.set(asset.destination, { promise, listeners });
+  return promise;
+}
+
+async function downloadAssetOnce(
   asset: AssetToDownload,
-  onProgress?: (progress: number) => void,
+  onProgress: (progress: number) => void,
 ): Promise<string> {
   const info = await FileSystem.getInfoAsync(asset.destination);
   if (info.exists) {
-    onProgress?.(1);
+    onProgress(1);
     return asset.destination;
   }
 
   console.log("[OfflineMate] Onboarding: starting asset download", { id: asset.id });
 
+  // Write to a temp file and move it into place only when complete, so an interrupted or still
+  // running download never looks "present" (ExecuTorch then fails with "File size is too small").
+  const partPath = `${asset.destination}${PART_SUFFIX}`;
   let lastErr: unknown;
   for (let attempt = 1; attempt <= DOWNLOAD_ASSET_RETRIES; attempt++) {
     try {
-      const task = FileSystem.createDownloadResumable(asset.url, asset.destination, {}, (event) => {
-        if (!onProgress || event.totalBytesExpectedToWrite === 0) return;
+      await FileSystem.deleteAsync(partPath, { idempotent: true });
+      const task = FileSystem.createDownloadResumable(asset.url, partPath, {}, (event) => {
+        if (event.totalBytesExpectedToWrite === 0) return;
         onProgress(event.totalBytesWritten / event.totalBytesExpectedToWrite);
       });
-      await task.downloadAsync();
+      const result = await task.downloadAsync();
+      if (!result || result.status < 200 || result.status >= 300) {
+        throw new DownloadHttpError(asset.id, result?.status ?? null);
+      }
+      await FileSystem.moveAsync({ from: partPath, to: asset.destination });
       return asset.destination;
     } catch (e) {
+      await FileSystem.deleteAsync(partPath, { idempotent: true }).catch(() => undefined);
       lastErr = e;
       const retry = attempt < DOWNLOAD_ASSET_RETRIES && isTransientDownloadFailure(e);
       console.warn(
@@ -270,6 +322,64 @@ async function downloadAsset(
   throw lastErr instanceof Error
     ? lastErr
     : new Error(String(lastErr ?? "Download failed"));
+}
+
+/**
+ * Deletes `.part` files left by downloads that were interrupted (app killed, model abandoned) and are
+ * not running now. Call once at app start; partial models can be hundreds of MB.
+ */
+export async function cleanupStalePartFiles(): Promise<number> {
+  const dir = await FileSystem.getInfoAsync(MODELS_DIR);
+  if (!dir.exists) return 0;
+  const names = await FileSystem.readDirectoryAsync(MODELS_DIR);
+  const stale = names
+    .filter((name) => name.endsWith(PART_SUFFIX))
+    .map((name) => `${MODELS_DIR}/${name}`)
+    .filter((path) => !inFlightDownloads.has(path.slice(0, -PART_SUFFIX.length)));
+  await Promise.all(stale.map((path) => FileSystem.deleteAsync(path, { idempotent: true })));
+  if (stale.length > 0) console.log("[OfflineMate] Removed stale partial downloads:", stale.length);
+  return stale.length;
+}
+
+const REMOTE_SIZE_TIMEOUT_MS = 8000;
+
+async function fetchRemoteSize(url: string): Promise<number | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REMOTE_SIZE_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { method: "HEAD", signal: controller.signal });
+    if (!res.ok) return null;
+    // Hugging Face sends the real file size as x-linked-size when it redirects to its CDN.
+    const length = Number(res.headers.get("x-linked-size") ?? res.headers.get("content-length"));
+    return Number.isFinite(length) && length > 0 ? length : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * After a model fails to load, compares the on-disk weights with the server's size. A shorter local
+ * file (e.g. truncated by builds before 0.7.0, which wrote downloads in place) is deleted so Settings
+ * shows "Not downloaded" and offers Download now. Returns true only when a truncated file was removed;
+ * false when the file looks complete, is missing, or the size can't be checked (offline).
+ */
+export async function removeTruncatedChatModel(tier: ModelTier, modelId?: string | null): Promise<boolean> {
+  const active = resolveModelForTier(tier, modelId);
+  const modelAsset = getTierChatAssets(tier, modelId).find((a) => a.id === `${active.id}-model`);
+  if (!modelAsset) return false;
+  const local = await FileSystem.getInfoAsync(modelAsset.destination);
+  if (!local.exists || typeof local.size !== "number") return false;
+  const remoteSize = await fetchRemoteSize(modelAsset.url);
+  if (remoteSize === null || local.size >= remoteSize) return false;
+  console.warn("[OfflineMate] Removing truncated model file", {
+    id: modelAsset.id,
+    localSize: local.size,
+    remoteSize,
+  });
+  await FileSystem.deleteAsync(modelAsset.destination, { idempotent: true });
+  return true;
 }
 
 /** Full onboarding download for a tier: chat model (the tier's selected one), embeddings and speech. */
@@ -356,6 +466,20 @@ export async function downloadTierVoiceModel(
   const assets = getTierVoiceAssets(tier);
   console.log("[OfflineMate] Voice: downloadTierVoiceModel", { tier, assetIds: assets.map((a) => a.id) });
   return downloadAssetList(assets, onProgress);
+}
+
+/**
+ * Deletes and re-fetches the chat files for a model. Repairs a damaged copy (e.g. a truncated file
+ * left by builds before 0.7.0, which wrote downloads in place) that still passes the exists check.
+ */
+export async function redownloadTierChatModel(
+  tier: ModelTier,
+  modelId?: string | null,
+  onProgress?: (progress: number, label?: string) => void,
+) {
+  const assets = getTierChatAssets(tier, modelId);
+  await Promise.all(assets.map((asset) => FileSystem.deleteAsync(asset.destination, { idempotent: true })));
+  return downloadTierChatModel(tier, modelId, onProgress);
 }
 
 export async function modelExists(modelId: string) {

@@ -16,7 +16,12 @@ import { WEB_SEARCH_NO_RESULTS_PREFIX } from "@/tools/search-tool";
 import { useChatStore } from "@/stores/chat-store";
 import { useModelStore } from "@/stores/model-store";
 import { useSettingsStore } from "@/stores/settings-store";
-import { downloadTierChatModel, getTierChatAssetReadiness, isTokenizerAssetId } from "@/ai/model-manager";
+import {
+  downloadTierChatModel,
+  getTierChatAssetReadiness,
+  isTokenizerAssetId,
+  removeTruncatedChatModel,
+} from "@/ai/model-manager";
 import { speak } from "@/voice/tts-engine";
 import { isMemoryPressureHigh } from "@/utils/performance";
 import { saveImportantMemory } from "@/context/long-term-memory";
@@ -28,6 +33,7 @@ import { buildSearchSynthesisMessages, runAgenticSearchFlow } from "@/ai/agentic
 import { parseToolActionDecision } from "@/ai/tool-action-schema";
 import { isEnabled } from "@/config/feature-flags";
 import { approximateTokenCount } from "@/utils/tokenizer";
+import { stripTokPerSecLines } from "@/utils/tok-per-sec";
 import type { ChatMessage, ModelTier } from "@/types/assistant";
 
 /** Cold load from storage + runtime init can take several minutes on mid-range phones; partial downloads also stall until complete. */
@@ -196,14 +202,28 @@ function estimateTokensPerSecond(text: string, elapsedMs: number): number | null
   return tokenCount / Math.max(elapsedMs / 1000, 0.001);
 }
 
-function withTokPerSecSuffix(text: string, tokensPerSecond: number | null): string {
-  const trimmed = text.trimEnd();
-  const metric =
-    tokensPerSecond !== null && Number.isFinite(tokensPerSecond) && tokensPerSecond > 0
-      ? tokensPerSecond.toFixed(1)
-      : "n/a";
-  if (!trimmed) return `(${metric} tok/s)`;
-  return `${trimmed}\n\n(${metric} tok/s)`;
+/** The speed is kept on the message (ChatBubble shows it) so it never enters the reply text or the prompt. */
+function createAssistantMessage(content: string, tokensPerSecond: number | null): ChatMessage {
+  return { ...createMessage("assistant", content), tokensPerSecond };
+}
+
+/** Model load/download failure the user fixes from the tier's model picker in Settings. */
+export class ModelSetupError extends Error {
+  constructor(
+    readonly tier: ModelTier,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ModelSetupError";
+  }
+}
+
+function settingsFixSteps(tier: ModelTier, filesMayBeDamaged = true): string {
+  const tierName = getTierSpec(tier).name;
+  const action = filesMayBeDamaged
+    ? "tap Download now (or Re-download if it already shows Downloaded)"
+    : "tap Download now";
+  return `Tap "Open ${tierName} in Settings" below (or Settings → ${tierName}), pick a model, ${action}, then send your message again.`;
 }
 
 async function assertChatAssetsReady(tier: ModelTier, modelId?: string | null): Promise<void> {
@@ -226,9 +246,8 @@ async function assertChatAssetsReady(tier: ModelTier, modelId?: string | null): 
     .slice(0, 4)
     .join(", ");
   const tierName = getTierSpec(tier).name;
-  throw new Error(
-    `The ${tierName} chat model files are not fully downloaded. Open Onboarding, choose ${tierName}, and finish download before sending messages. Missing assets: ${missing}.`,
-  );
+  console.warn("[OfflineMate] Chat assets missing:", tierName, missing);
+  throw new ModelSetupError(tier, `The ${tierName} model is not downloaded yet. ${settingsFixSteps(tier, false)}`);
 }
 
 /** Ask before switching to a smaller tier after primary model init fails. */
@@ -394,19 +413,34 @@ export function useLLMChat() {
             await withIdleDeadlineUnlessDownloading(
               llmEngine.initialize(activeTier, llmInitOpts),
               MODEL_INIT_TIMEOUT_MS,
-              "Model initialization timed out. Ensure the model finished downloading (Onboarding), then try again. On slow devices the first load can take up to several minutes.",
+              "Model initialization timed out. Make sure the model shows Downloaded in Settings, then try again. On slow devices the first load can take up to several minutes.",
               () => llmEngine.cancelPendingLoad(),
             );
           } catch (err) {
             initError = err instanceof Error ? err : new Error(String(err));
             console.error("[OfflineMate] LLM init failed for tier:", tier, initError.message, initError);
             const fallback = getFallbackTier(tier);
+            const tierName = getTierSpec(tier).name;
+            if (!(initError instanceof ModelSetupError) && (await removeTruncatedChatModel(tier, activeModelId))) {
+              // Files were present but short (interrupted download): the fix is downloading, not switching tier.
+              throw new ModelSetupError(
+                tier,
+                `The ${tierName} model file was incomplete and has been removed. ${settingsFixSteps(tier, false)}`,
+              );
+            }
+            if (initError instanceof ModelSetupError && !fallback) {
+              // "Not downloaded yet" from assertChatAssetsReady: show it as is.
+              throw initError;
+            }
             if (fallback) {
               const proceed = await confirmModelFallback(tier as "full" | "standard", fallback);
               if (!proceed) {
-                throw new Error(
-                  `Could not load the ${getTierSpec(tier).name} model. Fix downloads in Onboarding or pick another tier in Settings, then send your message again.`,
-                );
+                throw initError instanceof ModelSetupError
+                  ? initError
+                  : new ModelSetupError(
+                      tier,
+                      `Could not load the ${tierName} model. ${settingsFixSteps(tier)} You can also pick a smaller tier there.`,
+                    );
               }
               activeTier = fallback;
               setTier(fallback);
@@ -424,21 +458,20 @@ export function useLLMChat() {
                     onDownloadProgress: reportLlmInitDownloadProgress,
                   }),
                   MODEL_INIT_TIMEOUT_MS,
-                  "Fallback model initialization timed out. Open Onboarding and confirm the Lite model downloaded, or retry after a few minutes.",
+                  "Fallback model initialization timed out. Make sure the Lite model shows Downloaded in Settings, or retry after a few minutes.",
                   () => llmEngine.cancelPendingLoad(),
                 );
               } catch (fallbackErr) {
                 const fb = fallbackErr instanceof Error ? fallbackErr : new Error(String(fallbackErr));
                 console.error("[OfflineMate] LLM init failed for fallback tier:", fallback, fb.message, fb);
-                throw new Error(
-                  "Could not load any model. Open Settings → Onboarding: wait until each download shows complete. If downloads were interrupted, use a stable connection and retry. Standard/Full are large—Lite is smallest. First load after install can take several minutes on some devices.",
+                throw new ModelSetupError(
+                  fallback,
+                  `Could not load any model. ${settingsFixSteps(fallback)} Use a stable connection; the first load after install can take several minutes on some devices.`,
                 );
               }
             } else {
               console.error("[OfflineMate] LLM init failed (no fallback tier).", initError?.message, initError);
-              throw new Error(
-                "Could not load the model. Open Settings → Open Onboarding, complete the model download for your tier, then try again. Check logcat for details.",
-              );
+              throw new ModelSetupError(tier, `Could not load the ${tierName} model. ${settingsFixSteps(tier)}`);
             }
           }
         } finally {
@@ -462,12 +495,12 @@ export function useLLMChat() {
           const localDateTime = buildLocalDateTimeAnswer(cleaned);
           if (localDateTime) {
             const spokenOutput = cleanModelOutput(localDateTime);
-            const finalOutput = withTokPerSecSuffix(spokenOutput, null);
+            const finalOutput = spokenOutput;
             setStreamingHasThinkTag(false);
             setStreamingThinkClosed(true);
             setStreamingThinking([]);
             setStreamingResponse(finalOutput);
-            pushMessage(createMessage("assistant", finalOutput), requestConversationId);
+            pushMessage(createAssistantMessage(finalOutput, null), requestConversationId);
             if (voiceEnabled) {
               console.log("[OfflineMate] Chat: voice on, speaking local datetime response");
               await speak(spokenOutput);
@@ -675,9 +708,9 @@ export function useLLMChat() {
 
         if (agenticDirectAnswer) {
           const spokenOutput = cleanModelOutput(agenticDirectAnswer);
-          const finalOutput = withTokPerSecSuffix(spokenOutput, null);
+          const finalOutput = spokenOutput;
           console.log("[OfflineMate] Agentic cleaned output:", JSON.stringify(spokenOutput.slice(0, 120)));
-          pushMessage(createMessage("assistant", finalOutput), requestConversationId);
+          pushMessage(createAssistantMessage(finalOutput, null), requestConversationId);
           console.log("[OfflineMate] Agentic direct answer delivered");
           if (voiceEnabled) {
             console.log("[OfflineMate] Chat: voice on, speaking direct answer");
@@ -699,12 +732,12 @@ export function useLLMChat() {
           searchToolBody.startsWith(WEB_SEARCH_NO_RESULTS_PREFIX)
         ) {
           const spokenOutput = cleanModelOutput(searchToolBody);
-          const directNoResults = withTokPerSecSuffix(spokenOutput, null);
+          const directNoResults = spokenOutput;
           setStreamingHasThinkTag(false);
           setStreamingThinkClosed(true);
           setStreamingThinking([]);
           setStreamingResponse(directNoResults);
-          pushMessage(createMessage("assistant", directNoResults), requestConversationId);
+          pushMessage(createAssistantMessage(directNoResults, null), requestConversationId);
           if (voiceEnabled) {
             await speak(spokenOutput);
           }
@@ -848,28 +881,29 @@ export function useLLMChat() {
           console.warn("[OfflineMate] Empty direct/context output; using deterministic fallback copy");
         }
         const tokensPerSecond = estimateTokensPerSecond(output, llmElapsedMsTotal);
-        const decoratedOutput = withTokPerSecSuffix(finalOutput, tokensPerSecond);
+        // Drop any speed line the model copied from older history; the real speed is stored on the message.
+        const replyText = stripTokPerSecLines(finalOutput);
         setStreamingHasThinkTag(parsedOutput.hasThinkTag);
         setStreamingThinkClosed(parsedOutput.isClosed);
-        setStreamingResponse(decoratedOutput);
+        setStreamingResponse(replyText);
         pushMessage(
           {
-            ...createMessage("assistant", decoratedOutput),
+            ...createAssistantMessage(replyText, tokensPerSecond),
             thinking: finalThinking.length > 0 ? finalThinking : undefined,
           },
           requestConversationId,
         );
         if (voiceEnabled) {
           console.log("[OfflineMate] Chat: voice on, speaking response");
-          await speak(finalOutput);
+          await speak(replyText);
         }
         console.log(
-          `[OfflineMate] Assistant delivered: intent=${intent} finalLen=${decoratedOutput.length} tokPerSec=${tokensPerSecond?.toFixed(1) ?? "n/a"} text=${JSON.stringify(clipForLog(decoratedOutput))}`,
+          `[OfflineMate] Assistant delivered: intent=${intent} finalLen=${replyText.length} tokPerSec=${tokensPerSecond?.toFixed(1) ?? "n/a"} text=${JSON.stringify(clipForLog(replyText))}`,
         );
       } catch (errorValue) {
         const message = errorValue instanceof Error ? errorValue.message : "Unknown chat error";
         console.error("[OfflineMate] Chat error:", message, errorValue);
-        setError(message);
+        setError(message, errorValue instanceof ModelSetupError ? errorValue.tier : null);
       } finally {
         setLoading(false);
         setStreamingResponse("");

@@ -1,6 +1,7 @@
 import { getSlidingWindow } from "@/context/memory-manager";
 import { getImportantMemories } from "@/context/long-term-memory";
 import { approximateTokenCount } from "@/utils/tokenizer";
+import { stripTokPerSecLines } from "@/utils/tok-per-sec";
 import type { ChatMessage, ModelTier } from "@/types/assistant";
 
 interface PromptBuildInput {
@@ -64,7 +65,10 @@ export function buildPrompt(input: PromptBuildInput): ChatMessage[] {
       content: systemPrompt,
       createdAt: Date.now(),
     },
-    ...getSlidingWindow(messages, tier),
+    // Replies saved before 0.7.0 have a "(x tok/s)" line in their text; keep it out of the prompt.
+    ...getSlidingWindow(messages, tier).map((m) =>
+      m.role === "assistant" ? { ...m, content: stripTokPerSecLines(m.content) } : m,
+    ),
   ];
 }
 

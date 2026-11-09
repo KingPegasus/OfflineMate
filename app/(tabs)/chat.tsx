@@ -11,6 +11,7 @@ import { LlmInitDownloadModal } from "@/components/LlmInitDownloadModal";
 import { LiveThinkingPanel } from "@/components/LiveThinkingPanel";
 import { StreamingText } from "@/components/StreamingText";
 import { useLLMChat } from "@/hooks/useLLMChat";
+import { useChatStore } from "@/stores/chat-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { getTierSpec, resolveModelForTier } from "@/ai/model-registry";
 
@@ -29,6 +30,7 @@ export default function ChatScreen() {
     isLoading,
     error,
   } = useLLMChat();
+  const errorTier = useChatStore((s) => s.errorTier);
   const selectedTier = useSettingsStore((s) => s.selectedTier);
   const selectedModelId = useSettingsStore((s) => s.tierModelIds[selectedTier] ?? null);
   const tierSpec = getTierSpec(selectedTier);
@@ -67,9 +69,32 @@ export default function ChatScreen() {
         contentContainerStyle={styles.messagesContent}
       >
         <ChatModelBadge modelName={tierSpec.name} modelId={activeModel.id} />
-        {error ? <ErrorBanner message={error} /> : null}
+        {error ? (
+          <ErrorBanner
+            message={error}
+            action={
+              errorTier
+                ? {
+                    label: `Open ${getTierSpec(errorTier).name} in Settings`,
+                    onPress: () =>
+                      // `at` makes every tap a new param value, so Settings reopens the picker each time.
+                      router.push({
+                        pathname: "/settings",
+                        params: { tier: errorTier, at: String(Date.now()) },
+                      } as never),
+                  }
+                : undefined
+            }
+          />
+        ) : null}
         {messages.map((m) => (
-          <ChatBubble key={m.id} role={m.role} content={m.content} thinking={m.thinking} />
+          <ChatBubble
+            key={m.id}
+            role={m.role}
+            content={m.content}
+            thinking={m.thinking}
+            tokensPerSecond={m.tokensPerSecond}
+          />
         ))}
         <LiveThinkingPanel
           visible={isLoading && streamingHasThinkTag}
