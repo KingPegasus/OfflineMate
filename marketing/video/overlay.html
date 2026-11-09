@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>OfflineMate demo overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=block" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #020617; --bg2: #0b1530; --text: #f8fafc; --muted: #c4ced9;
+    --accent: #5ac8fa; --blue: #2f8cff; --line: rgba(180, 198, 216, 0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }
+  body { font-family: Inter, system-ui, sans-serif; color: var(--text); }
+  #stage { position: absolute; inset: 0; }
+  /* Background with a hole where the screen recording shows through. */
+  #bg { position: absolute; inset: 0;
+    background:
+      radial-gradient(60% 45% at 78% 18%, rgba(47, 140, 255, 0.28), transparent 70%),
+      radial-gradient(55% 40% at 12% 88%, rgba(90, 200, 250, 0.18), transparent 70%),
+      linear-gradient(160deg, var(--bg2), var(--bg) 60%);
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+  #grid { position: absolute; inset: 0; opacity: .5;
+    background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 72px 72px;
+    -webkit-mask-image: radial-gradient(70% 60% at 50% 40%, #000, transparent); mask-image: radial-gradient(70% 60% at 50% 40%, #000, transparent); }
+  #phone { position: absolute; border-radius: 64px; pointer-events: none;
+    box-shadow: 0 0 0 14px #0f172a, 0 0 0 16px #334155, 0 40px 120px rgba(0,0,0,.6), 0 0 90px rgba(47,140,255,.25); }
+  #cover { position: absolute; background: #0b1020; border-radius: 50px; }
+  #cap { position: absolute; display: flex; flex-direction: column; gap: 22px; }
+  .kicker { font: 600 30px/1 Inter, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 18px; }
+  .kicker b { display: inline-grid; place-items: center; min-width: 56px; height: 56px; border-radius: 16px; background: rgba(90,200,250,.14); border: 1px solid rgba(90,200,250,.4); font-weight: 700; letter-spacing: 0; }
+  .head { font: 800 84px/1.04 Outfit, sans-serif; letter-spacing: -0.02em; }
+  .sub { font: 500 38px/1.3 Inter, sans-serif; color: var(--muted); }
+  .head em { font-style: normal; color: var(--accent); }
+  #end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; text-align: center;
+    background: radial-gradient(60% 50% at 50% 40%, rgba(47,140,255,.25), transparent 70%), linear-gradient(160deg, var(--bg2), var(--bg) 65%); }
+  #end img { width: 260px; height: 260px; border-radius: 60px; box-shadow: 0 0 80px rgba(47,140,255,.45); }
+  #end .name { font: 800 104px/1 Outfit, sans-serif; letter-spacing: -0.02em; }
+  #end .tag { font: 500 42px/1.2 Inter, sans-serif; color: var(--muted); }
+  #end .url { font: 700 52px/1 Outfit, sans-serif; color: var(--accent); margin-top: 18px; }
+  #end .play { font: 600 32px/1 Inter, sans-serif; padding: 18px 30px; border-radius: 999px; border: 1px solid var(--line); background: rgba(15,23,42,.7); }
+  #end .by { font: 500 30px/1 Inter, sans-serif; color: var(--muted); margin-top: 20px; letter-spacing: .04em; }
+  #end .by strong { color: var(--text); }
+  /* Format tweaks */
+  body.landscape .head { font-size: 92px; } body.landscape .sub { font-size: 40px; }
+  body.square .head { font-size: 66px; } body.square .sub { font-size: 32px; } body.square .kicker { font-size: 24px; }
+  body.square #end img, body.landscape #end img { width: 200px; height: 200px; border-radius: 46px; }
+  body.square #end .name, body.landscape #end .name { font-size: 88px; }
+  body.square #end .tag { font-size: 34px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div>
+  <div id="grid"></div>
+  <div id="phone"></div>
+  <div id="cover"></div>
+  <div id="cap"><div class="kicker"></div><div class="head"></div><div class="sub"></div></div>
+  <div id="end">
+    <img src="logo.png" alt="" />
+    <div class="name">OfflineMate</div>
+    <div class="tag">Private AI that works offline</div>
+    <div class="url">offlinemate.com</div>
+    <div class="play">Coming soon to Google Play</div>
+    <div class="by">by <strong>Rhyme Solutions</strong></div>
+  </div>
+</div>
+<script>
+const P = new URLSearchParams(location.search);
+const FORMAT = P.get('f') || 'vertical';
+document.body.classList.add(FORMAT);
+const SIZE = { vertical: [1080, 1920], landscape: [1920, 1080], square: [1080, 1080] }[FORMAT];
+// Screen rect (1080x2400 recording scaled to keep its 0.45 aspect). render.mjs reads this for ffmpeg.
+const SCREEN = {
+  vertical: { x: 238, y: 520, w: 603, h: 1340 },
+  landscape: { x: 1220, y: 90, w: 405, h: 900 },
+  square: { x: 610, y: 100, w: 396, h: 880 },
+}[FORMAT];
+const CAP = {
+  vertical: { left: 90, top: 120, width: 900 },
+  landscape: { left: 150, top: 300, width: 940 },
+  square: { left: 64, top: 300, width: 500 },
+}[FORMAT];
+const R = 50; // screen corner radius
+
+// Scenes: [start, end, kicker, headline, sub]. Keep in sync with tools/build-video.sh and captions.srt.
+const SCENES = [
+  [0.0, 4.6, 'OfflineMate', 'Your AI assistant, <em>on your phone</em>', 'No cloud service. No account.'],
+  [4.6, 9.0, '01', 'Works in <em>airplane mode</em>', 'Models run on the device after a one-time download.'],
+  [9.0, 17.5, '02', 'Ask <em>anything</em>', 'Answers are generated on your phone.'],
+  [17.5, 23.0, '03', 'Notes stay <em>private</em>', 'Saved in on-device storage.'],
+  [23.0, 29.0, '04', 'A model for <em>every phone</em>', 'Lite, Standard and Full tiers.'],
+];
+const END = 29.0;
+window.DURATION = 35.0;
+window.SCREEN = SCREEN;
+
+const $ = s => document.querySelector(s);
+const bg = $('#bg'), phone = $('#phone'), cover = $('#cover'), cap = $('#cap'), end = $('#end');
+const css = (el, o) => Object.assign(el.style, o);
+const px = n => n + 'px';
+
+// Hole in the background: even-odd path, outer full frame + inner rounded screen rect.
+const [W, H] = SIZE, s = SCREEN;
+const hole = `M0 0H${W}V${H}H0Z M${s.x + R} ${s.y}H${s.x + s.w - R}A${R} ${R} 0 0 1 ${s.x + s.w} ${s.y + R}V${s.y + s.h - R}A${R} ${R} 0 0 1 ${s.x + s.w - R} ${s.y + s.h}H${s.x + R}A${R} ${R} 0 0 1 ${s.x} ${s.y + s.h - R}V${s.y + R}A${R} ${R} 0 0 1 ${s.x + R} ${s.y}Z`;
+const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${W}' height='${H}'><path fill-rule='evenodd' d='${hole}'/></svg>`;
+const mask = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+bg.style.webkitMaskImage = mask; bg.style.maskImage = mask;
+$('#grid').style.webkitMaskImage = mask + ', radial-gradient(70% 60% at 50% 40%, #000, transparent)';
+css(phone, { left: px(s.x), top: px(s.y), width: px(s.w), height: px(s.h), borderRadius: px(R) });
+css(cover, { left: px(s.x), top: px(s.y), width: px(s.w), height: px(s.h), borderRadius: px(R) });
+css(cap, { left: px(CAP.left), top: px(CAP.top), width: px(CAP.width) });
+
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+
+let shown = -1;
+window.renderFrame = t => {
+  // Phone fades in from the brand colour over the first second.
+  cover.style.opacity = String(1 - ease((t - 0.5) / 0.8));
+  const i = SCENES.findIndex(([a, b]) => t >= a && t < b);
+  if (i !== shown && i >= 0) {
+    const [, , k, h, sub] = SCENES[i];
+    cap.querySelector('.kicker').innerHTML = /^\d+$/.test(k) ? `<b>${k}</b>` : k;
+    cap.querySelector('.head').innerHTML = h;
+    cap.querySelector('.sub').textContent = sub;
+    shown = i;
+  }
+  if (i >= 0) {
+    const [a, b] = SCENES[i];
+    const inP = ease((t - a - 0.05) / 0.45), outP = ease((b - t) / 0.3);
+    const p = Math.min(inP, i === SCENES.length - 1 ? 1 : outP);
+    css(cap, { opacity: String(p), transform: `translateY(${(1 - inP) * 40}px)` });
+  } else css(cap, { opacity: '0' });
+  // End card
+  const e = ease((t - END) / 0.6);
+  css(end, { opacity: String(e), transform: `scale(${0.96 + 0.04 * e})` });
+  [...end.children].forEach((c, j) => {
+    const p = ease((t - END - 0.25 - j * 0.12) / 0.5);
+    css(c, { opacity: String(p), transform: `translateY(${(1 - p) * 30}px)` });
+  });
+};
+window.READY = document.fonts.ready.then(() => new Promise(r => {
+  const img = end.querySelector('img'); img.complete ? r() : img.onload = r;
+})).then(() => { window.renderFrame(P.has('t') ? Number(P.get('t')) : 0); return true; });
+</script>
+</body>
+</html>

@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.1] - 2026-11-09
+
+### Added
+- A 35-second demo video recorded on the release build: airplane mode on, an on-device answer at real speed, a private note, and the model tiers. It comes in vertical 1080×1920, 16:9 1920×1080 and square 1080×1080, with an `.srt` caption file. Captions and voiceover say only what the recording shows (`marketing/out/`).
+- `marketing/`: the scripts and templates that make the video and stills. The emulator is driven over adb, the screen track is cut at real speed, the voiceover is Kokoro `af_heart` (Apache-2.0), and the music is generated in code (`marketing/README.md`).
+- New Play Store graphics: six 1080×1920 phone screenshots with headlines, a new 1024×500 feature graphic, and a README that maps each file to its Play Console slot (`assets/play-store-listing/`).
+
+### Changed
+- The homepage's preview section now has the demo video. It is self-hosted (WebM and H.264 MP4 with faststart), muted, loads nothing until played, and has a poster and WebVTT captions. The five old JPEG screenshots are replaced by six framed WebP screens (`website/index.html`, `website/styles.css`, `website/media/`, `website/screenshots/`).
+- `og-image.jpg` now shows the app's chat and notes screens beside the logo, and the alt text on every page describes it (`website/*.html`).
+- `scripts/generate-website-images.cjs` no longer writes `og-image.jpg`, since `marketing/` makes it now.
+- `scripts/generate-play-store-assets.ps1` makes the 512×512 icon from the inner tile (Play adds its own rounded mask) and writes its plain feature graphic only with `-FeatureGraphic`.
+- App version updated to `0.7.1` in `app.json`. There are no app code changes; this is a patch release for the website and listing assets.
+
+### Known issues
+- "Remind me tomorrow at 9 AM to call the bank" schedules the reminder 24 hours from now instead of at 9 AM, and on the Lite tier the reply is just the tool name (`reminders.set`). "Add a note: …" saves the note, but the Lite reply prints the raw tool payload. The demo video leaves these flows out.
+- Some download sizes in the model picker are too low: Gemma 4 E2B is listed as 900 MB, but its file is over 2.3 GB, and SmolLM2 360M is listed as 200 MB, but its file is larger than 300 MB (`src/ai/model-registry.ts`).
+- On a tablet (Pixel Tablet emulator, 2560×1600), the app shows the phone layout stretched to full width, with small text and long lines. There is no tablet layout yet, and the tablet screenshots show that stretched layout.
+- On a 4 GB tablet, setup says "Recommended tier: Lite (3-4 GB RAM)" but highlights Standard (`app/onboarding.tsx`).
+
 ## [0.7.0] - 2026-11-09
 
 ### Fixed

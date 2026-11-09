@@ -29,7 +29,7 @@
     <meta property="og:image" content="https://offlinemate.com/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="OfflineMate logo with the text: Private AI assistant that runs offline on Android" />
+    <meta property="og:image:alt" content="OfflineMate logo and the text: Private AI that works offline, beside two phone screens showing the chat and notes screens" />
     <meta property="og:locale" content="en_US" />
 
     <meta name="twitter:card" content="summary_large_image" />
@@ -39,7 +39,7 @@
       content="A free, open-source AI assistant that runs on your phone. Works offline, with no account and no cloud."
     />
     <meta name="twitter:image" content="https://offlinemate.com/og-image.jpg" />
-    <meta name="twitter:image:alt" content="OfflineMate logo with the text: Private AI assistant that runs offline on Android" />
+    <meta name="twitter:image:alt" content="OfflineMate logo and the text: Private AI that works offline, beside two phone screens showing the chat and notes screens" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -80,9 +80,10 @@
             "url": "https://offlinemate.com/",
             "image": "https://offlinemate.com/icon-512.png",
             "screenshot": [
-              "https://offlinemate.com/screenshots/offline-ai-chat-android.jpeg",
-              "https://offlinemate.com/screenshots/model-tier-settings.jpeg",
-              "https://offlinemate.com/screenshots/device-tools-list.jpeg"
+              "https://offlinemate.com/screenshots/chat.webp",
+              "https://offlinemate.com/screenshots/notes.webp",
+              "https://offlinemate.com/screenshots/settings.webp",
+              "https://offlinemate.com/screenshots/tools.webp"
             ],
             "featureList": [
               "On-device AI chat",
@@ -101,6 +102,16 @@
               "price": "0",
               "priceCurrency": "USD"
             }
+          },
+          {
+            "@type": "VideoObject",
+            "@id": "https://offlinemate.com/#demo-video",
+            "name": "OfflineMate demo: a private AI assistant that works offline",
+            "description": "35-second screen recording of OfflineMate on Android: airplane mode on, an on-device answer, a private note, and the Lite, Standard and Full model tiers.",
+            "thumbnailUrl": "https://offlinemate.com/media/demo-poster.jpg",
+            "contentUrl": "https://offlinemate.com/media/offlinemate-demo.mp4",
+            "uploadDate": "2026-11-09",
+            "duration": "PT35S"
           },
           {
             "@type": "FAQPage",
@@ -412,68 +423,101 @@
             <div class="section-head">
               <p class="section-kicker">Preview</p>
               <h2 id="app-preview-heading">See OfflineMate in action</h2>
-              <p class="section-intro">Screenshots from the Android app.</p>
+              <p class="section-intro">A 35-second screen recording from the Android app, then a closer look at each screen.</p>
             </div>
-            <div class="screenshot-grid">
+            <figure class="demo-video">
+              <video
+                controls
+                playsinline
+                muted
+                preload="none"
+                width="1280"
+                height="720"
+                poster="/media/demo-poster.jpg"
+                aria-describedby="demo-video-caption"
+              >
+                <source src="/media/offlinemate-demo.webm" type="video/webm" />
+                <source src="/media/offlinemate-demo.mp4" type="video/mp4" />
+                <track kind="captions" src="/media/offlinemate-demo.en.vtt" srclang="en" label="English" />
+                <a href="/media/offlinemate-demo.mp4">Download the OfflineMate demo video (MP4)</a>
+              </video>
+              <figcaption id="demo-video-caption">
+                Airplane mode on, an answer generated on the phone, a private note, and the model tiers. Recorded on an
+                Android emulator with the Lite tier (LFM 2.5 350M); answers are shown at real speed.
+              </figcaption>
+            </figure>
+            <div class="screenshot-grid screenshot-grid--phones">
               <figure class="shot-card">
                 <img
                   class="shot"
-                  src="/screenshots/offline-ai-chat-android.jpeg"
-                  width="655"
-                  height="1280"
-                  alt="OfflineMate chat screen on Android showing an on-device model answering a question about business ideas."
+                  src="/screenshots/chat.webp"
+                  width="480"
+                  height="990"
+                  alt="OfflineMate chat screen: the Lite model on the phone answers a request for three tips to beat jet lag."
                   loading="lazy"
                   decoding="async"
                 />
-                <figcaption>On-device chat</figcaption>
+                <figcaption>On-device chat, even in airplane mode</figcaption>
               </figure>
               <figure class="shot-card">
                 <img
                   class="shot"
-                  src="/screenshots/model-tier-settings.jpeg"
-                  width="662"
-                  height="1280"
-                  alt="OfflineMate settings screen with Lite, Standard, and Full model tiers and the RAM each one targets."
+                  src="/screenshots/notes.webp"
+                  width="480"
+                  height="990"
+                  alt="OfflineMate notes screen with a saved trip checklist note."
                   loading="lazy"
                   decoding="async"
                 />
-                <figcaption>Settings and model tier</figcaption>
+                <figcaption>Notes saved on the device</figcaption>
               </figure>
               <figure class="shot-card">
                 <img
                   class="shot"
-                  src="/screenshots/standard-model-options.jpeg"
-                  width="662"
-                  height="1280"
-                  alt="OfflineMate Standard model options dialog listing Gemma 4, Qwen 3, Qwen 3.5, SmolLM2, and Llama 3.2."
+                  src="/screenshots/onboarding.webp"
+                  width="480"
+                  height="990"
+                  alt="OfflineMate setup screen recommending a tier for the phone's RAM, with the Lite, Standard and Full choices and the Lite models."
                   loading="lazy"
                   decoding="async"
                 />
-                <figcaption>Standard model options</figcaption>
+                <figcaption>Setup recommends a tier for your phone</figcaption>
               </figure>
               <figure class="shot-card">
                 <img
                   class="shot"
-                  src="/screenshots/saved-chats-list.jpeg"
-                  width="655"
-                  height="1280"
-                  alt="OfflineMate chats screen showing multiple saved conversations with delete buttons."
+                  src="/screenshots/picker-lite.webp"
+                  width="480"
+                  height="990"
+                  alt="OfflineMate Lite model options showing SmolLM2 135M and LFM 2.5 350M downloaded, with a Re-download action."
                   loading="lazy"
                   decoding="async"
                 />
-                <figcaption>Multiple chats and delete controls</figcaption>
+                <figcaption>Pick and download models per tier</figcaption>
               </figure>
               <figure class="shot-card">
                 <img
                   class="shot"
-                  src="/screenshots/device-tools-list.jpeg"
-                  width="656"
-                  height="1280"
-                  alt="OfflineMate tools screen listing alarms, web search, contacts, notes, and reminders tools."
+                  src="/screenshots/tools.webp"
+                  width="480"
+                  height="990"
+                  alt="OfflineMate tools screen listing calendar, alarm, web search, contacts, notes and reminders tools."
                   loading="lazy"
                   decoding="async"
                 />
                 <figcaption>Built-in tools</figcaption>
+              </figure>
+              <figure class="shot-card">
+                <img
+                  class="shot"
+                  src="/screenshots/settings.webp"
+                  width="480"
+                  height="990"
+                  alt="OfflineMate settings screen with the model tiers and a privacy and network boundaries panel."
+                  loading="lazy"
+                  decoding="async"
+                />
+                <figcaption>Settings and privacy boundaries</figcaption>
               </figure>
             </div>
           </section>

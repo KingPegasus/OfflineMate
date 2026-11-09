@@ -2,9 +2,10 @@
 #   .\scripts\generate-play-store-assets.ps1
 # Outputs:
 #   assets/play-store-listing/store-icon-512.png
-#   assets/play-store-listing/feature-graphic-1024x500.png
 #
-# For a more polished feature graphic, use Figma/Canva (1024×500) and replace the auto layout.
+# The feature graphic and screenshots are rendered by marketing/ (see marketing/README.md).
+# Pass -FeatureGraphic to overwrite the feature graphic with this script's plain fallback layout.
+param([switch]$FeatureGraphic)
 
 $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -24,7 +25,10 @@ try {
   $g = [System.Drawing.Graphics]::FromImage($out512)
   $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
   $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
-  $g.DrawImage($srcIcon, 0, 0, 512, 512)
+  # Use the inner rounded tile, full bleed: Play applies its own rounded mask, so the outer
+  # border of assets/icon.png would otherwise show as a frame inside a frame.
+  $tile = New-Object System.Drawing.Rectangle 118, 122, 788, 788
+  $g.DrawImage($srcIcon, (New-Object System.Drawing.Rectangle 0, 0, 512, 512), $tile, [System.Drawing.GraphicsUnit]::Pixel)
   $g.Dispose()
   $iconOut = Join-Path $outDir "store-icon-512.png"
   $out512.Save($iconOut, [System.Drawing.Imaging.ImageFormat]::Png)
@@ -34,7 +38,11 @@ try {
   $srcIcon.Dispose()
 }
 
-# --- 2) Feature graphic 1024×500 ---
+# --- 2) Feature graphic 1024×500 (fallback; the designed one comes from marketing/) ---
+if (-not $FeatureGraphic) {
+  Write-Host "Skipped the feature graphic (marketing/ renders it). Pass -FeatureGraphic to write the fallback."
+  exit 0
+}
 $logoPath = Join-Path $repoRoot "website\offlinemate.png"
 if (-not (Test-Path $logoPath)) { throw "Missing website\offlinemate.png" }
 $logo = [System.Drawing.Image]::FromFile($logoPath)
@@ -69,4 +77,4 @@ try {
   $logo.Dispose()
 }
 
-Write-Host "Upload these in Play Console > Main store listing. Polish the feature graphic in Figma/Canva if needed."
+Write-Host "Upload these in Play Console > Main store listing."
