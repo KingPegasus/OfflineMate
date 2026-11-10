@@ -101,6 +101,14 @@ export function resolveReminderSeconds(explicitSeconds?: string, naturalLanguage
   return 0;
 }
 
+/** "today at 5 PM" after 5 PM: the user named a time today that is already over. */
+export function isPastTimeToday(naturalLanguage?: string, now: Date = new Date()): boolean {
+  const text = (naturalLanguage ?? "").toLowerCase();
+  if (!/\btoday\b/.test(text) || !TIME_OF_DAY.test(text)) return false;
+  const parsed = chrono.parseDate(text, now);
+  return !!parsed && parsed.getTime() <= now.getTime();
+}
+
 /** Strip trailing time phrases so the reminder body is just the action (no "in 5 mins" or "tomorrow same time"). */
 function stripTrailingTime(text: string): string {
   return text

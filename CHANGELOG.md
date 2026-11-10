@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.2] - 2026-11-10
+
+### Fixed
+- On the Lite tier, replies after a tool call are now the tool's own sentences, such as "Reminder set for tomorrow at 9:00 AM: call the bank." or "Note saved: pack passport". Lite models (SmolLM2 135M/360M, LFM 2.5 350M) are too small to write a reply from tool output: they repeated the tool name or payload JSON, or LFM 2.5 350M printed `<|endoftext|>` and then unrelated text. 0.7.1 only caught the tool-name and payload echoes. Lite now skips the model for tool replies and drops the tool name, payload JSON and plan line. Note and contact searches list the titles or names they found, and web search results (for example "pharmacy near Lahore") are shown as the list the search returned. Standard and Full still word their own replies (`src/ai/tool-reply.ts`, `src/hooks/useLLMChat.ts`).
+- "Remind me today at 5 PM" after 5 PM now says that time has already passed today. Before, it said it couldn't figure out when (`src/tools/reminder-parser.ts`, `src/tools/reminders-tool.ts`).
+
+### Changed
+- Unit tests for reminder times: "tomorrow at 9 AM" (09:00 tomorrow, not 24 hours from now), "today at 5 PM", "in 2 hours", a clock time that already passed today (moves to tomorrow), and "today at 5 PM" after 5 PM (not scheduled) (`tests/unit/reminder-parser.test.ts`).
+- Unit tests for the Lite tool replies (`tests/unit/tool-reply.test.ts`).
+- Checked every model size in `src/ai/model-registry.ts` against the file the app downloads (Content-Length from Hugging Face). All 12 match, so the picker, onboarding and website sizes from 0.7.1 stay. Gemma 4 E2B is 2451 MB because Android downloads its Vulkan export (2.57 GB). The XNNPACK export, which some Hugging Face pages list first, is larger.
+- App version updated to `0.7.2` in `app.json`. This is a patch release with bug fixes only.
+
+### Known issues
+- OfflineMate has no directions or maps tool. A directions request with "near me" or a place goes to web search, and other directions questions are answered by the model without a tool.
+- The demo video still has no reminder flow. It was recorded before these fixes.
+- On a tablet, the app shows the phone layout stretched to full width (no tablet layout yet).
+- On a 4 GB tablet, setup says "Recommended tier: Lite (3-4 GB RAM)" but highlights Standard (`app/onboarding.tsx`).
+
 ## [0.7.1] - 2026-11-09
 
 ### Fixed

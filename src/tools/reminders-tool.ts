@@ -1,7 +1,12 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import type { Tool } from "@/tools/tool-registry";
-import { describeReminderTime, resolveReminderSeconds, resolveReminderText } from "@/tools/reminder-parser";
+import {
+  describeReminderTime,
+  isPastTimeToday,
+  resolveReminderSeconds,
+  resolveReminderText,
+} from "@/tools/reminder-parser";
 
 const REMINDER_CHANNEL_ID = "offlinemate-reminders-v2";
 const REMINDER_CHANNEL_LEGACY = "offlinemate-reminders";
@@ -38,6 +43,12 @@ export const setReminderTool: Tool = {
     const seconds = resolveReminderSeconds(params.seconds, sourceText);
     console.log("[OfflineMate] Reminder request:", { text, seconds, sourceText: sourceText.slice(0, 80) });
 
+    if (seconds <= 0 && isPastTimeToday(sourceText)) {
+      return {
+        ok: false,
+        message: "That time has already passed today. Say a later time, or \"tomorrow at ...\".",
+      };
+    }
     if (seconds <= 0) {
       return {
         ok: false,

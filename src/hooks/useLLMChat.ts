@@ -27,6 +27,7 @@ import { isMemoryPressureHigh } from "@/utils/performance";
 import { saveImportantMemory } from "@/context/long-term-memory";
 import { executePlanSteps, planStepsFromPrompt } from "@/ai/agent-planner";
 import { cleanModelOutput, looksLikeToolEcho } from "@/ai/output-guard";
+import { buildDeterministicToolReply, usesDeterministicToolReplies } from "@/ai/tool-reply";
 import { ragAnswerOrFallback } from "@/ai/rag-grounding";
 import { parseThinkTaggedContent, toThinkingLines } from "@/ai/think-parser";
 import { buildSearchSynthesisMessages, runAgenticSearchFlow } from "@/ai/agentic-search-flow";
@@ -715,6 +716,23 @@ export function useLLMChat() {
           if (voiceEnabled) {
             console.log("[OfflineMate] Chat: voice on, speaking direct answer");
             await speak(spokenOutput);
+          }
+          return;
+        }
+
+        // Lite models garble replies written from tool output, so show the tool's own sentences instead.
+        const liteToolReply =
+          intent === "tool" && usesDeterministicToolReplies(activeTier) ? buildDeterministicToolReply(toolResult) : null;
+        if (liteToolReply) {
+          const replyText = cleanModelOutput(liteToolReply);
+          setStreamingHasThinkTag(false);
+          setStreamingThinkClosed(true);
+          setStreamingThinking([]);
+          setStreamingResponse(replyText);
+          pushMessage(createAssistantMessage(replyText, null), requestConversationId);
+          console.log(`[OfflineMate] Lite tool reply (deterministic): ${JSON.stringify(replyText.slice(0, 200))}`);
+          if (voiceEnabled) {
+            await speak(replyText);
           }
           return;
         }

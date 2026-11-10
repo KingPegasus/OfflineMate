@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, vi } from "vitest";
-import { describeReminderTime, resolveReminderSeconds, resolveReminderText } from "@/tools/reminder-parser";
+import {
+  describeReminderTime,
+  isPastTimeToday,
+  resolveReminderSeconds,
+  resolveReminderText,
+} from "@/tools/reminder-parser";
 
 describe("reminder clock times", () => {
   // Monday 9 Nov 2026, 23:00 local time.
@@ -24,6 +29,38 @@ describe("reminder clock times", () => {
     vi.setSystemTime(at);
     const seconds = resolveReminderSeconds(undefined, "remind me tonight at 8pm to water the plants");
     expect(new Date(at.getTime() + seconds * 1000).getHours()).toBe(20);
+  });
+
+  it("schedules 'tomorrow at 9 AM' for 09:00 tomorrow, not now + 24 h", () => {
+    const seconds = resolveReminderSeconds(undefined, "remind me tomorrow at 9 AM to call the bank");
+    expect(seconds).not.toBe(86400);
+    expect(new Date(now.getTime() + seconds * 1000)).toEqual(new Date(2026, 10, 10, 9, 0, 0));
+  });
+
+  it("schedules 'today at 5 PM' for 17:00 today", () => {
+    const morning = new Date(2026, 10, 9, 10, 30, 0);
+    vi.setSystemTime(morning);
+    const seconds = resolveReminderSeconds(undefined, "remind me today at 5 PM to pick up the kids");
+    expect(new Date(morning.getTime() + seconds * 1000)).toEqual(new Date(2026, 10, 9, 17, 0, 0));
+  });
+
+  it("schedules 'in 2 hours' exactly two hours ahead", () => {
+    expect(resolveReminderSeconds(undefined, "remind me in 2 hours to stretch")).toBe(7200);
+    expect(resolveReminderSeconds(undefined, "remind me in two hours to stretch")).toBe(7200);
+  });
+
+  it("moves a clock time that already passed today to tomorrow", () => {
+    // 23:00 now, so 9 AM today is gone.
+    const seconds = resolveReminderSeconds(undefined, "remind me at 9 AM to call the bank");
+    expect(new Date(now.getTime() + seconds * 1000)).toEqual(new Date(2026, 10, 10, 9, 0, 0));
+  });
+
+  it("does not schedule 'today at 5 PM' once 5 PM has passed", () => {
+    // Firing tomorrow would contradict "today", so the tool asks for a time instead (0 = not scheduled).
+    expect(resolveReminderSeconds(undefined, "remind me today at 5 PM to pick up the kids")).toBe(0);
+    expect(isPastTimeToday("remind me today at 5 PM to pick up the kids", now)).toBe(true);
+    expect(isPastTimeToday("remind me today at 11:30 PM to lock up", now)).toBe(false);
+    expect(isPastTimeToday("remind me at 9 AM to call the bank", now)).toBe(false);
   });
 
   it("keeps the 24-hour offset when there is no clock time", () => {
