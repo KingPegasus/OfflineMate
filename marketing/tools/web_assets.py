@@ -12,6 +12,7 @@ OUT = ROOT / "marketing" / "out"
 WEB = ROOT / "website"
 
 FRAMES = ["chat", "notes", "onboarding", "picker-lite", "tools", "settings"]
+TABLET_FRAMES = ["chat", "notes", "picker-lite"]
 
 
 def ffmpeg():
@@ -27,6 +28,12 @@ def images():
         im = Image.open(OUT / "web" / f"frame-{name}.png").convert("RGBA")
         im = im.resize((480, 990), Image.LANCZOS)          # shown at ~300-460 CSS px; 480 covers 1.5x screens
         dst = WEB / "screenshots" / f"{name}.webp"
+        im.save(dst, "WEBP", quality=82, method=6)
+        print("wrote", dst.relative_to(ROOT), dst.stat().st_size // 1024, "KB")
+    for name in TABLET_FRAMES:
+        im = Image.open(OUT / "web" / f"frame-tablet-{name}.png").convert("RGBA")
+        im = im.resize((1600, 1100), Image.LANCZOS)        # shown up to ~1000 CSS px wide (chat) or ~500 (pair)
+        dst = WEB / "screenshots" / f"tablet-{name}.webp"
         im.save(dst, "WEBP", quality=82, method=6)
         print("wrote", dst.relative_to(ROOT), dst.stat().st_size // 1024, "KB")
     og = Image.open(OUT / "web" / "og-image.png").convert("RGB")

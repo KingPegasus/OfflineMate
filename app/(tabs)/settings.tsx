@@ -15,9 +15,12 @@ import {
 import { useChatStore } from "@/stores/chat-store";
 import { llmEngine } from "@/ai/llm-engine";
 import type { ModelTier } from "@/types/assistant";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
+import { DIALOG_MAX_WIDTH, READABLE_MAX_WIDTH } from "@/utils/layout";
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { isWide } = useBreakpoint();
   const selectedTier = useSettingsStore((s) => s.selectedTier);
   const tierModelIds = useSettingsStore((s) => s.tierModelIds);
   const setTier = useSettingsStore((s) => s.setSelectedTier);
@@ -192,8 +195,8 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={["top"]}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.root} edges={isWide ? ["top", "bottom"] : ["top"]}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, isWide && styles.contentWide]} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Model Tier</Text>
         <View style={styles.activeModelCard}>
           <Text style={styles.activeLabel}>Active model</Text>
@@ -260,8 +263,8 @@ export default function SettingsScreen() {
         animationType="slide"
         onRequestClose={() => setModelPickerTier(null)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+        <View style={[styles.modalBackdrop, isWide && styles.modalBackdropWide]}>
+          <View style={[styles.modalCard, isWide && styles.modalCardWide]}>
             <Text style={styles.modalTitle}>{modalTierSpec.name} model options</Text>
             <Text style={styles.modalHint}>
               Pick a model for {modalTierSpec.name}, then tap Download now if it is not downloaded yet.
@@ -346,6 +349,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#0b1020" },
   scroll: { flex: 1 },
   content: { padding: 16, paddingBottom: 36 },
+  contentWide: { width: "100%", maxWidth: READABLE_MAX_WIDTH, alignSelf: "center", paddingTop: 24 },
   title: { color: "#e5e7eb", fontSize: 20, fontWeight: "700", marginBottom: 12 },
   subtitle: { color: "#e5e7eb", fontSize: 16, fontWeight: "600", marginTop: 4, marginBottom: 8 },
   hint: { color: "#9ca3af", fontSize: 12, lineHeight: 18, marginBottom: 8 },
@@ -372,6 +376,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 16,
   },
+  modalBackdropWide: { alignItems: "center" },
+  modalCardWide: { width: "100%", maxWidth: DIALOG_MAX_WIDTH, padding: 20 },
   modalCard: {
     backgroundColor: "#0f172a",
     borderWidth: 1,

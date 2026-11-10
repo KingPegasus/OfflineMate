@@ -6,9 +6,12 @@ import { getDeviceTierRecommendation } from "@/utils/device-profiler";
 import { getModelsForTier, MODEL_TIERS, resolveModelForTier } from "@/ai/model-registry";
 import { useSettingsStore } from "@/stores/settings-store";
 import { ModelDownloader } from "@/components/ModelDownloader";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
+import { READABLE_MAX_WIDTH } from "@/utils/layout";
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { isWide } = useBreakpoint();
   const [recommended, setRecommended] = useState<"lite" | "standard" | "full">("standard");
   const [isSelectedTierReady, setIsSelectedTierReady] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -41,7 +44,7 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, isWide && styles.contentWide]}>
         <Text style={styles.h1}>Welcome to OfflineMate</Text>
         <Text style={styles.body}>
           Recommended tier: {recommendedTier.name} ({recommendedTier.targetRam})
@@ -119,6 +122,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#030712" },
   content: { padding: 20, gap: 12 },
+  contentWide: { width: "100%", maxWidth: READABLE_MAX_WIDTH, alignSelf: "center", paddingTop: 32 },
   h1: { color: "#e5e7eb", fontSize: 26, fontWeight: "800" },
   h2: { color: "#e5e7eb", fontSize: 16, fontWeight: "700", marginTop: 6 },
   body: { color: "#9ca3af" },

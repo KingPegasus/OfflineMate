@@ -83,7 +83,9 @@
               "https://offlinemate.com/screenshots/chat.webp",
               "https://offlinemate.com/screenshots/notes.webp",
               "https://offlinemate.com/screenshots/settings.webp",
-              "https://offlinemate.com/screenshots/tools.webp"
+              "https://offlinemate.com/screenshots/tools.webp",
+              "https://offlinemate.com/screenshots/tablet-chat.webp",
+              "https://offlinemate.com/screenshots/tablet-notes.webp"
             ],
             "featureList": [
               "On-device AI chat",
@@ -222,7 +224,9 @@
                 OfflineMate runs language models on your phone, so your chats, notes, and reminders work without a cloud
                 service or an account. Download a model once, then keep using it in airplane mode.
               </p>
-              <p class="availability-note">For <strong>Android 7.0 and later</strong>. Not available on iOS yet.</p>
+              <p class="availability-note">
+                For <strong>Android 7.0 and later</strong>, on phones and tablets. Not available on iOS yet.
+              </p>
               <div class="actions">
                 <a class="btn btn-primary" href="#get">Get OfflineMate</a>
                 <a class="btn" href="/run-ai-offline-on-android.html">How offline AI works</a>
@@ -230,16 +234,31 @@
             </div>
             <div class="hero-visual">
               <img
-                class="logo-hero"
-                src="/offlinemate.png"
-                width="176"
-                height="176"
-                alt="OfflineMate app icon: a chat bubble with a padlock"
+                class="hero-tablet"
+                src="/screenshots/tablet-chat.webp"
+                width="1600"
+                height="1100"
+                alt="OfflineMate on an Android tablet: the chat list beside a conversation in which the Lite model answers a request for three tips to beat jet lag."
                 fetchpriority="high"
+                decoding="async"
+              />
+              <img
+                class="hero-phone"
+                src="/screenshots/notes.webp"
+                width="480"
+                height="990"
+                alt="OfflineMate on an Android phone: the notes screen with a saved trip checklist."
                 decoding="async"
               />
             </div>
           </section>
+
+          <ul class="facts" aria-label="OfflineMate at a glance">
+            <li><strong>On device</strong><span>Chat, notes and voice input run on your phone</span></li>
+            <li><strong>12 models</strong><span>SmolLM2, LFM, Gemma, Qwen, Llama and more</span></li>
+            <li><strong>3 tiers</strong><span>Lite, Standard and Full, matched to your RAM</span></li>
+            <li><strong>No account</strong><span>Free, open source, MIT licensed</span></li>
+          </ul>
 
           <section id="features" aria-labelledby="features-heading">
             <div class="section-head">
@@ -519,6 +538,53 @@
                 />
                 <figcaption>Settings and privacy boundaries</figcaption>
               </figure>
+            </div>
+            <div class="tablet-showcase">
+              <div class="section-head section-head--sub">
+                <h3>Made for tablets too</h3>
+                <p class="section-intro">
+                  On a tablet, a side rail replaces the bottom tabs, your chats sit beside the conversation, and notes open
+                  next to the list.
+                </p>
+              </div>
+              <div class="screenshot-grid screenshot-grid--tablets">
+                <figure class="shot-card shot-card--wide">
+                  <img
+                    class="shot"
+                    src="/screenshots/tablet-chat.webp"
+                    width="1600"
+                    height="1100"
+                    alt="OfflineMate on a tablet: the chat list on the left and a conversation on the right, with the Lite model's answer about jet lag."
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <figcaption>Chats and the conversation side by side</figcaption>
+                </figure>
+                <figure class="shot-card">
+                  <img
+                    class="shot"
+                    src="/screenshots/tablet-notes.webp"
+                    width="1600"
+                    height="1100"
+                    alt="OfflineMate notes on a tablet: the note list beside the open trip checklist."
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <figcaption>Notes next to the list</figcaption>
+                </figure>
+                <figure class="shot-card">
+                  <img
+                    class="shot"
+                    src="/screenshots/tablet-picker-lite.webp"
+                    width="1600"
+                    height="1100"
+                    alt="OfflineMate model picker on a tablet: the Lite model options in a centred dialog."
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <figcaption>Model picker at a readable width</figcaption>
+                </figure>
+              </div>
             </div>
           </section>
 

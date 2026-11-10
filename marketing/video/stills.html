@@ -33,7 +33,7 @@
 <body>
 <div class="canvas" id="c"><div class="grid"></div></div>
 <script>
-// Layouts, sized from the viewport. Query: ?layout=store|feature|og|device&shot=chat&head=...&sub=...&kicker=...
+// Layouts, sized from the viewport. Query: ?layout=store|tablet|feature|og|device|tablet-device&shot=chat&head=...&sub=...&kicker=...
 const q = new URLSearchParams(location.search);
 const W = innerWidth, H = innerHeight, c = document.getElementById('c');
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -91,6 +91,14 @@ if (layout === 'store') {
   c.style.background = 'none'; c.innerHTML = '';
   const pad = Math.round(W * 0.06), h = H - pad * 2;
   imgs.push(phone(q.get('shot'), Math.round((W - h * 0.45) / 2), pad, h).img);
+} else if (layout === 'tablet-device') {
+  // A framed landscape tablet on a transparent background (website gallery).
+  c.style.background = 'none'; c.innerHTML = '';
+  const pad = Math.round(W * 0.06), tw = W - pad * 2, th = Math.round(tw / (q.get('ar') ? Number(q.get('ar')) : 1.6));
+  const p = el('div', 'phone');
+  Object.assign(p.style, { left: pad + 'px', top: Math.round((H - th) / 2) + 'px', width: tw + 'px', height: th + 'px', borderRadius: Math.round(tw * .03) + 'px' });
+  p.style.setProperty('--bz', Math.round(tw * .012) + 'px');
+  const img = el('img'); img.src = `shots/${q.get('shot')}.png`; p.appendChild(img); c.appendChild(p); imgs.push(img);
 }
 window.READY = document.fonts.ready.then(() => Promise.all(imgs.map(i => i.complete ? 1 : new Promise(r => { i.onload = r; i.onerror = r; })))).then(() => true);
 </script>

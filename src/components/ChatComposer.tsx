@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View, type StyleProp, type ViewStyle } from "react-native";
 import { VoiceButton } from "@/components/VoiceButton";
 
 type Props = {
@@ -9,6 +9,8 @@ type Props = {
   isLoading: boolean;
   canSubmit: boolean;
   onVoiceTranscript: (text: string) => void;
+  /** Extra row style, e.g. a max width on tablets. */
+  style?: StyleProp<ViewStyle>;
 };
 
 export function ChatComposer({
@@ -19,9 +21,10 @@ export function ChatComposer({
   isLoading,
   canSubmit,
   onVoiceTranscript,
+  style,
 }: Props) {
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, style]}>
       <TextInput
         placeholder="Ask OfflineMate..."
         placeholderTextColor="#6b7280"
