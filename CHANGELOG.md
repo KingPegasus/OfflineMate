@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.8.2] - 2026-11-10
+
+### Fixed
+- iOS: the app quit as soon as Chat opened (after "Continue to Chat", or on any launch after setup) with `Cannot find native module 'ExpoAlarm'`. `expo-alarm` is Android-only and looks up its native module when it is imported, and the alarm tool imported it at the top of the file, so loading the tool registry crashed iOS. The alarm tool now loads `expo-alarm` only when an alarm is set on Android; on iOS it keeps replying that native alarms are Android-only (`src/tools/alarm-tool.ts`, `tests/unit/alarm-tool-platform.test.ts`).
+- iOS builds: `pod install` failed because `react-native-executorch` needs iOS 17.0 and the generated project targeted 16.4. The minimum is now set to 17.0 through `expo-build-properties` in `app.json`, so `expo prebuild` and EAS iOS builds get it automatically (new dependency `expo-build-properties`).
+- A clean `npm ci` with npm 11 skipped `react-native-executorch`'s install script, so the ExecuTorch native libraries (iOS xcframeworks and Android `.so` files) were never downloaded. The script is now approved in `package.json` (`allowScripts`).
+- The app no longer spins forever on launch when the saved settings can't be read. If the Keychain or Keystore read fails (seen on iOS as `-34018`, missing keychain entitlement), the app starts with default settings and logs a warning instead of waiting for hydration that never finishes. Failed saves are logged rather than thrown (`src/stores/settings-store.ts`, `tests/unit/settings-store.test.ts`).
+- Setup screen on iOS: the "Setup" header was black on the dark screen and drawn over "Welcome to OfflineMate", and the status bar text was dark on dark. The header now has the screen's dark background with light text, the content starts right below it (the screen no longer adds its own top safe-area padding under the header), and the setup screen uses light status bar text. iOS sets the status bar per screen (`UIViewControllerBasedStatusBarAppearance`), so the style is now a `statusBarStyle` screen option: light for setup, dark for the tab screens, which keep their white header (`app/_layout.tsx`, `app/onboarding.tsx`). This also gives the Android setup screen a dark header.
+
+### Changed
+- `BUILDING.md` has a new "Local iOS Simulator Build (macOS)" section.
+- Vitest ignores `.claude/`, so leftover Claude Code worktrees (`.claude/worktrees/`, each with its own `tests/`) no longer make `npm run validate` and the pre-commit hook fail (`vitest.config.ts`).
+- App version updated to `0.8.2` in `app.json`. This is a patch release with build and launch fixes.
+
+### Known issues
+- The `allowScripts` approval is pinned to `react-native-executorch@0.11.0`. After upgrading the package, approve the new version (`npx npm@11 install-scripts approve react-native-executorch`), or `npm ci` will skip the native-library download again.
+- iOS has only been run on the simulator (iPhone 18 Pro, iOS 27.2) up to the setup screen. Model download, chat, voice and on-device performance haven't been tested on iOS, and a real iPhone needs an Apple Developer signing team.
+- On the simulator, setup recommends the Full tier because it reports the Mac's RAM.
+
 ## [0.8.1] - 2026-11-10
 
 ### Fixed

@@ -1,4 +1,33 @@
-import { migrateSettingsState, useSettingsStore } from "@/stores/settings-store";
+import * as SecureStore from "expo-secure-store";
+import { migrateSettingsState, secureStorage, useSettingsStore } from "@/stores/settings-store";
+
+describe("secureStorage", () => {
+  const keychainError = Object.assign(new Error("Keychain access failed: A required entitlement is not present."), {
+    code: "-34018",
+  });
+
+  it("returns null instead of rejecting when the read fails, so hydration can finish", async () => {
+    vi.mocked(SecureStore.getItemAsync).mockRejectedValueOnce(keychainError);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(secureStorage.getItem("offlinemate-settings")).resolves.toBeNull();
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it("does not reject when a write or delete fails", async () => {
+    vi.mocked(SecureStore.setItemAsync).mockRejectedValueOnce(keychainError);
+    vi.mocked(SecureStore.deleteItemAsync).mockRejectedValueOnce(keychainError);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(secureStorage.setItem("offlinemate-settings", "{}")).resolves.toBeUndefined();
+    await expect(secureStorage.removeItem("offlinemate-settings")).resolves.toBeUndefined();
+  });
+
+  it("passes values through when the store works", async () => {
+    await secureStorage.setItem("roundtrip", "value");
+    await expect(secureStorage.getItem("roundtrip")).resolves.toBe("value");
+    await secureStorage.removeItem("roundtrip");
+    await expect(secureStorage.getItem("roundtrip")).resolves.toBeNull();
+  });
+});
 
 describe("settings store", () => {
   beforeEach(() => {

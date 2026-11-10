@@ -49,6 +49,7 @@
     "expo": "~58.0.23",
     "expo-alarm": "^0.2.2",
     "expo-asset": "~58.0.19",
+    "expo-build-properties": "~58.0.12",
     "expo-calendar": "~58.0.6",
     "expo-clipboard": "~58.0.4",
     "expo-constants": "~58.0.14",
@@ -99,5 +100,8 @@
     "tsx": "^4.22.4",
     "typescript": "~6.0.3",
     "vitest": "^5.1.0"
+  },
+  "allowScripts": {
+    "react-native-executorch@0.11.0": true
   }
 }

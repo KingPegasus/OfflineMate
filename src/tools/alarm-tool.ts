@@ -1,5 +1,4 @@
 import { Platform } from "react-native";
-import { setAlarm } from "expo-alarm";
 import type { Tool } from "@/tools/tool-registry";
 import { parseAlarmTime, extractAlarmMessage } from "@/tools/alarm-parser";
 
@@ -44,6 +43,10 @@ export const setAlarmTool: Tool = {
       params.title?.trim() || params.message?.trim() || extractAlarmMessage(sourceText) || "Alarm";
 
     try {
+      // expo-alarm is Android-only and calls requireNativeModule("ExpoAlarm") when it is imported,
+      // which throws on iOS. A top-level import crashed the iOS app as soon as Chat loaded the
+      // tool registry, so load it here, after the Android check.
+      const { setAlarm } = await import("expo-alarm");
       await setAlarm({
         hour,
         minutes,

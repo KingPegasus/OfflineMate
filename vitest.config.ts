@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import path from "node:path";
 
 export default defineConfig({
@@ -6,6 +6,9 @@ export default defineConfig({
     globals: true,
     environment: "node",
     setupFiles: ["tests/setup.ts"],
+    // Claude Code worktrees live in .claude/worktrees/ and contain their own copy of tests/;
+    // without this, `vitest run tests/unit` also runs (and fails on) every stale worktree.
+    exclude: [...configDefaults.exclude, ".claude/**"],
     clearMocks: true,
     restoreMocks: true,
     coverage: {

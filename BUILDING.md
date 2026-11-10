@@ -193,6 +193,29 @@ Notes:
 - Keystore creation is interactive on first run.
 - Avoid `--non-interactive` if credentials/keystore are not already configured.
 
+## 5a) Local iOS Simulator Build (macOS)
+
+Needs a Mac with Xcode (tested with Xcode 27.2 on Apple Silicon), Node 24, npm 11 and CocoaPods. A Windows machine can drive it over SSH.
+
+```bash
+npm ci                       # also runs react-native-executorch's native-library download (approved in package.json "allowScripts")
+npx expo prebuild -p ios     # minimum iOS 17.0 comes from expo-build-properties in app.json
+cd ios && pod install && cd ..
+xcodebuild -workspace ios/OfflineMate.xcworkspace -scheme OfflineMate -configuration Release \
+  -sdk iphonesimulator -destination "generic/platform=iOS Simulator" -derivedDataPath ios/build \
+  CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=
+xcrun simctl boot "iPhone 18 Pro"
+xcrun simctl install booted ios/build/Build/Products/Release-iphonesimulator/OfflineMate.app
+xcrun simctl launch booted com.offlinemate.app
+```
+
+Notes:
+
+- The Release build bundles the JavaScript, so it opens without Metro.
+- Keep the ad-hoc signing flags. With `CODE_SIGNING_ALLOWED=NO` the app has no keychain entitlement, so `expo-secure-store` fails with `-34018` and settings can't be saved.
+- If `npm ci` lists `react-native-executorch` under "install scripts not yet covered by allowScripts" (after a version bump), approve the new version with `npx npm@11 install-scripts approve react-native-executorch`, or run `INIT_CWD=$PWD node node_modules/react-native-executorch/scripts/download-libs.js` once.
+- Real-device builds and TestFlight need a paid Apple Developer account (signing team).
+
 ## 6) Recommended Build Order
 
 1. Verify Java/Android SDK tools

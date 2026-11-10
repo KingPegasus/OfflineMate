@@ -80,10 +80,35 @@ export function migrateSettingsState(
   return out;
 }
 
-const secureStorage = {
-  getItem: (name: string) => SecureStore.getItemAsync(name),
-  setItem: (name: string, value: string) => SecureStore.setItemAsync(name, value),
-  removeItem: (name: string) => SecureStore.deleteItemAsync(name),
+/**
+ * Exported for tests. Secure storage that never rejects. If the Keychain/Keystore read fails
+ * (for example iOS error -34018 when the app lacks the keychain entitlement), zustand's persist
+ * would never finish hydrating and the index screen would spin forever. Falling back to defaults
+ * keeps the app usable; a failed write only means the setting isn't remembered.
+ */
+export const secureStorage = {
+  getItem: async (name: string) => {
+    try {
+      return await SecureStore.getItemAsync(name);
+    } catch (e) {
+      console.warn("[OfflineMate] Could not read settings, using defaults:", e);
+      return null;
+    }
+  },
+  setItem: async (name: string, value: string) => {
+    try {
+      await SecureStore.setItemAsync(name, value);
+    } catch (e) {
+      console.warn("[OfflineMate] Could not save settings:", e);
+    }
+  },
+  removeItem: async (name: string) => {
+    try {
+      await SecureStore.deleteItemAsync(name);
+    } catch (e) {
+      console.warn("[OfflineMate] Could not clear settings:", e);
+    }
+  },
 };
 
 interface SettingsState {

@@ -3,7 +3,7 @@
     "name": "OfflineMate",
     "slug": "offlinemate",
     "scheme": "offlinemate",
-    "version": "0.8.1",
+    "version": "0.8.2",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -44,6 +44,14 @@
       "expo-secure-store",
       "expo-font",
       "expo-status-bar",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "17.0"
+          }
+        }
+      ],
       "./plugins/with-cmake-object-path-max"
     ],
     "experiments": {
