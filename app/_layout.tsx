@@ -12,6 +12,7 @@ import { runMigrations } from "@/db/migrations";
 import { registerBackgroundUnload } from "@/utils/performance";
 import { llmEngine } from "@/ai/llm-engine";
 import { cleanupStalePartFiles } from "@/ai/model-manager";
+import { usePhonePortraitLock } from "@/hooks/usePhonePortraitLock";
 
 initExecutorch({
   resourceFetcher: ExpoResourceFetcher,
@@ -31,6 +32,7 @@ export default function RootLayout() {
   const queryClient = useMemo(() => new QueryClient(), []);
 
   useKeepAwake();
+  usePhonePortraitLock();
 
   useEffect(() => {
     runMigrations();
