@@ -3,8 +3,8 @@
     "name": "OfflineMate",
     "slug": "offlinemate",
     "scheme": "offlinemate",
-    "version": "0.8.0",
-    "orientation": "portrait",
+    "version": "0.8.1",
+    "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "plugins": [
@@ -17,12 +17,7 @@
           "backgroundColor": "#030712"
         }
       ],
-      [
-        "expo-sqlite",
-        {
-          "withSQLiteVecExtension": true
-        }
-      ],
+      "expo-sqlite",
       [
         "expo-notifications",
         {

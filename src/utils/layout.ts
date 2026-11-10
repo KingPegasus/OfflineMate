@@ -20,6 +20,15 @@ export const DIALOG_MAX_WIDTH = 560;
 /** Width of the list pane in two-pane layouts (chat list, notes list). */
 export const LIST_PANE_WIDTH = 340;
 
+/**
+ * Phones (shortest screen side under 600 dp) stay in portrait; tablets and foldables rotate.
+ * The lock is applied at runtime, not in the manifest, because Android 16 ignores manifest
+ * orientation locks on large screens and Play flags them.
+ */
+export function shouldLockPortrait(screenWidth: number, screenHeight: number): boolean {
+  return Math.min(screenWidth, screenHeight) < BREAKPOINT_MEDIUM;
+}
+
 export function getWindowClass(width: number): WindowClass {
   if (width >= BREAKPOINT_EXPANDED) return "expanded";
   if (width >= BREAKPOINT_MEDIUM) return "medium";

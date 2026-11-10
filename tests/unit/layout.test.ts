@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getBreakpoint, getWindowClass } from "@/utils/layout";
+import { getBreakpoint, getWindowClass, shouldLockPortrait } from "@/utils/layout";
 
 describe("window size classes", () => {
   it("keeps phones compact, including landscape phones", () => {
@@ -19,5 +19,18 @@ describe("window size classes", () => {
     expect(getWindowClass(840)).toBe("expanded");
     expect(getWindowClass(1280)).toBe("expanded");
     expect(getBreakpoint(1280)).toEqual({ windowClass: "expanded", isWide: true, isTwoPane: true });
+  });
+});
+
+describe("portrait lock", () => {
+  it("locks phones to portrait in either orientation", () => {
+    expect(shouldLockPortrait(411, 914)).toBe(true);
+    expect(shouldLockPortrait(914, 411)).toBe(true);
+  });
+
+  it("lets tablets and unfolded foldables rotate", () => {
+    expect(shouldLockPortrait(800, 1280)).toBe(false);
+    expect(shouldLockPortrait(1280, 800)).toBe(false);
+    expect(shouldLockPortrait(960, 600)).toBe(false);
   });
 });

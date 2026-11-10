@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.8.1] - 2026-11-10
+
+### Fixed
+- Play's warning "Remove resizability and orientation restrictions": the manifest no longer locks the app to portrait (`"orientation": "default"` in `app.json`). Phones are still kept in portrait, now at runtime. When the screen's shortest side is under 600 dp the app locks to portrait, and tablets and unfolded foldables rotate freely. It uses the physical screen size, so split screen on a tablet doesn't lock it, and it checks again when a foldable is unfolded (`src/hooks/usePhonePortraitLock.ts`, `src/utils/layout.ts`, `app/_layout.tsx`, new dependency `expo-screen-orientation`).
+- Play's warning "Recompile your app with 16 KB native library alignment": the only unaligned library was `vec.so`, the sqlite-vec extension bundled with `expo-sqlite` 58.0.15 (the latest). It is no longer included (`withSQLiteVecExtension` removed from `app.json`). Notes search keeps working: every embedding was already saved to a plain table, and the app compares them in JavaScript when sqlite-vec isn't loaded, which is fast enough for a personal notes collection (`src/context/vector-store.ts`, unchanged). All other native libraries (ExecuTorch, Whisper, OpenCV and the rest) were already 16 KB-aligned.
+
+### Changed
+- Unit tests for the portrait lock (`tests/unit/layout.test.ts`).
+- App version updated to `0.8.1` in `app.json`. This is a patch release with Play compatibility fixes only.
+
+### Known issues
+- Play's warning "Your app uses deprecated APIs or parameters for edge-to-edge" remains. The deprecated calls (`Window.setStatusBarColor` / `setNavigationBarColor` and the matching theme attributes) are in React Native, the Expo Android template, `react-native-screens` and `react-native-keyboard-controller`, not in OfflineMate's code. It should clear with later Expo SDK and library updates.
+- Devices that ran an earlier version keep an unused `vectors_idx` table (sqlite-vec) in their database. It is no longer read or written. If sqlite-vec is turned back on once `expo-sqlite` ships an aligned `vec.so`, rebuild that index from the `vectors` table first, since it misses notes changed in the meantime.
+- On a 4 GB tablet, setup says "Recommended tier: Lite (3-4 GB RAM)" but highlights Standard (`app/onboarding.tsx`).
+
 ## [0.8.0] - 2026-11-10
 
 ### Added
