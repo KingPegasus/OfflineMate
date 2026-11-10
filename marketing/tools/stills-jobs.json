@@ -150,6 +150,39 @@
     }
   },
   {
+    "out": "../out/web/frame-tablet-chat.png",
+    "w": 1600,
+    "h": 1100,
+    "transparent": true,
+    "params": {
+      "layout": "tablet-device",
+      "shot": "tablet-chat",
+      "ar": "1.6"
+    }
+  },
+  {
+    "out": "../out/web/frame-tablet-notes.png",
+    "w": 1600,
+    "h": 1100,
+    "transparent": true,
+    "params": {
+      "layout": "tablet-device",
+      "shot": "tablet-notes",
+      "ar": "1.6"
+    }
+  },
+  {
+    "out": "../out/web/frame-tablet-picker-lite.png",
+    "w": 1600,
+    "h": 1100,
+    "transparent": true,
+    "params": {
+      "layout": "tablet-device",
+      "shot": "tablet-picker-lite",
+      "ar": "1.6"
+    }
+  },
+  {
     "out": "../out/store/tablet7/01-offline-chat.png",
     "w": 1920,
     "h": 1200,

@@ -7,7 +7,7 @@ Source and build scripts for the demo video, website images and Play Store graph
 | Path | What it is |
 | --- | --- |
 | `video/overlay.html` | The video's branded background, phone frame, captions and end card. Open it with `?f=vertical`, `?f=landscape` or `?f=square`, plus `&t=12` to see a moment. The screen area is transparent; the recording goes underneath. |
-| `video/stills.html` | Template for store screenshots (`layout=store`, `tablet`), the feature graphic (`feature`), the social image (`og`) and framed screens (`device`). |
+| `video/stills.html` | Template for store screenshots (`layout=store`, `tablet`), the feature graphic (`feature`), the social image (`og`), framed phone screens (`device`) and framed tablet screens (`tablet-device`). |
 | `video/shots/` | Clean emulator screenshots (1080×2400) used by the stills. |
 | `video/vo/` | Voiceover lines (Kokoro `af_heart`, Apache-2.0). |
 | `tools/ui.sh` | adb helpers that tap the emulator by on-screen text. |
@@ -28,7 +28,7 @@ Source and build scripts for the demo video, website images and Play Store graph
 - `out/offlinemate-demo-1080x1080.mp4`: square, for LinkedIn.
 - `out/offlinemate-demo.en.srt`: captions, for all three.
 - `../assets/play-store-listing/`: Play Store graphics (copied from `out/store/`; see its README).
-- `../website/media/`, `../website/screenshots/*.webp`, `../website/og-image.jpg`: the website copies.
+- `../website/media/`, `../website/screenshots/*.webp` (phone and `tablet-*`), `../website/og-image.jpg`: the website copies.
 
 ## Script (35 s)
 

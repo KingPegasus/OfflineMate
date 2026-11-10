@@ -11,7 +11,11 @@ All notable changes to this project are documented in this file.
 - One shared breakpoint helper, so screens don't compare widths themselves: compact under 600 dp, medium 600–839 dp, expanded 840 dp and up, plus the max widths for reading content, chat and dialogs (`src/utils/layout.ts`, `src/hooks/useBreakpoint.ts`, `tests/unit/layout.test.ts`).
 - New 7-inch (1920×1200) and 10-inch (2560×1600) Play Store tablet screenshots of the tablet layout. The 7-inch set is captured at a 7-inch tablet's size (960×600 dp) and the 10-inch set on the Pixel Tablet emulator (1280×800 dp) (`assets/play-store-listing/screenshots/tablet/`, `marketing/video/shots/tablet*-*.png`, `marketing/tools/stills-jobs.json`).
 
+- The homepage shows the tablet layout. The hero's app icon is replaced by a framed tablet (chat) with a phone (notes) in front. A "Made for tablets too" block under the phone gallery shows chat, notes and the model picker on a tablet. The framed tablet images are WebP (33–45 KB each), rendered by a new `tablet-device` layout in `marketing/video/stills.html` (`website/index.html`, `website/styles.css`, `website/screenshots/tablet-*.webp`, `marketing/tools/web_assets.py`, `marketing/tools/stills-jobs.json`).
+- An "at a glance" row under the hero: on device, 12 models, 3 tiers, no account (`website/index.html`, `website/styles.css`).
+
 ### Changed
+- The homepage hero fades in, which is turned off for people who prefer reduced motion. The availability note now says it runs on phones and tablets (`website/index.html`, `website/styles.css`).
 - Settings, the model picker, Tools, Chats and setup are capped at a readable width on wide screens. The model picker is a centred dialog up to 560 dp wide (`app/(tabs)/settings.tsx`, `app/(tabs)/tools.tsx`, `app/(tabs)/chats.tsx`, `app/onboarding.tsx`).
 - App version updated to `0.8.0` in `app.json`. This is a minor release: a new tablet layout.
 
