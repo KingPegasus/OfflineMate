@@ -7,8 +7,8 @@ Upload these in **Play Console → Grow users → Store presence → Main store 
 | App icon | `store-icon-512.png` | 512×512 PNG | Made by `scripts/generate-play-store-assets.ps1` from `assets/icon.png` (full-bleed tile; Play adds the rounded mask). |
 | Feature graphic | `feature-graphic-1024x500.png` | 1024×500 PNG | Logo, name and tagline sit well inside the edges; the phones bleed off the bottom on purpose. |
 | Phone screenshots | `screenshots/phone/01-…06-*.png` | 1080×1920 (9:16) | Upload in number order; the first three show in search results. |
-| 7-inch tablet screenshots | `screenshots/tablet/tablet7/*.png` | 1920×1200 (16:10) | Captured on a Pixel Tablet emulator. |
-| 10-inch tablet screenshots | `screenshots/tablet/tablet10/*.png` | 2560×1600 (16:10) | Same screens at full tablet resolution. |
+| 7-inch tablet screenshots | `screenshots/tablet/tablet7/*.png` | 1920×1200 (16:10) | The tablet layout at a 7-inch tablet's size (960×600 dp), captured on the Pixel Tablet emulator with `wm size 1920x1200` and `wm density 320`. |
+| 10-inch tablet screenshots | `screenshots/tablet/tablet10/*.png` | 2560×1600 (16:10) | The tablet layout on the Pixel Tablet emulator (1280×800 dp): navigation rail, chat list beside the conversation, notes list beside the note. |
 | Promo video (optional) | `marketing/out/offlinemate-demo-1920x1080.mp4` | 1920×1080, 35 s | Play only takes a YouTube URL: upload this to YouTube first, then paste the link. |
 
 ## Phone screenshot order

@@ -18,7 +18,7 @@ Source and build scripts for the demo video, website images and Play Store graph
 | `tools/stills.mjs`, `tools/stills-jobs.json` | Renders the stills listed in the jobs file. |
 | `tools/web_assets.py` | Exports WebP screenshots, the OG image, and the web video, poster and captions into `website/`. |
 | `out/` | The videos and captions. `out/store/` and `out/web/` are render intermediates (git-ignored) that `web_assets.py` and the copy step put into `website/` and `assets/play-store-listing/`. |
-| `video/shots/tablet-*.png` | Tablet screenshots (2560×1600, Pixel Tablet emulator) used by the tablet store stills. |
+| `video/shots/tablet-*.png`, `video/shots/tablet7-*.png` | Tablet screenshots used by the 10-inch and 7-inch store stills: 2560×1600 on the Pixel Tablet emulator, and 1920×1200 on the same emulator set to a 7-inch size (`adb shell wm size 1920x1200` and `wm density 320`; undo with `wm size reset` and `wm density reset`). |
 | `raw/` | Recordings and intermediates (git-ignored). |
 
 ## Outputs

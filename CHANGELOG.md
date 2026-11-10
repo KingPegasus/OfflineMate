@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.8.0] - 2026-11-10
+
+### Added
+- Tablet layout. Screens 600 dp and wider (tablets, large foldables, split-screen windows) get a navigation rail on the left instead of the bottom tab bar, and their content is capped at a readable width instead of stretching across the screen. Phones (under 600 dp) keep the same layout as before (`app/(tabs)/_layout.tsx`).
+- Chat on a wide screen (840 dp and up, such as a tablet in landscape) shows two panes: your chats on the left, the conversation on the right. Tap a chat to open it, or start one with + New chat. The message column and composer are capped at 760 dp and centred. Between 600 and 840 dp (a tablet in portrait), chat stays one column with the same width cap (`app/(tabs)/chat.tsx`, `src/components/ChatListPane.tsx`, `src/components/ChatComposer.tsx`).
+- Notes on a wide screen show the list beside the selected note. The newest note opens first, and a note you save opens right away (`app/(tabs)/notes.tsx`).
+- One shared breakpoint helper, so screens don't compare widths themselves: compact under 600 dp, medium 600–839 dp, expanded 840 dp and up, plus the max widths for reading content, chat and dialogs (`src/utils/layout.ts`, `src/hooks/useBreakpoint.ts`, `tests/unit/layout.test.ts`).
+- New 7-inch (1920×1200) and 10-inch (2560×1600) Play Store tablet screenshots of the tablet layout. The 7-inch set is captured at a 7-inch tablet's size (960×600 dp) and the 10-inch set on the Pixel Tablet emulator (1280×800 dp) (`assets/play-store-listing/screenshots/tablet/`, `marketing/video/shots/tablet*-*.png`, `marketing/tools/stills-jobs.json`).
+
+### Changed
+- Settings, the model picker, Tools, Chats and setup are capped at a readable width on wide screens. The model picker is a centred dialog up to 560 dp wide (`app/(tabs)/settings.tsx`, `app/(tabs)/tools.tsx`, `app/(tabs)/chats.tsx`, `app/onboarding.tsx`).
+- App version updated to `0.8.0` in `app.json`. This is a minor release: a new tablet layout.
+
+### Known issues
+- The app stays portrait-only on phones (`"orientation": "portrait"`). Tablets rotate because Android 16 ignores orientation locks on large screens. On older Android versions a tablet stays in portrait and gets the one-column tablet layout.
+- On a 4 GB tablet, setup says "Recommended tier: Lite (3-4 GB RAM)" but highlights Standard (`app/onboarding.tsx`).
+- The demo video still has no reminder flow. It was recorded before the 0.7.1 and 0.7.2 fixes.
+
 ## [0.7.2] - 2026-11-10
 
 ### Fixed

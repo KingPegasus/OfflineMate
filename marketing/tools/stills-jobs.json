@@ -155,7 +155,7 @@
     "h": 1200,
     "params": {
       "layout": "tablet",
-      "shot": "tablet-chat",
+      "shot": "tablet7-chat",
       "ar": "1.6",
       "kicker": "Works offline",
       "head": "Your AI assistant, <em>no internet needed</em>",
@@ -168,7 +168,7 @@
     "h": 1200,
     "params": {
       "layout": "tablet",
-      "shot": "tablet-notes",
+      "shot": "tablet7-notes",
       "ar": "1.6",
       "kicker": "Private",
       "head": "Notes stay <em>on your device</em>",
@@ -181,7 +181,7 @@
     "h": 1200,
     "params": {
       "layout": "tablet",
-      "shot": "tablet-onboarding",
+      "shot": "tablet7-onboarding",
       "ar": "1.6",
       "kicker": "Set up once",
       "head": "A tier that <em>fits your device</em>",
@@ -194,7 +194,7 @@
     "h": 1200,
     "params": {
       "layout": "tablet",
-      "shot": "tablet-picker-lite",
+      "shot": "tablet7-picker-lite",
       "ar": "1.6",
       "kicker": "Open models",
       "head": "Choose your <em>model</em>",
