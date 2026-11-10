@@ -4,9 +4,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { useChatStore } from "@/stores/chat-store";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
+import { READABLE_MAX_WIDTH } from "@/utils/layout";
 
 export default function ChatsScreen() {
   const router = useRouter();
+  const { isWide } = useBreakpoint();
   const conversations = useChatStore((s) => s.conversations);
   const activeConversationId = useChatStore((s) => s.activeConversationId);
   const selectConversation = useChatStore((s) => s.selectConversation);
@@ -26,87 +29,91 @@ export default function ChatsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={["top"]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Chats</Text>
-        <Pressable
-          style={styles.newBtn}
-          onPress={() => {
-            createConversation("New chat");
-            router.push("/chat");
-          }}
-        >
-          <Text style={styles.newBtnText}>+ New</Text>
-        </Pressable>
-      </View>
+    <SafeAreaView style={styles.root} edges={isWide ? ["top", "bottom"] : ["top"]}>
+      <View style={[styles.column, isWide && styles.columnWide]}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Chats</Text>
+          <Pressable
+            style={styles.newBtn}
+            onPress={() => {
+              createConversation("New chat");
+              router.push("/chat");
+            }}
+          >
+            <Text style={styles.newBtnText}>+ New</Text>
+          </Pressable>
+        </View>
 
-      <Text style={styles.helper}>Use Delete on each row to remove a chat.</Text>
+        <Text style={styles.helper}>Use Delete on each row to remove a chat.</Text>
 
-      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {sortedConversations.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No chats yet</Text>
-            <Text style={styles.emptyBody}>Start a new chat to create your first conversation.</Text>
-          </View>
-        ) : (
-          sortedConversations.map((conversation) => (
-            <Swipeable
-              key={conversation.id}
-              overshootRight={false}
-              renderRightActions={() => (
-                <View style={styles.swipeActionWrap}>
-                  <Pressable
-                    style={styles.swipeDeleteBtn}
-                    onPress={() => confirmDeleteConversation(conversation.id)}
-                  >
-                    <Text style={styles.swipeDeleteText}>Delete</Text>
-                  </Pressable>
-                </View>
-              )}
-            >
-              <Pressable
-                style={[styles.row, conversation.id === activeConversationId && styles.rowActive]}
-                onPress={() => {
-                  selectConversation(conversation.id);
-                  router.push("/chat");
-                }}
+        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+          {sortedConversations.length === 0 ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>No chats yet</Text>
+              <Text style={styles.emptyBody}>Start a new chat to create your first conversation.</Text>
+            </View>
+          ) : (
+            sortedConversations.map((conversation) => (
+              <Swipeable
+                key={conversation.id}
+                overshootRight={false}
+                renderRightActions={() => (
+                  <View style={styles.swipeActionWrap}>
+                    <Pressable
+                      style={styles.swipeDeleteBtn}
+                      onPress={() => confirmDeleteConversation(conversation.id)}
+                    >
+                      <Text style={styles.swipeDeleteText}>Delete</Text>
+                    </Pressable>
+                  </View>
+                )}
               >
-                <View style={styles.rowMain}>
-                  <Text
-                    style={[styles.rowTitle, conversation.id === activeConversationId && styles.rowTitleActive]}
-                    numberOfLines={1}
-                  >
-                    {conversation.title || "Untitled chat"}
-                  </Text>
-                  <Text style={styles.rowTime}>{new Date(conversation.updatedAt).toLocaleString()}</Text>
-                </View>
-                <TextInput
-                  style={styles.renameInput}
-                  defaultValue={conversation.title}
-                  placeholder="Chat title"
-                  placeholderTextColor="#6b7280"
-                  onSubmitEditing={(event) => renameConversation(conversation.id, event.nativeEvent.text)}
-                />
-                <View style={styles.rowActions}>
-                  <Text style={styles.swipeHint}>Swipe left or tap Delete.</Text>
-                  <Pressable
-                    style={styles.inlineDeleteBtn}
-                    onPress={() => confirmDeleteConversation(conversation.id)}
-                  >
-                    <Text style={styles.inlineDeleteText}>Delete</Text>
-                  </Pressable>
-                </View>
-              </Pressable>
-            </Swipeable>
-          ))
-        )}
-      </ScrollView>
+                <Pressable
+                  style={[styles.row, conversation.id === activeConversationId && styles.rowActive]}
+                  onPress={() => {
+                    selectConversation(conversation.id);
+                    router.push("/chat");
+                  }}
+                >
+                  <View style={styles.rowMain}>
+                    <Text
+                      style={[styles.rowTitle, conversation.id === activeConversationId && styles.rowTitleActive]}
+                      numberOfLines={1}
+                    >
+                      {conversation.title || "Untitled chat"}
+                    </Text>
+                    <Text style={styles.rowTime}>{new Date(conversation.updatedAt).toLocaleString()}</Text>
+                  </View>
+                  <TextInput
+                    style={styles.renameInput}
+                    defaultValue={conversation.title}
+                    placeholder="Chat title"
+                    placeholderTextColor="#6b7280"
+                    onSubmitEditing={(event) => renameConversation(conversation.id, event.nativeEvent.text)}
+                  />
+                  <View style={styles.rowActions}>
+                    <Text style={styles.swipeHint}>Swipe left or tap Delete.</Text>
+                    <Pressable
+                      style={styles.inlineDeleteBtn}
+                      onPress={() => confirmDeleteConversation(conversation.id)}
+                    >
+                      <Text style={styles.inlineDeleteText}>Delete</Text>
+                    </Pressable>
+                  </View>
+                </Pressable>
+              </Swipeable>
+            ))
+          )}
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#0b1020", paddingHorizontal: 16, paddingTop: 12 },
+  column: { flex: 1 },
+  columnWide: { width: "100%", maxWidth: READABLE_MAX_WIDTH, alignSelf: "center" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { color: "#e5e7eb", fontSize: 24, fontWeight: "800" },
   newBtn: {
