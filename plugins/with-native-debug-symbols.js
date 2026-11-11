@@ -8,21 +8,24 @@ const { withAppBuildGradle } = require("expo/config-plugins");
 // Libraries that ship already stripped (some prebuilt .so files) have no symbols to extract.
 const LEVEL = "SYMBOL_TABLE";
 const MARKER = "debugSymbolLevel";
+// buildTypes { ... release {  plus the release block's text up to its first nested "}" (our ndk
+// block goes at its top). The indent group takes spaces and tabs only, never blank lines.
+const RELEASE_BLOCK = /(buildTypes\s*\{[\s\S]*?\n([ \t]*)release\s*\{)([^}]*)/;
 
 module.exports = function withNativeDebugSymbols(config) {
   return withAppBuildGradle(config, (cfg) => {
     const gradle = cfg.modResults.contents;
-    if (gradle.includes(MARKER)) return cfg;
-
-    const anchor = /(buildTypes\s*\{[\s\S]*?\n(\s*)release\s*\{)/;
-    const match = gradle.match(anchor);
+    const match = gradle.match(RELEASE_BLOCK);
     if (!match) {
       throw new Error("with-native-debug-symbols: buildTypes.release block not found in app/build.gradle");
     }
+    // Skip only when release itself already sets it; debugSymbolLevel in another block doesn't count.
+    if (match[3].includes(MARKER)) return cfg;
     const indent = `${match[2]}    `;
     cfg.modResults.contents = gradle.replace(
-      anchor,
-      (whole) => `${whole}\n${indent}ndk {\n${indent}    ${MARKER} '${LEVEL}'\n${indent}}`,
+      RELEASE_BLOCK,
+      (_whole, head, _releaseIndent, rest) =>
+        `${head}\n${indent}ndk {\n${indent}    ${MARKER} '${LEVEL}'\n${indent}}${rest}`,
     );
     return cfg;
   });

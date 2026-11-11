@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { Alert } from "react-native";
 import { llmEngine } from "@/ai/llm-engine";
 import {
@@ -11,7 +11,7 @@ import {
 import { routeIntent } from "@/ai/intent-router";
 import { retrieveContextForQuery } from "@/ai/rag-pipeline";
 import { buildPrompt } from "@/ai/prompt-builder";
-import { filterArgsForTool, getToolByName, selectToolFromInput } from "@/tools/tool-registry";
+import { filterArgsForTool, getToolByName, selectToolFromInput, type Tool } from "@/tools/tool-registry";
 import { WEB_SEARCH_NO_RESULTS_PREFIX } from "@/tools/search-tool";
 import { useChatStore } from "@/stores/chat-store";
 import { useModelStore } from "@/stores/model-store";
@@ -36,10 +36,7 @@ import { parseToolActionDecision } from "@/ai/tool-action-schema";
 import { isEnabled } from "@/config/feature-flags";
 import { approximateTokenCount } from "@/utils/tokenizer";
 import { stripTokPerSecLines } from "@/utils/tok-per-sec";
-import type { ChatMessage, ModelTier } from "@/types/assistant";
-
-/** Set when the user taps Stop, so a cut-off reply doesn't count toward the review prompt. */
-let replyStoppedByUser = false;
+import type { ChatMessage, ModelTier, ToolResult } from "@/types/assistant";
 
 /** Cold load from storage + runtime init can take several minutes on mid-range phones; partial downloads also stall until complete. */
 const MODEL_INIT_TIMEOUT_MS = 300_000;
@@ -377,8 +374,10 @@ export function useLLMChat() {
     createConversation(seedTitle);
   }, [createConversation]);
 
+  /** Set when the user taps Stop, so a cut-off reply doesn't count toward the review prompt. */
+  const stoppedByUserRef = useRef(false);
   const stopGeneration = useCallback(() => {
-    replyStoppedByUser = true;
+    stoppedByUserRef.current = true;
     llmEngine.interrupt();
   }, []);
 
@@ -404,7 +403,18 @@ export function useLLMChat() {
       setStreamingThinkClosed(false);
       // Only clean replies count toward the review prompt: no error, failed tool, tier fallback or canned fallback copy.
       let replyWasClean = true;
-      replyStoppedByUser = false;
+      stoppedByUserRef.current = false;
+      /** Every tool call goes through here, so a failed or timed-out tool always marks the reply as not clean. */
+      const runTool = async (tool: Tool, args: Record<string, string>, timeoutMessage: string): Promise<ToolResult> => {
+        try {
+          const result = await withTimeout(tool.execute(args), 15000, timeoutMessage);
+          if (!result.ok) replyWasClean = false;
+          return result;
+        } catch (err) {
+          replyWasClean = false;
+          throw err;
+        }
+      };
       try {
         let activeTier = tier;
         const activeModelId = tierModelIds[activeTier] ?? null;
@@ -569,11 +579,7 @@ export function useLLMChat() {
                     setStreamingThinking(["Planning search...", "Searching web..."]);
                     setStreamingResponse("Searching web...");
                     const filtered = filterArgsForTool(searchTool, { query, text: query });
-                    const result = await withTimeout(
-                      searchTool.execute(filtered),
-                      15000,
-                      "Web search timed out. Please try a shorter query.",
-                    );
+                    const result = await runTool(searchTool, filtered, "Web search timed out. Please try a shorter query.");
                     const payloadText =
                       result.payload && Object.keys(result.payload).length > 0
                         ? `\nPayload: ${JSON.stringify(result.payload)}`
@@ -623,11 +629,7 @@ export function useLLMChat() {
                     setStreamingThinking(["Planning search...", "Searching web..."]);
                     setStreamingResponse("Searching web...");
                     const filtered = filterArgsForTool(searchTool, { query: cleaned, text: cleaned });
-                    const result = await withTimeout(
-                      searchTool.execute(filtered),
-                      15000,
-                      "Web search timed out. Please try a shorter query.",
-                    );
+                    const result = await runTool(searchTool, filtered, "Web search timed out. Please try a shorter query.");
                     const payloadText =
                       result.payload && Object.keys(result.payload).length > 0
                         ? `\nPayload: ${JSON.stringify(result.payload)}`
@@ -663,6 +665,7 @@ export function useLLMChat() {
               "Planning timed out. Falling back to direct tool execution.",
               () => llmEngine.interrupt(),
             ).catch(async () => {
+              replyWasClean = false;
               const fallbackTool = selectToolFromInput(cleaned);
               if (!fallbackTool) return [];
               return [
@@ -679,23 +682,20 @@ export function useLLMChat() {
             console.log("[OfflineMate] Executing plan steps:", correlationId, plannedSteps.length, plannedSteps.map((s) => s.toolName ?? s.description));
             const execution = await executePlanSteps(plannedSteps, async (toolName, args) => {
               const tool = getToolByName(toolName);
-              if (!tool) return `Tool ${toolName} is not available.`;
+              if (!tool) {
+                replyWasClean = false;
+                return `Tool ${toolName} is not available.`;
+              }
               const filtered = filterArgsForTool(tool, { query: cleaned, text: cleaned, ...args });
               console.log("[OfflineMate] Tool execute:", correlationId, toolName);
               let result;
               try {
-                result = await withTimeout(
-                  tool.execute(filtered),
-                  15000,
-                  `Tool ${tool.name} timed out. Please try a simpler request.`,
-                );
+                result = await runTool(tool, filtered, `Tool ${tool.name} timed out. Please try a simpler request.`);
               } catch (err) {
-                replyWasClean = false;
                 const msg = err instanceof Error ? err.message : "Tool execution failed.";
                 console.warn("[OfflineMate] Tool failed:", correlationId, toolName, msg);
                 return msg;
               }
-              if (!result.ok) replyWasClean = false;
               const payloadText =
                 result.payload && Object.keys(result.payload).length > 0
                   ? `\nPayload: ${JSON.stringify(result.payload)}`
@@ -760,6 +760,7 @@ export function useLLMChat() {
           searchToolBody &&
           searchToolBody.startsWith(WEB_SEARCH_NO_RESULTS_PREFIX)
         ) {
+          replyWasClean = false;
           const spokenOutput = cleanModelOutput(searchToolBody);
           const directNoResults = spokenOutput;
           setStreamingHasThinkTag(false);
@@ -943,7 +944,7 @@ export function useLLMChat() {
         setStreamingThinking([]);
         setStreamingHasThinkTag(false);
         setStreamingThinkClosed(false);
-        if (replyWasClean && !replyStoppedByUser) noteSuccessfulReply(() => useChatStore.getState().isLoading);
+        if (replyWasClean && !stoppedByUserRef.current) noteSuccessfulReply(() => useChatStore.getState().isLoading);
       }
     },
     [

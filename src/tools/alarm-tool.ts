@@ -41,7 +41,8 @@ export const setAlarmTool: Tool = {
     const explicitMinutes = params.minutes ? parseInt(params.minutes, 10) : NaN;
     let hour: number;
     let minutes: number;
-    if (!Number.isNaN(explicitHour) && !Number.isNaN(explicitMinutes)) {
+    // A relative time ("in 2 minutes") comes from the text: the planner can't know the current time.
+    if (!parsed?.exact && !Number.isNaN(explicitHour) && !Number.isNaN(explicitMinutes)) {
       hour = Math.max(0, Math.min(23, explicitHour));
       minutes = Math.max(0, Math.min(59, explicitMinutes));
     } else if (parsed) {
@@ -91,7 +92,11 @@ export const setAlarmTool: Tool = {
         };
       }
       const now = new Date();
-      const when = nextAlarmDate({ hour, minutes, days, recurring, date: parsed?.date }, now);
+      // AlarmKit takes seconds, so a relative time rings exactly when asked.
+      const when =
+        parsed?.exact && parsed.date && parsed.date > now
+          ? parsed.date
+          : nextAlarmDate({ hour, minutes, days, recurring, date: parsed?.date }, now);
       try {
         await scheduleIosAlarm(when, message);
         const phrase = describeReminderTime((when.getTime() - now.getTime()) / 1000, now);

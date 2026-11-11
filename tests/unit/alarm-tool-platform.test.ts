@@ -81,6 +81,19 @@ describe("alarm tool on iOS 26+ (AlarmKit)", () => {
     expect(iosAlarms.scheduleIosAlarm).toHaveBeenCalledWith(new Date(2026, 10, 10, 16, 55, 0), "stretch");
   });
 
+  it("rings a relative alarm exactly when asked, even mid-minute", async () => {
+    platform.OS = "ios";
+    iosAlarms.available = true;
+    vi.setSystemTime(new Date(2026, 10, 12, 0, 12, 51));
+    const { setAlarmTool } = await import("@/tools/alarm-tool");
+
+    // The planner's guessed hour/minutes don't override the relative time in the text.
+    const result = await setAlarmTool.execute({ text: "Set an alarm for 2min to stretch", hour: "0", minutes: "14" });
+    expect(result.ok).toBe(true);
+    expect(result.message).toBe("Alarm set to ring in 2 minutes: stretch");
+    expect(iosAlarms.scheduleIosAlarm).toHaveBeenCalledWith(new Date(2026, 10, 12, 0, 14, 51), "stretch");
+  });
+
   it("asks for permission before scheduling", async () => {
     platform.OS = "ios";
     iosAlarms.available = true;
@@ -184,5 +197,15 @@ describe("alarm tool on Android", () => {
     expect(setAlarm).toHaveBeenCalledWith(expect.objectContaining({ hour: 7, minutes: 0 }));
     expect(expoAlarmLoaded.count).toBe(1);
     expect(iosAlarms.scheduleIosAlarm).not.toHaveBeenCalled();
+  });
+
+  it("rounds a relative alarm up to the next minute so it never rings early", async () => {
+    platform.OS = "android";
+    vi.setSystemTime(new Date(2026, 10, 12, 0, 12, 51));
+    const { setAlarmTool } = await import("@/tools/alarm-tool");
+
+    const result = await setAlarmTool.execute({ text: "Set an alarm for 2min to stretch" });
+    expect(result.message).toBe("Alarm set for 00:15: stretch");
+    expect(setAlarm).toHaveBeenCalledWith(expect.objectContaining({ hour: 0, minutes: 15 }));
   });
 });

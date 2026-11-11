@@ -14,6 +14,11 @@ export interface AlarmTime {
   recurring?: boolean;
   /** The moment chrono resolved ("November 20 at 7am" → that day). Keeps dates more than a week out. */
   date?: Date;
+  /**
+   * True when `date` is an exact moment rather than a clock time: relative phrases ("in 2 minutes")
+   * keep the current seconds. `hour`/`minutes` are then rounded up, so a minute-only alarm is never early.
+   */
+  exact?: boolean;
   message?: string;
 }
 
@@ -54,9 +59,13 @@ export function parseAlarmTime(text: string): AlarmTime | null {
   const parsed = chrono.parseDate(text, ref, { forwardDate: true });
   if (!parsed) return null;
   const d = new Date(parsed);
+  // "in 2 minutes" sent at 00:12:51 is 00:14:51. Dropping the seconds (00:14) rang about a minute
+  // early, so round up to the next whole minute (00:15) for APIs that take only hour and minute.
+  const exact = d.getSeconds() !== 0 || d.getMilliseconds() !== 0;
+  const clock = exact ? new Date(Math.ceil(d.getTime() / 60000) * 60000) : d;
 
-  const hour = d.getHours();
-  const minutes = d.getMinutes();
+  const hour = clock.getHours();
+  const minutes = clock.getMinutes();
 
   const lower = text.toLowerCase();
   const everyWeekday = /\b(?:every\s+)?(?:weekday|week\s*day|mon|tue|wed|thu|fri)\b/i.test(lower);
@@ -86,6 +95,7 @@ export function parseAlarmTime(text: string): AlarmTime | null {
     ...(days && days.length > 0 ? { days } : {}),
     ...(recurring && { recurring: true }),
     date: d,
+    ...(exact && { exact: true }),
     ...(message && { message }),
   };
 }

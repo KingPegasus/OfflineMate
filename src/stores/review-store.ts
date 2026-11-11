@@ -16,17 +16,20 @@ const PROMPT_DELAY_MS = 1500;
 
 interface ReviewStore extends ReviewPromptState {
   ensureFirstSeen: (now: number) => void;
-  recordSuccess: () => void;
+  recordSuccess: (count?: number) => void;
   markPrompted: (now: number, version: string | null) => void;
   markRatedFromSettings: () => void;
 }
+
+/** Clean replies that finished before the saved counters loaded; added once hydration completes. */
+let successesBeforeHydration = 0;
 
 export const useReviewStore = create<ReviewStore>()(
   persist(
     (set) => ({
       ...INITIAL_REVIEW_PROMPT_STATE,
       ensureFirstSeen: (now) => set((s) => (s.firstSeenAt === null ? { firstSeenAt: now } : {})),
-      recordSuccess: () => set((s) => ({ successCount: s.successCount + 1 })),
+      recordSuccess: (count = 1) => set((s) => ({ successCount: s.successCount + count })),
       markPrompted: (now, version) =>
         set((s) => ({ lastPromptAt: now, lastPromptVersion: version, promptCount: s.promptCount + 1 })),
       markRatedFromSettings: () => set({ ratedFromSettings: true }),
@@ -35,7 +38,7 @@ export const useReviewStore = create<ReviewStore>()(
       name: "offlinemate-review-prompt",
       storage: createJSONStorage(() => createSecureStorage()),
       version: 1,
-      migrate: (persisted) => migrateReviewPromptState(persisted),
+      // Normalizes whatever was saved (or nothing) on every hydration, so no separate migrate step.
       merge: (persisted, current) => ({ ...current, ...migrateReviewPromptState(persisted) }),
       partialize: (s): ReviewPromptState => ({
         firstSeenAt: s.firstSeenAt,
@@ -46,7 +49,12 @@ export const useReviewStore = create<ReviewStore>()(
         ratedFromSettings: s.ratedFromSettings,
       }),
       onRehydrateStorage: () => (state) => {
-        state?.ensureFirstSeen(Date.now());
+        if (!state) return;
+        state.ensureFirstSeen(Date.now());
+        if (successesBeforeHydration > 0) {
+          state.recordSuccess(successesBeforeHydration);
+          successesBeforeHydration = 0;
+        }
       },
     },
   ),
@@ -64,9 +72,11 @@ let pendingTimer: ReturnType<typeof setTimeout> | null = null;
  */
 export function noteSuccessfulReply(isBusy: () => boolean): void {
   try {
-    if (!useReviewStore.persist.hasHydrated()) return;
-    const store = useReviewStore.getState();
-    store.recordSuccess();
+    if (!useReviewStore.persist.hasHydrated()) {
+      successesBeforeHydration += 1;
+      return;
+    }
+    useReviewStore.getState().recordSuccess();
     if (!shouldRequestReview(useReviewStore.getState(), Date.now(), appVersion())) return;
     if (pendingTimer) return;
     pendingTimer = setTimeout(() => {
@@ -110,9 +120,10 @@ export function getStoreListingUrl(): string | null {
 export async function openStoreListingForRating(): Promise<boolean> {
   const url = getStoreListingUrl();
   if (!url) return false;
-  useReviewStore.getState().markRatedFromSettings();
   try {
     await Linking.openURL(url);
+    // Only once the store actually opened: a failed open shouldn't switch the prompt off for good.
+    useReviewStore.getState().markRatedFromSettings();
     return true;
   } catch (e) {
     console.warn("[OfflineMate] Could not open the store listing:", e);
