@@ -68,6 +68,7 @@
     "expo-splash-screen": "~58.0.14",
     "expo-sqlite": "~58.0.16",
     "expo-status-bar": "~58.0.5",
+    "expo-store-review": "~58.0.3",
     "react": "19.3.0",
     "react-native": "0.88.1",
     "react-native-device-info": "^15.0.2",

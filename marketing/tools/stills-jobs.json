@@ -24,7 +24,19 @@
     }
   },
   {
-    "out": "../out/store/phone/03-pick-a-tier.png",
+    "out": "../out/store/phone/03-built-in-tools.png",
+    "w": 1080,
+    "h": 1920,
+    "params": {
+      "layout": "store",
+      "shot": "tools",
+      "kicker": "Built-in tools",
+      "head": "More than <em>chat</em>",
+      "sub": "Calendar, alarms, reminders, contacts and notes."
+    }
+  },
+  {
+    "out": "../out/store/phone/04-pick-a-tier.png",
     "w": 1080,
     "h": 1920,
     "params": {
@@ -36,7 +48,7 @@
     }
   },
   {
-    "out": "../out/store/phone/04-choose-a-model.png",
+    "out": "../out/store/phone/05-choose-a-model.png",
     "w": 1080,
     "h": 1920,
     "params": {
@@ -45,18 +57,6 @@
       "kicker": "Open models",
       "head": "Choose your <em>model</em>",
       "sub": "SmolLM2, LFM, Gemma, Qwen, Llama and more."
-    }
-  },
-  {
-    "out": "../out/store/phone/05-built-in-tools.png",
-    "w": 1080,
-    "h": 1920,
-    "params": {
-      "layout": "store",
-      "shot": "tools",
-      "kicker": "Built-in tools",
-      "head": "More than <em>chat</em>",
-      "sub": "Calendar, alarms, reminders, contacts and notes."
     }
   },
   {

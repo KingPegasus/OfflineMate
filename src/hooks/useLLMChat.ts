@@ -16,6 +16,7 @@ import { WEB_SEARCH_NO_RESULTS_PREFIX } from "@/tools/search-tool";
 import { useChatStore } from "@/stores/chat-store";
 import { useModelStore } from "@/stores/model-store";
 import { useSettingsStore } from "@/stores/settings-store";
+import { noteSuccessfulReply } from "@/stores/review-store";
 import {
   downloadTierChatModel,
   getTierChatAssetReadiness,
@@ -36,6 +37,9 @@ import { isEnabled } from "@/config/feature-flags";
 import { approximateTokenCount } from "@/utils/tokenizer";
 import { stripTokPerSecLines } from "@/utils/tok-per-sec";
 import type { ChatMessage, ModelTier } from "@/types/assistant";
+
+/** Set when the user taps Stop, so a cut-off reply doesn't count toward the review prompt. */
+let replyStoppedByUser = false;
 
 /** Cold load from storage + runtime init can take several minutes on mid-range phones; partial downloads also stall until complete. */
 const MODEL_INIT_TIMEOUT_MS = 300_000;
@@ -374,6 +378,7 @@ export function useLLMChat() {
   }, [createConversation]);
 
   const stopGeneration = useCallback(() => {
+    replyStoppedByUser = true;
     llmEngine.interrupt();
   }, []);
 
@@ -397,6 +402,9 @@ export function useLLMChat() {
       setStreamingThinking([]);
       setStreamingHasThinkTag(false);
       setStreamingThinkClosed(false);
+      // Only clean replies count toward the review prompt: no error, failed tool, tier fallback or canned fallback copy.
+      let replyWasClean = true;
+      replyStoppedByUser = false;
       try {
         let activeTier = tier;
         const activeModelId = tierModelIds[activeTier] ?? null;
@@ -434,6 +442,7 @@ export function useLLMChat() {
               throw initError;
             }
             if (fallback) {
+              replyWasClean = false;
               const proceed = await confirmModelFallback(tier as "full" | "standard", fallback);
               if (!proceed) {
                 throw initError instanceof ModelSetupError
@@ -681,10 +690,12 @@ export function useLLMChat() {
                   `Tool ${tool.name} timed out. Please try a simpler request.`,
                 );
               } catch (err) {
+                replyWasClean = false;
                 const msg = err instanceof Error ? err.message : "Tool execution failed.";
                 console.warn("[OfflineMate] Tool failed:", correlationId, toolName, msg);
                 return msg;
               }
+              if (!result.ok) replyWasClean = false;
               const payloadText =
                 result.payload && Object.keys(result.payload).length > 0
                   ? `\nPayload: ${JSON.stringify(result.payload)}`
@@ -896,6 +907,7 @@ export function useLLMChat() {
           finalOutput = ragAnswerOrFallback(finalOutput, contextSnippets);
         }
         if (!finalOutput.trim()) {
+          replyWasClean = false;
           finalOutput =
             "I could not generate a reply from this model just now. Please try again, or switch to Qwen 3 1.7B in Settings.";
           console.warn("[OfflineMate] Empty direct/context output; using deterministic fallback copy");
@@ -921,6 +933,7 @@ export function useLLMChat() {
           `[OfflineMate] Assistant delivered: intent=${intent} finalLen=${replyText.length} tokPerSec=${tokensPerSecond?.toFixed(1) ?? "n/a"} text=${JSON.stringify(clipForLog(replyText))}`,
         );
       } catch (errorValue) {
+        replyWasClean = false;
         const message = errorValue instanceof Error ? errorValue.message : "Unknown chat error";
         console.error("[OfflineMate] Chat error:", message, errorValue);
         setError(message, errorValue instanceof ModelSetupError ? errorValue.tier : null);
@@ -930,6 +943,7 @@ export function useLLMChat() {
         setStreamingThinking([]);
         setStreamingHasThinkTag(false);
         setStreamingThinkClosed(false);
+        if (replyWasClean && !replyStoppedByUser) noteSuccessfulReply(() => useChatStore.getState().isLoading);
       }
     },
     [
