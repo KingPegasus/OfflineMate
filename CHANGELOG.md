@@ -21,6 +21,7 @@ iOS release: the app now builds, launches and runs on iPhone, and can set real a
 - Website: Search Console flagged the demo video's structured data ("Datetime property 'uploadDate' is missing a time zone", "Invalid datetime value for 'uploadDate'"). `uploadDate` was a bare date (`2026-11-09`); it's now a date and time with a time zone (`2026-11-09T12:00:00+05:00`), and a test checks the format (`website/index.html`, `tests/unit/website-content.test.ts`). After deploying, use "Validate fix" in Search Console.
 
 ### Changed
+- Website: every page footer has a "Follow us" column with Rhyme Solutions on YouTube, LinkedIn and Instagram. The install section, the "Run AI offline on Android" setup step and the home and guide footers link to the Google Play listing (`com.offlinemate.app`), with "Build it from source" kept as a second option. The app's structured data gets a Play `downloadUrl`/`installUrl`, and Rhyme Solutions gets the social profiles as `sameAs` (`website/*.html`, `tests/unit/website-content.test.ts`).
 - Expo patch updates within SDK 58: `expo-dev-client` 58.0.19, `expo-font` 58.0.12, `expo-keep-awake` 58.0.4, `expo-secure-store` 58.0.3, `expo-speech` 58.0.4, `expo-splash-screen` 58.0.14, `expo-status-bar` 58.0.5. `expo` (58.0.23) was already the latest, and `expo install --check` reports everything matches SDK 58. `react-native-gesture-handler`, `react-native-keyboard-controller` and `react-native-worklets` stay at the versions SDK 58 pins.
 - `BUILDING.md` has a new "Local iOS Simulator Build (macOS)" section.
 - Vitest ignores `.claude/`, so leftover Claude Code worktrees (`.claude/worktrees/`, each with its own `tests/`) no longer make `npm run validate` and the pre-commit hook fail (`vitest.config.ts`).
@@ -30,6 +31,7 @@ iOS release: the app now builds, launches and runs on iPhone, and can set real a
 ### Known issues
 - The `allowScripts` approval is pinned to `react-native-executorch@0.11.0`. After upgrading the package, approve the new version (`npx npm@11 install-scripts approve react-native-executorch`), or `npm ci` will skip the native-library download again.
 - iOS has only been run on the simulator (iPhone 18 Pro, iOS 27.2): setup, Lite model download, Chat, a reminder and an alarm. Voice, notes search and on-device performance haven't been tested on iOS, and a real iPhone needs an Apple Developer signing team.
+- The Google Play listing isn't public yet (expected within days), so the website's Play links return "not found" until it goes live.
 - `npx expo-doctor` currently crashes on startup with a missing-module error inside the published tool, so it couldn't check this release.
 - iPhone alarms have no snooze button. Snooze in AlarmKit needs a Live Activity widget extension, which the app doesn't have yet. Alarms are not listed or cancelable inside OfflineMate.
 - On the simulator, setup recommends the Full tier because it reports the Mac's RAM.

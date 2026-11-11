@@ -36,6 +36,22 @@ describe("website content", () => {
     expect(rows.filter((r) => r[3] === "Default").map((r) => r[1])).toEqual([`${tier.primary.family} ${tier.primary.size}`]);
   });
 
+  it("every page footer links to the Rhyme Solutions social profiles, and the home page to Google Play", () => {
+    const social = [
+      "https://youtube.com/@rhymesolutions",
+      "https://www.linkedin.com/company/rhymesolutions",
+      "https://www.instagram.com/rhymesolutions/",
+    ];
+    for (const page of ["index.html", "models.html", "run-ai-offline-on-android.html", "privacy.html", "terms.html"]) {
+      const footer = readPage(page).match(/<footer class="site-footer">[\s\S]*?<\/footer>/)?.[0] ?? "";
+      for (const url of social) expect(footer, `${page} footer`).toContain(`href="${url}"`);
+    }
+    const play = "https://play.google.com/store/apps/details?id=com.offlinemate.app";
+    const getSection = home.match(/<section id="get"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(getSection).toContain(`href="${play}"`);
+    expect(home).not.toContain("isn’t on Google Play yet");
+  });
+
   it("video structured data has an uploadDate with a time zone (Search Console rejects a bare date)", () => {
     const jsonLd = JSON.parse(home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? "{}");
     const video = jsonLd["@graph"].find((item: { "@type": string }) => item["@type"] === "VideoObject");
