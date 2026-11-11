@@ -3,7 +3,7 @@
     "name": "OfflineMate",
     "slug": "offlinemate",
     "scheme": "offlinemate",
-    "version": "0.8.2",
+    "version": "0.9.0",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -82,7 +82,8 @@
     "ios": {
       "bundleIdentifier": "com.offlinemate.app",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "OfflineMate uses microphone access for voice assistant features."
+        "NSMicrophoneUsageDescription": "OfflineMate uses microphone access for voice assistant features.",
+        "NSAlarmKitUsageDescription": "OfflineMate sets alarms you ask for, so they ring even in silent mode or Focus."
       }
     },
     "extra": {

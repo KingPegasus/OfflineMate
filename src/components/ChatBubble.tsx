@@ -2,7 +2,7 @@ import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { MarkdownText } from "@/components/MarkdownText";
-import { formatTokPerSec } from "@/utils/tok-per-sec";
+import { formatTokPerSec, hasMeasuredTokPerSec } from "@/utils/tok-per-sec";
 
 interface Props {
   role: "user" | "assistant" | "system";
@@ -51,7 +51,7 @@ export function ChatBubble({ role, content, thinking, tokensPerSecond }: Props) 
           </View>
         ) : null}
         <MarkdownText text={content} style={styles.text} boldStyle={styles.textBold} />
-        {isAssistant && tokensPerSecond !== undefined ? (
+        {isAssistant && hasMeasuredTokPerSec(tokensPerSecond) ? (
           <Text style={styles.metric}>{formatTokPerSec(tokensPerSecond)}</Text>
         ) : null}
         {isAssistant ? (

@@ -1,3 +1,12 @@
+/**
+ * Whether a reply has a real generation speed to show. Replies written without running the model
+ * (Lite tool replies such as "Reminder set…", fallbacks) have none, and the bubble hides the line
+ * instead of showing "(n/a tok/s)".
+ */
+export function hasMeasuredTokPerSec(tokensPerSecond: number | null | undefined): tokensPerSecond is number {
+  return typeof tokensPerSecond === "number" && Number.isFinite(tokensPerSecond) && tokensPerSecond > 0;
+}
+
 /** "(18.3 tok/s)", or "(n/a tok/s)" when the speed was not measured. Shown under assistant replies. */
 export function formatTokPerSec(tokensPerSecond: number | null): string {
   const metric =
