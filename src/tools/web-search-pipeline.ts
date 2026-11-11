@@ -1,3 +1,4 @@
+import { normalizeIntentInput } from "@/ai/intent-router";
 import { createDuckDuckGoProvider } from "@/tools/providers/duckduckgo-provider";
 
 const provider = createDuckDuckGoProvider();
@@ -19,7 +20,7 @@ function isDayQuery(lower: string): boolean {
 }
 
 function buildLocalDateTimeAnswer(rawQuery: string): string | null {
-  const lower = rawQuery.toLowerCase();
+  const lower = normalizeIntentInput(rawQuery);
   const needDate = isDateQuery(lower);
   const needTime = isTimeQuery(lower);
   const needDay = isDayQuery(lower);
