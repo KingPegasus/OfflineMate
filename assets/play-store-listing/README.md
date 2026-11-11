@@ -9,15 +9,17 @@ Upload these in **Play Console → Grow users → Store presence → Main store 
 | Phone screenshots | `screenshots/phone/01-…06-*.png` | 1080×1920 (9:16) | Upload in number order; the first three show in search results. |
 | 7-inch tablet screenshots | `screenshots/tablet/tablet7/*.png` | 1920×1200 (16:10) | The tablet layout at a 7-inch tablet's size (960×600 dp), captured on the Pixel Tablet emulator with `wm size 1920x1200` and `wm density 320`. |
 | 10-inch tablet screenshots | `screenshots/tablet/tablet10/*.png` | 2560×1600 (16:10) | The tablet layout on the Pixel Tablet emulator (1280×800 dp): navigation rail, chat list beside the conversation, notes list beside the note. |
-| Promo video (optional) | `marketing/out/offlinemate-demo-1920x1080.mp4` | 1920×1080, 35 s | Play only takes a YouTube URL: upload this to YouTube first, then paste the link. |
+| Promo video | https://youtu.be/_3OGRtLmc1U | 1920×1080, 35 s | `marketing/out/offlinemate-demo-1920x1080.mp4` on YouTube. Play only takes a YouTube URL; paste this one. Keep the video public or unlisted, with ads off. |
 
 ## Phone screenshot order
 
 1. `01-offline-chat.png`: "Your AI assistant, no internet needed" (chat answered on the phone)
 2. `02-private-notes.png`: "Notes stay on your device"
-3. `03-pick-a-tier.png`: "A tier that fits your phone" (setup screen)
-4. `04-choose-a-model.png`: "Choose your model" (Lite model picker)
-5. `05-built-in-tools.png`: "More than chat" (tool list)
+3. `03-built-in-tools.png`: "More than chat" (tool list)
+4. `04-pick-a-tier.png`: "A tier that fits your phone" (setup screen)
+5. `05-choose-a-model.png`: "Choose your model" (Lite model picker)
 6. `06-privacy.png`: "Clear privacy boundaries" (Settings)
+
+The first three show in search results, so they're the three that sell the app: offline chat, private notes and the tools. The setup screens come after.
 
 Play's rules: PNG or JPEG, up to 8 MB each, sides 320–3840 px, aspect ratio no longer than 2:1. Every file here fits.

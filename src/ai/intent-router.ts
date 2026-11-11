@@ -1,6 +1,10 @@
 export type IntentType = "direct" | "context" | "tool" | "datetime";
 
-function normalizeIntentInput(input: string): string {
+/**
+ * Lowercased text with curly apostrophes made straight. iPhone keyboards type "today’s" (U+2019), and
+ * every phrase check that has a "'" must see the same text the router saw, or it misses the phrase.
+ */
+export function normalizeIntentInput(input: string): string {
   return input
     .normalize("NFKC")
     .replace(/[\u2018\u2019\u02BC]/g, "'")

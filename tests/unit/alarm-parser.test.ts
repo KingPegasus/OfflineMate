@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { extractAlarmMessage, nextAlarmDate, parseAlarmTime } from "@/tools/alarm-parser";
 
 describe("alarm parser", () => {
@@ -35,6 +35,20 @@ describe("alarm parser", () => {
   it("does not use the time as the alarm label", () => {
     expect(extractAlarmMessage("set an alarm for 7am")).toBeUndefined();
     expect(extractAlarmMessage("set an alarm for tomorrow at 8")).toBeUndefined();
+  });
+
+  it("keeps the exact moment of a relative time and rounds the clock time up", () => {
+    vi.useFakeTimers({ now: new Date(2026, 10, 12, 0, 12, 51), toFake: ["Date"] });
+    try {
+      const r = parseAlarmTime("Set an alarm for 2min to stretch")!;
+      expect(r.exact).toBe(true);
+      expect(r.date).toEqual(new Date(2026, 10, 12, 0, 14, 51));
+      // 00:14 would ring a minute early; 00:15 is the first whole minute that isn't.
+      expect([r.hour, r.minutes]).toEqual([0, 15]);
+      expect(parseAlarmTime("set an alarm for 7am")!.exact).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("marks only every/daily/weekday phrases as recurring", () => {

@@ -3,7 +3,7 @@
     "name": "OfflineMate",
     "slug": "offlinemate",
     "scheme": "offlinemate",
-    "version": "0.9.0",
+    "version": "0.10.0",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -52,7 +52,8 @@
           }
         }
       ],
-      "./plugins/with-cmake-object-path-max"
+      "./plugins/with-cmake-object-path-max",
+      "./plugins/with-native-debug-symbols"
     ],
     "experiments": {
       "typedRoutes": true
@@ -62,6 +63,7 @@
     ],
     "android": {
       "package": "com.offlinemate.app",
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.offlinemate.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#0f172a"

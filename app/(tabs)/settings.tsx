@@ -13,6 +13,7 @@ import {
   redownloadTierChatModel,
 } from "@/ai/model-manager";
 import { useChatStore } from "@/stores/chat-store";
+import { getStoreListingUrl, openStoreListingForRating } from "@/stores/review-store";
 import { llmEngine } from "@/ai/llm-engine";
 import type { ModelTier } from "@/types/assistant";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
@@ -53,6 +54,7 @@ export default function SettingsScreen() {
     full: null,
   });
   const appVersion = Constants.expoConfig?.version ?? "unknown";
+  const canRateApp = getStoreListingUrl() !== null;
   const modalTier = modelPickerTier ?? selectedTier;
   const modalTierSpec = getTierSpec(modalTier);
   const modalModels = getModelsForTier(modalTier);
@@ -254,6 +256,19 @@ export default function SettingsScreen() {
         <Text style={styles.link} onPress={handleClearCurrentChat}>
           Clear current chat
         </Text>
+        {canRateApp ? (
+          <Text
+            style={styles.link}
+            accessibilityRole="link"
+            onPress={() => {
+              void openStoreListingForRating().then((opened) => {
+                if (!opened) Alert.alert("Couldn't open the store", "Search for OfflineMate in Google Play to rate it.");
+              });
+            }}
+          >
+            Rate OfflineMate
+          </Text>
+        ) : null}
         <Text style={styles.versionLabel}>App version: {appVersion}</Text>
       </ScrollView>
 
