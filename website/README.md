@@ -49,11 +49,23 @@ npx --yes serve website-dist -p 3333
 
 CI runs `website:build` before upload; `website-dist/` is gitignored.
 
+## Shared footer
+
+The footer is written once, in [`_partials/footer.html`](_partials/footer.html). Each page has only a marker where it goes:
+
+```html
+<!--#include footer.html -->
+```
+
+`npm run website:build` replaces the marker with the partial (see `scripts/website-includes.mjs`), and `_partials/` itself isn't published. Edit the footer in that one file; a test fails if a page gets its own copy.
+
 ## Local preview (source)
 
 ```bash
 npx --yes serve website -p 3333
 ```
+
+The raw source has no footer (only the marker). To see the finished pages, preview the build instead (`npm run website:build`, then serve `website-dist`).
 
 ## Repo links in HTML
 

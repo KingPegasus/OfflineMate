@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { minify } from "html-minifier-terser";
 import * as esbuild from "esbuild";
+import { PARTIALS_DIR, renderIncludes } from "./website-includes.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
@@ -35,7 +36,8 @@ async function main() {
 
   for (const name of htmlFiles) {
     const p = path.join(srcDir, name);
-    const html = fs.readFileSync(p, "utf8");
+    // Shared parts (the footer) are inserted before minifying, since minifying strips the markers.
+    const html = renderIncludes(fs.readFileSync(p, "utf8"), srcDir);
     const result = await minify(html, htmlOptions);
     fs.writeFileSync(path.join(outDir, name), result);
   }
@@ -61,6 +63,7 @@ async function main() {
       continue;
     }
     if (ent.isDirectory()) {
+      if (name === PARTIALS_DIR) continue; // already inlined into the pages
       fs.cpSync(from, to, { recursive: true, force: true });
     }
   }
