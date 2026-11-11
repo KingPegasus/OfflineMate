@@ -36,6 +36,13 @@ describe("website content", () => {
     expect(rows.filter((r) => r[3] === "Default").map((r) => r[1])).toEqual([`${tier.primary.family} ${tier.primary.size}`]);
   });
 
+  it("video structured data has an uploadDate with a time zone (Search Console rejects a bare date)", () => {
+    const jsonLd = JSON.parse(home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? "{}");
+    const video = jsonLd["@graph"].find((item: { "@type": string }) => item["@type"] === "VideoObject");
+    expect(video.uploadDate).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})$/);
+    expect(Number.isNaN(Date.parse(video.uploadDate))).toBe(false);
+  });
+
   it("FAQ structured data matches the visible answers", () => {
     const jsonLd = JSON.parse(home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? "{}");
     const faq = jsonLd["@graph"].find((item: { "@type": string }) => item["@type"] === "FAQPage");
