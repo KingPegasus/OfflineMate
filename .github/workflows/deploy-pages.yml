@@ -8,6 +8,7 @@ on:
     paths:
       - "website/**"
       - "scripts/minify-website.mjs"
+      - "scripts/website-includes.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/deploy-pages.yml"
