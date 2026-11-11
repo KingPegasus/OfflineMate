@@ -1,6 +1,7 @@
 # OfflineMate
 
 ![Android 7.0+](https://img.shields.io/badge/Android-7.0%2B%20(API%2024)-3DDC84?logo=android&logoColor=white)
+![iOS coming soon](https://img.shields.io/badge/iOS-coming%20soon-lightgrey?logo=apple&logoColor=white)
 ![Target SDK 36](https://img.shields.io/badge/Target%20SDK-36-blue)
 ![Expo SDK 58](https://img.shields.io/badge/Expo%20SDK-58-000020)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
@@ -10,11 +11,17 @@
 </p>
 
 <p align="center">
-  <strong>On-device AI assistant for Android</strong> — private by default, capable on the go.
+  <strong>On-device AI assistant for your phone</strong> — private by default, capable on the go.
+</p>
+
+<p align="center">
+  Available now for <strong>Android 7.0+</strong> · <strong>iOS</strong> coming soon
 </p>
 
 <p align="center">
   <a href="https://offlinemate.com">Website</a>
+  ·
+  <a href="https://play.google.com/store/apps/details?id=com.offlinemate.app">Google Play</a>
   ·
   <a href="https://github.com/KingPegasus/OfflineMate">Source</a>
   ·
@@ -47,6 +54,7 @@ All runbooks live in the repo—nothing heavy duplicated here:
 | Topic | Where |
 |--------|--------|
 | Local dev, native builds, EAS | [`BUILDING.md`](BUILDING.md) |
+| iOS simulator build (macOS, in progress) | [`BUILDING.md` § 5a](BUILDING.md#5a-local-ios-simulator-build-macos) |
 | Expo / cloud build & release | [`docs/deployment/expo-build-and-release.md`](docs/deployment/expo-build-and-release.md) |
 | Play Store checklist | [`docs/deployment/android-release-playstore.md`](docs/deployment/android-release-playstore.md) |
 | OTA updates | [`docs/deployment/ota-updates.md`](docs/deployment/ota-updates.md) |
@@ -69,4 +77,4 @@ Full index: **[`docs/README.md`](docs/README.md)** — architecture, model tiers
 | **Security** | [`SECURITY.md`](SECURITY.md) |
 | **Privacy & terms** | [`docs/legal/README.md`](docs/legal/README.md) (store-ready markdown in [`docs/legal/`](docs/legal/)) |
 
-OfflineMate is built and maintained by [Rhyme Solutions](https://rhymesolutions.com/).
+OfflineMate is built and maintained by [Rhyme Solutions](https://rhymesolutions.com/). Follow us on [YouTube](https://youtube.com/@rhymesolutions) · [LinkedIn](https://www.linkedin.com/company/rhymesolutions) · [Instagram](https://www.instagram.com/rhymesolutions/).

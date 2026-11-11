@@ -48,10 +48,21 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <StatusBar style="dark" hidden={false} />
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(tabs)" options={{ statusBarStyle: "dark" }} />
             <Stack.Screen
               name="onboarding"
-              options={{ presentation: "modal", headerShown: true, title: "Setup" }}
+              options={{
+                presentation: "modal",
+                headerShown: true,
+                title: "Setup",
+                // Match the dark onboarding screen. An opaque background also keeps iOS from
+                // laying the screen out underneath a translucent header.
+                headerStyle: { backgroundColor: "#030712" },
+                headerTintColor: "#e5e7eb",
+                headerShadowVisible: false,
+                // iOS uses view-controller-based status bar appearance, so the style is set per screen.
+                statusBarStyle: "light",
+              }}
             />
           </Stack>
         </QueryClientProvider>

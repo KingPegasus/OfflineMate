@@ -1,4 +1,47 @@
-import { migrateSettingsState, useSettingsStore } from "@/stores/settings-store";
+import * as SecureStore from "expo-secure-store";
+import { createSecureStorage, migrateSettingsState, useSettingsStore } from "@/stores/settings-store";
+
+describe("secureStorage", () => {
+  const keychainError = Object.assign(new Error("Keychain access failed: A required entitlement is not present."), {
+    code: "-34018",
+  });
+
+  it("returns null instead of rejecting when the read fails, so hydration can finish", async () => {
+    const storage = createSecureStorage();
+    vi.mocked(SecureStore.getItemAsync).mockRejectedValueOnce(keychainError);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(storage.getItem("offlinemate-settings")).resolves.toBeNull();
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it("after a failed read, never writes, so the real saved settings aren't overwritten with defaults", async () => {
+    const storage = createSecureStorage();
+    vi.mocked(SecureStore.getItemAsync).mockRejectedValueOnce(keychainError);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await storage.getItem("offlinemate-settings");
+    await expect(storage.setItem("offlinemate-settings", '{"hasCompletedOnboarding":false}')).resolves.toBeUndefined();
+    await expect(storage.removeItem("offlinemate-settings")).resolves.toBeUndefined();
+    expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
+  });
+
+  it("does not reject when a write or delete fails", async () => {
+    const storage = createSecureStorage();
+    vi.mocked(SecureStore.setItemAsync).mockRejectedValueOnce(keychainError);
+    vi.mocked(SecureStore.deleteItemAsync).mockRejectedValueOnce(keychainError);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(storage.setItem("offlinemate-settings", "{}")).resolves.toBeUndefined();
+    await expect(storage.removeItem("offlinemate-settings")).resolves.toBeUndefined();
+  });
+
+  it("passes values through when the store works", async () => {
+    const storage = createSecureStorage();
+    await storage.setItem("roundtrip", "value");
+    await expect(storage.getItem("roundtrip")).resolves.toBe("value");
+    await storage.removeItem("roundtrip");
+    await expect(storage.getItem("roundtrip")).resolves.toBeNull();
+  });
+});
 
 describe("settings store", () => {
   beforeEach(() => {

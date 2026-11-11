@@ -1,13 +1,21 @@
-/** "(18.3 tok/s)", or "(n/a tok/s)" when the speed was not measured. Shown under assistant replies. */
-export function formatTokPerSec(tokensPerSecond: number | null): string {
-  const metric =
-    tokensPerSecond !== null && Number.isFinite(tokensPerSecond) && tokensPerSecond > 0
-      ? tokensPerSecond.toFixed(1)
-      : "n/a";
-  return `(${metric} tok/s)`;
+/**
+ * Whether a reply has a real generation speed to show. Replies written without running the model
+ * (Lite tool replies such as "Reminder set…", fallbacks) have none, and the bubble hides the line
+ * instead of showing "(n/a tok/s)".
+ */
+export function hasMeasuredTokPerSec(tokensPerSecond: number | null | undefined): tokensPerSecond is number {
+  return typeof tokensPerSecond === "number" && Number.isFinite(tokensPerSecond) && tokensPerSecond > 0;
 }
 
-/** Matches a whole line produced by formatTokPerSec. */
+/** "(18.3 tok/s)", shown under assistant replies. Call only when hasMeasuredTokPerSec is true. */
+export function formatTokPerSec(tokensPerSecond: number): string {
+  return `(${tokensPerSecond.toFixed(1)} tok/s)`;
+}
+
+/**
+ * Matches a whole speed line. Also matches "(n/a tok/s)": replies saved before 0.9.0 could contain
+ * it, and small models copy it from history.
+ */
 const TOK_PER_SEC_LINE = /^[ \t]*\((?:\d+(?:\.\d+)?|n\/a) tok\/s\)[ \t]*$/gim;
 
 /**

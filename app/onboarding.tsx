@@ -43,7 +43,8 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root}>
+    // The Setup header already sits below the status bar, so only pad the other edges.
+    <SafeAreaView style={styles.root} edges={["left", "right", "bottom"]}>
       <ScrollView contentContainerStyle={[styles.content, isWide && styles.contentWide]}>
         <Text style={styles.h1}>Welcome to OfflineMate</Text>
         <Text style={styles.body}>

@@ -10,7 +10,42 @@ export interface AlarmTime {
   minutes: number;
   /** Recurring: [1-7] for each weekday. One-time: single day or empty for "next occurrence". */
   days?: number[];
+  /** True for "every …" / "daily" / weekday phrases. A single day in `days` without this is a one-time date ("tomorrow"). */
+  recurring?: boolean;
+  /** The moment chrono resolved ("November 20 at 7am" → that day). Keeps dates more than a week out. */
+  date?: Date;
   message?: string;
+}
+
+/**
+ * The exact moment an alarm should ring, for APIs that take a date (iOS AlarmKit), at `hour:minutes`:
+ * - recurring (or no resolved `date`) with `days`: the next day whose weekday is in `days`
+ *   ("every weekday at 9" on a Friday evening → Monday). Recurring alarms are set as one-time, as on Android.
+ * - otherwise the resolved `date` ("November 20", "tomorrow"), if that's still ahead;
+ * - otherwise today if the time is still ahead, else tomorrow.
+ */
+export function nextAlarmDate(
+  time: Pick<AlarmTime, "hour" | "minutes" | "days" | "recurring" | "date">,
+  now: Date = new Date(),
+): Date {
+  const atTime = (day: Date, daysAhead = 0) => {
+    const t = new Date(day);
+    t.setDate(t.getDate() + daysAhead);
+    t.setHours(time.hour, time.minutes, 0, 0);
+    return t;
+  };
+  if (time.days?.length && (time.recurring || !time.date)) {
+    for (let ahead = 0; ahead <= 7; ahead++) {
+      const candidate = atTime(now, ahead);
+      if (candidate > now && time.days.includes(toAlarmDay(candidate.getDay()))) return candidate;
+    }
+  }
+  if (time.date) {
+    const onDate = atTime(time.date);
+    if (onDate > now) return onDate;
+  }
+  const today = atTime(now);
+  return today > now ? today : atTime(now, 1);
 }
 
 /** Parse "7am", "7:30", "tomorrow at 8", "every weekday at 9" into AlarmTime. */
@@ -45,11 +80,20 @@ export function parseAlarmTime(text: string): AlarmTime | null {
   const msgMatch = text.match(/(?:for|to|about)\s+(.+)$/i);
   const message = msgMatch?.[1]?.trim() || undefined;
 
-  return { hour, minutes, ...(days && days.length > 0 ? { days } : {}), ...(message && { message }) };
+  return {
+    hour,
+    minutes,
+    ...(days && days.length > 0 ? { days } : {}),
+    ...(recurring && { recurring: true }),
+    date: d,
+    ...(message && { message }),
+  };
 }
 
 /** Extract alarm message from query (e.g. "set alarm for 7am to wake up" -> "wake up"). */
 export function extractAlarmMessage(query: string): string | undefined {
-  const m = query.match(/(?:set\s+)?(?:an?\s+)?alarm\s+(?:for\s+[^t]+?\s+)?(?:to|for)\s+(.+)$/i);
+  // The label follows "to": "alarm for 7am to wake up", "alarm in 5 minutes to stretch". Without a
+  // "to", "alarm for 7am" has no label (it used to return "7am").
+  const m = query.match(/(?:set\s+)?(?:an?\s+)?alarm\s+(?:(?:for|in|at)\s+.+?\s+)?to\s+(.+)$/i);
   return m?.[1]?.trim();
 }
