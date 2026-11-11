@@ -125,6 +125,53 @@ describe("alarm tool on iOS 26+ (AlarmKit)", () => {
   });
 });
 
+describe("alarm tool on iOS 26+: dates", () => {
+  beforeEach(() => {
+    platform.OS = "ios";
+    iosAlarms.available = true;
+  });
+
+  it("schedules a date more than a week ahead on that date", async () => {
+    const { setAlarmTool } = await import("@/tools/alarm-tool");
+    const result = await setAlarmTool.execute({ text: "set an alarm for November 20 at 7am to fly home" });
+    expect(result.ok).toBe(true);
+    expect(iosAlarms.scheduleIosAlarm).toHaveBeenCalledWith(new Date(2026, 10, 20, 7, 0, 0), "fly home");
+  });
+
+  it("schedules a weekday alarm set on a Friday evening for Monday", async () => {
+    vi.setSystemTime(new Date(2026, 10, 13, 20, 0, 0));
+    const { setAlarmTool } = await import("@/tools/alarm-tool");
+    const result = await setAlarmTool.execute({ text: "set an alarm every weekday at 9" });
+    expect(result.ok).toBe(true);
+    expect(result.message).toMatch(/Recurring not yet supported/);
+    expect(iosAlarms.scheduleIosAlarm).toHaveBeenCalledWith(new Date(2026, 10, 16, 9, 0, 0), "Alarm");
+  });
+
+  it("keeps the requested day when the planner passes explicit hour and minutes", async () => {
+    const { setAlarmTool } = await import("@/tools/alarm-tool");
+    // 16:50 now: today 21:00 is still ahead, but the user asked for tomorrow.
+    const result = await setAlarmTool.execute({ text: "set an alarm for tomorrow at 9pm", hour: "21", minutes: "0" });
+    expect(result.ok).toBe(true);
+    expect(iosAlarms.scheduleIosAlarm).toHaveBeenCalledWith(new Date(2026, 10, 11, 21, 0, 0), "Alarm");
+  });
+
+  it("reports a failed permission check as an error, not as alarms turned off", async () => {
+    iosAlarms.requestIosAlarmAuthorization.mockRejectedValueOnce(
+      new Error("Calling the 'requestAuthorization' function has failed\n→ Caused by: Connection interrupted."),
+    );
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { setAlarmTool } = await import("@/tools/alarm-tool");
+    const result = await setAlarmTool.execute({ text: "set an alarm for 7am" });
+    expect(result.ok).toBe(false);
+    expect(result.errorCode).toBe("UNKNOWN");
+    expect(result.message).toBe(
+      'Could not check alarm permission: Connection interrupted. Try "Remind me at 7:00 to Alarm" instead.',
+    );
+    expect(result.message).not.toMatch(/Settings app/);
+    expect(iosAlarms.scheduleIosAlarm).not.toHaveBeenCalled();
+  });
+});
+
 describe("alarm tool on Android", () => {
   it("loads expo-alarm only when an alarm is set, and never uses AlarmKit", async () => {
     platform.OS = "android";

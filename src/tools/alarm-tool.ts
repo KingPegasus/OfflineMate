@@ -41,19 +41,13 @@ export const setAlarmTool: Tool = {
     const explicitMinutes = params.minutes ? parseInt(params.minutes, 10) : NaN;
     let hour: number;
     let minutes: number;
-    let days: number[] | undefined;
-    let hasRecurring = false;
     if (!Number.isNaN(explicitHour) && !Number.isNaN(explicitMinutes)) {
       hour = Math.max(0, Math.min(23, explicitHour));
       minutes = Math.max(0, Math.min(59, explicitMinutes));
-      hasRecurring = false;
     } else if (parsed) {
       hour = parsed.hour;
       minutes = parsed.minutes;
-      days = parsed.days;
-      // Only "every …"/"daily"/weekday phrases. "tomorrow at 8" also sets one day in `days`, but it's one-time.
-      hasRecurring = Boolean(parsed.recurring);
-      // Android: omit days, expo-alarm has known bug with EXTRA_DAYS causing rejection (gh#6).
+      // Android: days aren't passed on, expo-alarm has known bug with EXTRA_DAYS causing rejection (gh#6).
       // One-time alarms (hour+minutes only) work reliably across devices.
     } else {
       return {
@@ -64,12 +58,28 @@ export const setAlarmTool: Tool = {
     }
     const message =
       params.title?.trim() || params.message?.trim() || extractAlarmMessage(sourceText) || "Alarm";
-    const recurringNote = hasRecurring ? RECURRING_NOTE : "";
+    // The day comes from the text even when the planner passed explicit hour/minutes ("tomorrow at 9pm").
+    // Only "every …"/"daily"/weekday phrases are recurring; "tomorrow at 8" also sets one day, but it's one-time.
+    const days = parsed?.days;
+    const recurring = Boolean(parsed?.recurring);
+    const recurringNote = recurring ? RECURRING_NOTE : "";
 
     if (!isAndroid) {
       // iOS 26+: AlarmKit takes an exact date, so resolve "7am" / "tomorrow at 8" to the next occurrence.
       // Ask first: shows the system prompt the first time, then returns the saved choice.
-      const authorization = await requestIosAlarmAuthorization().catch(() => "denied" as const);
+      let authorization: Awaited<ReturnType<typeof requestIosAlarmAuthorization>>;
+      try {
+        authorization = await requestIosAlarmAuthorization();
+      } catch (e) {
+        // Not a "permission off" case: the toggle may already be on, so don't send the user to Settings.
+        console.warn("[OfflineMate] Alarm permission check failed:", e);
+        return {
+          ok: false,
+          message: `Could not check alarm permission: ${nativeErrorReason(e, "unknown error")}.${reminderFallback(hour, minutes, message)}`,
+          errorCode: "UNKNOWN",
+          retryable: true,
+        };
+      }
       if (authorization !== "authorized") {
         return {
           ok: false,
@@ -81,7 +91,7 @@ export const setAlarmTool: Tool = {
         };
       }
       const now = new Date();
-      const when = nextAlarmDate({ hour, minutes, days }, now);
+      const when = nextAlarmDate({ hour, minutes, days, recurring, date: parsed?.date }, now);
       try {
         await scheduleIosAlarm(when, message);
         const phrase = describeReminderTime((when.getTime() - now.getTime()) / 1000, now);

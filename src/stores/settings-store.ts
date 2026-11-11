@@ -82,34 +82,50 @@ export function migrateSettingsState(
 
 /**
  * Exported for tests. Secure storage that never rejects. If the Keychain/Keystore read fails
- * (for example iOS error -34018 when the app lacks the keychain entitlement), zustand's persist
- * would never finish hydrating and the index screen would spin forever. Falling back to defaults
- * keeps the app usable; a failed write only means the setting isn't remembered.
+ * (iOS -34018 missing entitlement, or errSecInteractionNotAllowed when the app wakes in the
+ * background while the phone is locked), zustand's persist would never finish hydrating and the
+ * index screen would spin forever, so the read falls back to defaults.
+ *
+ * A failed read doesn't mean nothing is saved, so after one, writes are skipped for the rest of the
+ * session: saving the defaults would overwrite the user's real settings. They load normally on the
+ * next launch. A failed write only means that change isn't remembered.
  */
-export const secureStorage = {
-  getItem: async (name: string) => {
-    try {
-      return await SecureStore.getItemAsync(name);
-    } catch (e) {
-      console.warn("[OfflineMate] Could not read settings, using defaults:", e);
-      return null;
-    }
-  },
-  setItem: async (name: string, value: string) => {
-    try {
-      await SecureStore.setItemAsync(name, value);
-    } catch (e) {
-      console.warn("[OfflineMate] Could not save settings:", e);
-    }
-  },
-  removeItem: async (name: string) => {
-    try {
-      await SecureStore.deleteItemAsync(name);
-    } catch (e) {
-      console.warn("[OfflineMate] Could not clear settings:", e);
-    }
-  },
-};
+export function createSecureStorage() {
+  let readFailed = false;
+  const skipWrite = () => {
+    if (readFailed) console.warn("[OfflineMate] Not saving settings: the saved ones couldn't be read this session.");
+    return readFailed;
+  };
+  return {
+    getItem: async (name: string) => {
+      try {
+        return await SecureStore.getItemAsync(name);
+      } catch (e) {
+        readFailed = true;
+        console.warn("[OfflineMate] Could not read settings, using defaults for this session:", e);
+        return null;
+      }
+    },
+    setItem: async (name: string, value: string) => {
+      if (skipWrite()) return;
+      try {
+        await SecureStore.setItemAsync(name, value);
+      } catch (e) {
+        console.warn("[OfflineMate] Could not save settings:", e);
+      }
+    },
+    removeItem: async (name: string) => {
+      if (skipWrite()) return;
+      try {
+        await SecureStore.deleteItemAsync(name);
+      } catch (e) {
+        console.warn("[OfflineMate] Could not clear settings:", e);
+      }
+    },
+  };
+}
+
+const secureStorage = createSecureStorage();
 
 interface SettingsState {
   selectedTier: ModelTier;

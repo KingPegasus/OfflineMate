@@ -73,7 +73,7 @@ describe("stripTokPerSecLines", () => {
   });
 
   it("strips exactly the lines formatTokPerSec produces", () => {
-    for (const speed of [18.25, null, 0]) {
+    for (const speed of [18.25, 0.4, 123]) {
       expect(stripTokPerSecLines(`Answer.\n\n${formatTokPerSec(speed)}`)).toBe("Answer.");
     }
   });

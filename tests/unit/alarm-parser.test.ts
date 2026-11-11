@@ -75,3 +75,34 @@ describe("nextAlarmDate", () => {
     expect(nextAlarmDate({ hour: 9, minutes: 0, days: [2, 3, 4, 5, 6] }, now)).toEqual(new Date(2026, 10, 11, 9, 0, 0));
   });
 });
+
+describe("nextAlarmDate with a resolved date and recurring days", () => {
+  const tuesday = new Date(2026, 10, 10, 16, 50, 0);
+
+  it("keeps a date more than a week ahead instead of folding it onto a weekday", () => {
+    // Friday 20 Nov; a weekday-only answer would have given Friday 13 Nov.
+    expect(nextAlarmDate({ hour: 7, minutes: 0, days: [6], date: new Date(2026, 10, 20, 7, 0) }, tuesday)).toEqual(
+      new Date(2026, 10, 20, 7, 0, 0),
+    );
+  });
+
+  it("schedules a weekday alarm set on a Friday evening for Monday, not Saturday", () => {
+    const fridayEvening = new Date(2026, 10, 13, 20, 0, 0);
+    expect(nextAlarmDate({ hour: 9, minutes: 0, days: [2, 3, 4, 5, 6], recurring: true }, fridayEvening)).toEqual(
+      new Date(2026, 10, 16, 9, 0, 0),
+    );
+  });
+
+  it("uses the resolved day with a different explicit time", () => {
+    // "tomorrow at 9pm" resolved to Wed 11 Nov; explicit 21:00 must not fall back to today.
+    expect(nextAlarmDate({ hour: 21, minutes: 0, days: [4], date: new Date(2026, 10, 11, 21, 0) }, tuesday)).toEqual(
+      new Date(2026, 10, 11, 21, 0, 0),
+    );
+  });
+
+  it("falls back to the next occurrence when the resolved date has already passed", () => {
+    expect(nextAlarmDate({ hour: 7, minutes: 0, date: new Date(2026, 10, 10, 7, 0) }, tuesday)).toEqual(
+      new Date(2026, 10, 11, 7, 0, 0),
+    );
+  });
+});

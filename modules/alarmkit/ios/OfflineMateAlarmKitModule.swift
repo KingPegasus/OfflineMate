@@ -85,7 +85,9 @@ enum OfflineMateAlarms {
   }
 
   static func schedule(epochSeconds: Double, title: String, stopLabel: String) async throws -> String {
-    guard await requestAuthorization() == "authorized" else {
+    // JS asks for permission first (requestAuthorization); this only reads the saved state,
+    // so scheduling doesn't make a second request to the alarm service.
+    guard AlarmManager.shared.authorizationState == .authorized else {
       throw AlarmKitNotAuthorizedException()
     }
 

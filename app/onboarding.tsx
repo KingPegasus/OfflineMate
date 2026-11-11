@@ -1,7 +1,6 @@
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { getDeviceTierRecommendation } from "@/utils/device-profiler";
 import { getModelsForTier, MODEL_TIERS, resolveModelForTier } from "@/ai/model-registry";
@@ -46,8 +45,6 @@ export default function OnboardingScreen() {
   return (
     // The Setup header already sits below the status bar, so only pad the other edges.
     <SafeAreaView style={styles.root} edges={["left", "right", "bottom"]}>
-      {/* The tab screens have a white header and use dark status bar text; this screen is dark. */}
-      <StatusBar style="light" />
       <ScrollView contentContainerStyle={[styles.content, isWide && styles.contentWide]}>
         <Text style={styles.h1}>Welcome to OfflineMate</Text>
         <Text style={styles.body}>

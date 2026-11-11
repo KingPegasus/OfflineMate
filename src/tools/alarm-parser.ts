@@ -12,26 +12,40 @@ export interface AlarmTime {
   days?: number[];
   /** True for "every …" / "daily" / weekday phrases. A single day in `days` without this is a one-time date ("tomorrow"). */
   recurring?: boolean;
+  /** The moment chrono resolved ("November 20 at 7am" → that day). Keeps dates more than a week out. */
+  date?: Date;
   message?: string;
 }
 
 /**
- * The exact moment an alarm for `time` should ring, for APIs that take a date (iOS AlarmKit).
- * One weekday in `days` (e.g. "tomorrow at 8", "Friday at 7") means the next such day; otherwise
- * today if the time is still ahead, else tomorrow. Recurring alarms are set as one-time, as on Android.
+ * The exact moment an alarm should ring, for APIs that take a date (iOS AlarmKit), at `hour:minutes`:
+ * - recurring (or no resolved `date`) with `days`: the next day whose weekday is in `days`
+ *   ("every weekday at 9" on a Friday evening → Monday). Recurring alarms are set as one-time, as on Android.
+ * - otherwise the resolved `date` ("November 20", "tomorrow"), if that's still ahead;
+ * - otherwise today if the time is still ahead, else tomorrow.
  */
-export function nextAlarmDate(time: Pick<AlarmTime, "hour" | "minutes" | "days">, now: Date = new Date()): Date {
-  const target = new Date(now);
-  target.setHours(time.hour, time.minutes, 0, 0);
-  const singleDay = time.days?.length === 1 ? time.days[0] : undefined;
-  if (singleDay !== undefined) {
-    const daysAhead = (singleDay - toAlarmDay(now.getDay()) + 7) % 7;
-    target.setDate(target.getDate() + daysAhead);
-    if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 7);
-  } else if (target.getTime() <= now.getTime()) {
-    target.setDate(target.getDate() + 1);
+export function nextAlarmDate(
+  time: Pick<AlarmTime, "hour" | "minutes" | "days" | "recurring" | "date">,
+  now: Date = new Date(),
+): Date {
+  const atTime = (day: Date, daysAhead = 0) => {
+    const t = new Date(day);
+    t.setDate(t.getDate() + daysAhead);
+    t.setHours(time.hour, time.minutes, 0, 0);
+    return t;
+  };
+  if (time.days?.length && (time.recurring || !time.date)) {
+    for (let ahead = 0; ahead <= 7; ahead++) {
+      const candidate = atTime(now, ahead);
+      if (candidate > now && time.days.includes(toAlarmDay(candidate.getDay()))) return candidate;
+    }
   }
-  return target;
+  if (time.date) {
+    const onDate = atTime(time.date);
+    if (onDate > now) return onDate;
+  }
+  const today = atTime(now);
+  return today > now ? today : atTime(now, 1);
 }
 
 /** Parse "7am", "7:30", "tomorrow at 8", "every weekday at 9" into AlarmTime. */
@@ -71,6 +85,7 @@ export function parseAlarmTime(text: string): AlarmTime | null {
     minutes,
     ...(days && days.length > 0 ? { days } : {}),
     ...(recurring && { recurring: true }),
+    date: d,
     ...(message && { message }),
   };
 }
