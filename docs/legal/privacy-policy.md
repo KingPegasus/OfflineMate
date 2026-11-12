@@ -1,6 +1,6 @@
 # OfflineMate Privacy Policy
 
-**Effective date:** November 12, 2026 (app version 0.11.0)  
+**Effective date:** November 13, 2026 (app version 0.11.0)  
 
 **Applies to:** the OfflineMate mobile application for **Android** (package identifier `com.offlinemate.app`), distributed by the project maintainers (“we”, “us”). The source code also builds for iOS, but **no iOS version is distributed yet**; if one is released, this policy covers it in the same way.
 
@@ -28,7 +28,7 @@ Depending on how you use OfflineMate, the app may process:
 - **Notes or documents** you choose to index for retrieval (RAG) features, and **derived data** such as embeddings or index entries stored locally.
 - **Files and model weights** downloaded for on-device models (stored in app storage).
 
-This processing is performed **on the device** to provide the assistant. Voice is turned into text on the device; recordings are not sent anywhere. Contacts, calendar entries and notes are read and stored only on the device. **Chat history** is not kept unless you turn on “Persist chat history” in Settings (off by default); when on, it is stored only on the device.
+This processing is performed **on the device** to provide the assistant. Voice is turned into text on the device; recordings are not sent anywhere. Contacts, calendar entries and notes are read and stored only on the device. **Chat history** is not kept after you close the app unless you turn on “Persist chat history” in Settings (off by default); when on, it is stored only on the device. A message that starts with **“remember”** (for example “remember my locker code is 42”) is saved as a **memory** on the device and used in later answers, whether or not chat history is kept.
 
 **Uninstalling the app** removes app-specific data subject to your operating system’s rules (some residual data may remain until the OS reclaims storage).
 
@@ -90,7 +90,13 @@ OfflineMate is **not directed at children under 13** (or the minimum age require
 
 ## Data retention and deletion
 
-We do not keep any of your data: there is no account and no OfflineMate server. Everything the app stores is on your device, and you delete it by clearing the app’s data or uninstalling it. Data sent to DuckDuckGo, Open-Meteo or Hugging Face is handled under their policies, linked above.
+We do not keep any of your data: there is no account and no OfflineMate server. Everything the app stores is on your device, and you can delete it yourself:
+
+- **A chat:** in the Chat tab, open **Open chats** and swipe left on the chat or tap **Delete**, then confirm. **Settings → Clear current chat** deletes the chat you are in. Deleted chats are removed permanently.
+- **A note:** in the **Notes** tab, tap **Delete** on the note. Its search index on the device is removed with it.
+- **Memories** saved from “remember…” messages, and **everything else** (chats, notes, settings, downloaded models): clear OfflineMate’s storage in your phone’s settings (Apps → OfflineMate → Storage → Clear storage), or uninstall the app. Deleting a chat does not delete memories saved from it.
+
+Because nothing is stored by us, there is nothing for us to delete on request. Data sent to DuckDuckGo, Open-Meteo or Hugging Face is handled under their policies, linked above.
 
 ---
 
