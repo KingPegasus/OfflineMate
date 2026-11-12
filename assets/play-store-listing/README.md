@@ -18,7 +18,9 @@ Upload these in **Play Console → Grow users → Store presence → Main store 
 3. `03-built-in-tools.png`: "More than chat" (tool list)
 4. `04-pick-a-tier.png`: "A tier that fits your phone" (setup screen)
 5. `05-choose-a-model.png`: "Choose your model" (Lite model picker)
-6. `06-privacy.png`: "Clear privacy boundaries" (Settings)
+6. `06-privacy.png`: "Clear privacy boundaries" (Settings, with the info buttons; updated for 0.11.0)
+
+Tablet screenshots (`screenshots/tablet/tablet7/` and `tablet10/`): `01-offline-chat`, `02-private-notes`, `03-pick-a-tier`, `04-choose-a-model`, and `05-privacy` ("Clear privacy boundaries", the Settings screen; added in 0.11.0).
 
 The first three show in search results, so they're the three that sell the app: offline chat, private notes and the tools. The setup screens come after.
 

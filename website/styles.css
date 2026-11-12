@@ -1349,3 +1349,62 @@ td {
   white-space: nowrap;
   border: 0;
 }
+
+/* ——— Settings guide (settings.html) ——— */
+.settings-shots {
+  display: grid;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+@media (min-width: 900px) {
+  .settings-shots {
+    grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
+  }
+}
+
+.settings-shots .shot-card {
+  margin: 0;
+  text-align: center;
+}
+
+.settings-shots .shot {
+  width: 100%;
+  height: auto;
+}
+
+.settings-shots .shot-card:first-child .shot {
+  max-width: 17rem;
+  margin: 0 auto;
+}
+
+.settings-list {
+  margin: 0;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.settings-list dt {
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-list dd {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.settings-default {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}

@@ -84,6 +84,7 @@ OfflineMate is **not directed at children under 13** (or the minimum age require
 - **Permissions:** Grant or revoke in system settings.
 - **Web search and weather:** Turn off **“Web search and weather”** in OfflineMate’s Settings tab (it is on by default). Nothing is then sent to DuckDuckGo or Open-Meteo.
 - **Chat history and spoken replies:** Both are off by default; turn them on or off in Settings.
+- **Chats and memories:** delete them all with **Settings → Clear chats and memories**. Each option in Settings has an ⓘ button that explains what it does.
 - **Data on device:** Clear app data or uninstall to remove locally stored app content (subject to OS behavior).
 
 ---
@@ -92,9 +93,10 @@ OfflineMate is **not directed at children under 13** (or the minimum age require
 
 We do not keep any of your data: there is no account and no OfflineMate server. Everything the app stores is on your device, and you can delete it yourself:
 
-- **A chat:** in the Chat tab, open **Open chats** and swipe left on the chat or tap **Delete**, then confirm. **Settings → Clear current chat** deletes the chat you are in. Deleted chats are removed permanently.
+- **One chat:** in the Chat tab, open **Open chats** and swipe left on the chat or tap **Delete**, then confirm. Deleted chats are removed permanently.
 - **A note:** in the **Notes** tab, tap **Delete** on the note. Its search index on the device is removed with it.
-- **Memories** saved from “remember…” messages, and **everything else** (chats, notes, settings, downloaded models): clear OfflineMate’s storage in your phone’s settings (Apps → OfflineMate → Storage → Clear storage), or uninstall the app. Deleting a chat does not delete memories saved from it.
+- **All chats and memories:** **Settings → Clear chats and memories** deletes every chat and every memory saved from “remember…” messages, after you confirm. (Deleting a single chat does not delete memories saved from it.) Turning off “Persist chat history” also deletes all saved chats.
+- **Everything** (chats, memories, notes, settings, downloaded models): clear OfflineMate’s storage in your phone’s settings (Apps → OfflineMate → Storage → Clear storage), or uninstall the app.
 
 Because nothing is stored by us, there is nothing for us to delete on request. Data sent to DuckDuckGo, Open-Meteo or Hugging Face is handled under their policies, linked above.
 

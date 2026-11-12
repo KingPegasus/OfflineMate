@@ -12,7 +12,7 @@ OUT = ROOT / "marketing" / "out"
 WEB = ROOT / "website"
 
 FRAMES = ["chat", "notes", "onboarding", "picker-lite", "tools", "settings", "tools-chat"]
-TABLET_FRAMES = ["chat", "notes", "picker-lite"]
+TABLET_FRAMES = ["chat", "notes", "picker-lite", "settings"]
 
 
 def ffmpeg():

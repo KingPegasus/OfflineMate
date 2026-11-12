@@ -68,7 +68,7 @@
       "shot": "settings",
       "kicker": "Transparent",
       "head": "Clear <em>privacy</em> boundaries",
-      "sub": "Settings show when the app uses the network."
+      "sub": "Every setting explains what it does."
     }
   },
   {
@@ -193,6 +193,17 @@
     }
   },
   {
+    "out": "../out/web/frame-tablet-settings.png",
+    "w": 1600,
+    "h": 1100,
+    "transparent": true,
+    "params": {
+      "layout": "tablet-device",
+      "shot": "tablet-settings",
+      "ar": "1.6"
+    }
+  },
+  {
     "out": "../out/store/tablet7/01-offline-chat.png",
     "w": 1920,
     "h": 1200,
@@ -245,6 +256,19 @@
     }
   },
   {
+    "out": "../out/store/tablet7/05-privacy.png",
+    "w": 1920,
+    "h": 1200,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet7-settings",
+      "ar": "1.6",
+      "kicker": "Transparent",
+      "head": "Clear <em>privacy</em> boundaries",
+      "sub": "Every setting explains what it does. One switch keeps everything on the device."
+    }
+  },
+  {
     "out": "../out/store/tablet10/01-offline-chat.png",
     "w": 2560,
     "h": 1600,
@@ -294,6 +318,19 @@
       "kicker": "Open models",
       "head": "Choose your <em>model</em>",
       "sub": "SmolLM2, LFM, Gemma, Qwen, Llama and more."
+    }
+  },
+  {
+    "out": "../out/store/tablet10/05-privacy.png",
+    "w": 2560,
+    "h": 1600,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet-settings",
+      "ar": "1.6",
+      "kicker": "Transparent",
+      "head": "Clear <em>privacy</em> boundaries",
+      "sub": "Every setting explains what it does. One switch keeps everything on the device."
     }
   }
 ]
