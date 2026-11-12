@@ -240,7 +240,8 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>Privacy and network boundaries</Text>
           <Text style={styles.sectionBody}>
             Core chat, retrieval, and tools run on device after models are downloaded. Network use is mainly for model
-            downloads, and for optional web search and weather (only the place name is sent to Open-Meteo).
+            downloads, and for web search (queries go to DuckDuckGo) and weather (only the place name goes to Open-Meteo).
+            Both are on by default; turn off “Web search and weather” above to keep everything on this device.
           </Text>
           <Text style={styles.sectionBody}>
             Text-to-speech uses device OS voices and may use vendor online services.

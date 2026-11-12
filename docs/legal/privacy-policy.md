@@ -1,8 +1,8 @@
 # OfflineMate Privacy Policy
 
-**Effective date:** March 29, 2026  
+**Effective date:** November 12, 2026 (app version 0.11.0)  
 
-**Applies to:** the OfflineMate mobile application for **Android** (package identifier `com.offlinemate.app`), distributed by the project maintainers (“we”, “us”). **An iOS build is not offered today**; if one is released later, this policy will be updated to cover it.
+**Applies to:** the OfflineMate mobile application for **Android** (package identifier `com.offlinemate.app`), distributed by the project maintainers (“we”, “us”). The source code also builds for iOS, but **no iOS version is distributed yet**; if one is released, this policy covers it in the same way.
 
 This policy describes how the app handles information. It is intended for end users and for transparency in this repository. **It is not legal advice.** If you distribute the app under your own brand, replace contact details and review this text with qualified counsel.
 
@@ -11,8 +11,9 @@ This policy describes how the app handles information. It is intended for end us
 ## Summary
 
 - OfflineMate is built for **local-first** use: conversation, retrieval, and on-device language models run **on your device** where that architecture applies.
-- The app may use **the network** for **downloading AI models and related assets**, and (when you use features that require it) for **optional web search** and similar tools. Those flows can send requests to **third-party services** you do not control.
-- We do **not** operate a dedicated “OfflineMate cloud” for storing your chats in the version described by this repository; **data stays on your device** except as noted below (network requests you trigger, OS and framework behavior, and third-party infrastructure).
+- The app uses **the network** to **download AI models** and, for two optional features, **web search** and **weather**. Those features send your search query or the place you ask about to **third-party services** (DuckDuckGo and Open-Meteo). They are **on by default** and one switch in Settings turns both off.
+- We do **not** run servers that receive or store your data. There is no account. **Your chats, notes, contacts, calendar and voice stay on your device**, except the search queries and place names described below.
+- We do **not** sell your data, show ads, or build profiles about you.
 
 ---
 
@@ -27,19 +28,27 @@ Depending on how you use OfflineMate, the app may process:
 - **Notes or documents** you choose to index for retrieval (RAG) features, and **derived data** such as embeddings or index entries stored locally.
 - **Files and model weights** downloaded for on-device models (stored in app storage).
 
-This processing is performed **on the device** to provide the assistant. **Uninstalling the app** removes app-specific data subject to your operating system’s rules (some residual data may remain until the OS reclaims storage).
+This processing is performed **on the device** to provide the assistant. Voice is turned into text on the device; recordings are not sent anywhere. Contacts, calendar entries and notes are read and stored only on the device. **Chat history** is not kept unless you turn on “Persist chat history” in Settings (off by default); when on, it is stored only on the device.
+
+**Uninstalling the app** removes app-specific data subject to your operating system’s rules (some residual data may remain until the OS reclaims storage).
 
 ---
 
 ## Network and third parties
 
-When the device is online, parts of the app may contact:
+When the device is online, the app contacts these services. All connections use HTTPS (encrypted in transit).
 
-- **Model and asset hosts** (for example, CDNs or repositories used to download quantized models, tokenizers, or speech-related assets). Those servers may receive **standard technical metadata** typical of HTTPS requests (such as IP address, user agent, and timing). The exact endpoints depend on the build and configuration in source (see `src/ai/model-manager.ts`, `src/ai/model-registry.ts`, and related code).
-- **Web search providers** when a web search tool is used (for example, DuckDuckGo-related endpoints in `src/tools/providers/duckduckgo-provider.ts`). **Search queries** you trigger can be sent to that provider under **their** policies.
-- **Open-Meteo** (`geocoding-api.open-meteo.com`, `api.open-meteo.com`) when you ask about the weather (`src/tools/weather.ts`). Only the **place name** you ask about is sent to find it, then its coordinates to get the forecast; your device location is not used. Weather and web search share one switch in Settings, so turning it off sends neither.
+- **Model downloads (Hugging Face).** Setup and the model picker download AI models, tokenizers and speech models from Hugging Face (`src/ai/model-manager.ts`, `src/ai/model-registry.ts`). No personal content is sent; like any download, the host receives standard technical data such as your IP address, user agent and request time.
+- **Web search (DuckDuckGo).** When a message asks to search or for current information (for example “search for…”, “look up…”, “latest news on…”, “what’s the current…”, “is it true that…”), the app sends a search query to DuckDuckGo (`src/tools/providers/duckduckgo-provider.ts`). **The query can be the whole message you typed.** DuckDuckGo also receives your IP address.
+- **Weather (Open-Meteo).** When you ask about the weather, the app sends **only the place name** you asked about to Open-Meteo’s geocoding service to find it, then that place’s coordinates to its forecast service (`src/tools/weather.ts`). The app **never reads your device’s location**, but the place you ask about may be where you are, so it can reveal your **approximate location**. Open-Meteo also receives your IP address.
+- **Ratings (Google Play).** After a few good replies the app may show Google Play’s rating prompt. Google runs that prompt; the app does not see whether or how you rated it.
+- **Text-to-speech.** Spoken replies (off by default) use your phone’s built-in voices. Depending on your device and voice settings, the voice provider may process the text online under its own policy.
 
-We do not control third-party services. Review their privacy policies if you need detail beyond what this document states.
+**What happens to search queries and place names:** the app sends them only to answer that request, uses the result to write the reply, and does not store them anywhere off your device. They go only to the provider named above, only to provide the feature you asked for, never for advertising or profiling. The reply (and your message) stay in chat on your device as described above.
+
+**Web search and weather are on by default.** Turn off **Settings → “Web search and weather”** in OfflineMate to keep every request on the device; then nothing is sent to DuckDuckGo or Open-Meteo.
+
+These providers handle requests under their own policies: [DuckDuckGo privacy policy](https://duckduckgo.com/privacy), [Open-Meteo terms and privacy](https://open-meteo.com/en/terms), [Hugging Face privacy policy](https://huggingface.co/privacy). We do not control them.
 
 ---
 
@@ -73,8 +82,21 @@ OfflineMate is **not directed at children under 13** (or the minimum age require
 ## Your choices
 
 - **Permissions:** Grant or revoke in system settings.
+- **Web search and weather:** Turn off **“Web search and weather”** in OfflineMate’s Settings tab (it is on by default). Nothing is then sent to DuckDuckGo or Open-Meteo.
+- **Chat history and spoken replies:** Both are off by default; turn them on or off in Settings.
 - **Data on device:** Clear app data or uninstall to remove locally stored app content (subject to OS behavior).
-- **Web search:** Avoid features that perform web search if you do not want queries sent to a search provider.
+
+---
+
+## Data retention and deletion
+
+We do not keep any of your data: there is no account and no OfflineMate server. Everything the app stores is on your device, and you delete it by clearing the app’s data or uninstalling it. Data sent to DuckDuckGo, Open-Meteo or Hugging Face is handled under their policies, linked above.
+
+---
+
+## Store disclosures
+
+Google Play’s Data safety section for OfflineMate lists **in-app search history** (web search queries and weather place names) and **approximate location** (weather place names) as collected and shared with those providers **for app functionality only**, **optional** (the Settings switch), and **processed ephemerally** (not stored by us). If the app’s behavior changes, this policy and those disclosures are updated together.
 
 Regional laws (for example GDPR, UK GDPR, CCPA/CPRA) may give you additional rights. Contact us using the details below for privacy requests related to **our** distribution of the app. We cannot control data held purely on your device or by independent third parties.
 
