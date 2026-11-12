@@ -150,7 +150,7 @@ export async function executePlanSteps(
 ): Promise<ExecutedPlanResult> {
   const executed: string[] = [];
   const planSummary = steps.map((step) => step.description).join(" -> ");
-  // Also here, not only in reconcile: every plan (validated, fallback, timeout) runs through this loop.
+  // Here rather than in planning: every plan (validated, fallback, timeout) runs through this loop.
   for (const step of dropRepeatedWriteSteps(steps) as PlannedStep[]) {
     if (!step.toolName) continue;
     const output = await executeTool(step.toolName, step.args ?? {});

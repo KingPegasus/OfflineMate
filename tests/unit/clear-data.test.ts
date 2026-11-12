@@ -7,7 +7,12 @@ vi.mock("@/db/database", () => ({
   getDb: () => ({
     runSync: (sql: string, params: unknown[] = []) => {
       if (sql.startsWith("INSERT")) table.rows.push({ id: String(params[0]), content: String(params[1]), created_at: Number(params[2]) });
-      if (sql.startsWith("DELETE FROM conversation_memory")) table.rows = [];
+      if (sql.startsWith("DELETE FROM conversation_memory")) {
+        const changes = table.rows.length;
+        table.rows = [];
+        return { changes, lastInsertRowId: 0 };
+      }
+      return { changes: 1, lastInsertRowId: 0 };
     },
     getFirstSync: () => ({ n: table.rows.length }),
     getAllSync: () => table.rows,

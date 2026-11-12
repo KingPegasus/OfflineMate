@@ -24,7 +24,6 @@ export const weatherTool: Tool = {
     "weather in",
     "weather like",
     "weather forecast",
-    "forecast for",
     "temperature in",
     "temperature outside",
     "how hot is it",

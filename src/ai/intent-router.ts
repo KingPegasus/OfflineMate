@@ -103,11 +103,9 @@ const TOOL_KEYWORDS = [
   "is it true that",
   "verify online",
   "fact check",
-  // Weather (weather.current, Open-Meteo): bare "weather", and phrases for temperature and rain
-  // (no bare "temperature" or "forecast": "oven temperature", "sales forecast")
-  "weather",
+  // Weather (weather.current, Open-Meteo): weather questions only, see wantsWeatherIntent() for "weather"
+  // (no bare "weather", "temperature" or "forecast": "a poem about the weather", "oven temperature", "sales forecast")
   "weather forecast",
-  "forecast for",
   "temperature in",
   "temperature outside",
   "how hot is it",
@@ -167,10 +165,25 @@ export function wantsContactLookupIntent(normalizedLower: string): boolean {
  * an appointment/meeting/event word, and a day or time. The time cue keeps "how do I add an event listener" direct.
  */
 export function wantsCalendarAddIntent(normalizedLower: string): boolean {
-  const adds = /\b(add|create|schedule|book|put|set up|make)\b[^.?!]{0,50}\b(appointment|meeting|event|lunch|dinner|interview)s?\b/;
+  // The add verb must start the request ("Add…", "Can you book…"), so "What should I make for dinner tonight?" stays direct.
+  const adds =
+    /^(?:(?:can|could|would) you\s+|please\s+)*(add|create|schedule|book|put|set up|make)\b[^.?!]{0,50}\b(appointment|meeting|event|lunch|dinner|interview)s?\b/;
   const when =
     /\b(today|tomorrow|tonight|this (morning|afternoon|evening)|next (week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|on (monday|tuesday|wednesday|thursday|friday|saturday|sunday)|at \d|\d{1,2}(:\d{2})?\s?(am|pm)|\d{1,2}:\d{2})\b/;
   return adds.test(normalizedLower) && when.test(normalizedLower);
+}
+
+/**
+ * A question about the weather: "what's the weather in…", "weather in Paris", "how's the weather", or a short message
+ * like "london weather". Bare "weather" in a longer message ("write a poem about the weather") stays direct, so its
+ * text is never sent to the weather service.
+ */
+export function wantsWeatherIntent(normalizedLower: string): boolean {
+  if (!/\bweather\b/.test(normalizedLower)) return false;
+  if (/\b(what'?s|what is|how'?s|how is) the weather\b|\bweather (in|for|at|like|today|tomorrow|tonight|now)\b|\b(current|today'?s|tomorrow'?s) weather\b/.test(normalizedLower)) {
+    return true;
+  }
+  return normalizedLower.split(/\s+/).filter(Boolean).length <= 4;
 }
 
 export function wantsReminderRelativeTimeIntent(normalizedLower: string): boolean {
@@ -224,6 +237,7 @@ export function routeIntent(input: string): IntentType {
   if (wantsContactLookupIntent(normalized)) return "tool";
   if (wantsReminderRelativeTimeIntent(normalized)) return "tool";
   if (wantsCalendarAddIntent(normalized)) return "tool";
+  if (wantsWeatherIntent(normalized)) return "tool";
   if (CONTEXT_KEYWORDS.some((k) => hasKeywordMatch(normalized, k))) return "context";
   return "direct";
 }

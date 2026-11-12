@@ -27,16 +27,19 @@ export interface WeatherQuery {
 export function parseWeatherQuery(text: string): WeatherQuery {
   const clean = text.normalize("NFKC").replace(/[‘’ʼ]/g, "'").replace(/[?!.]+\s*$/, "").trim();
   const tomorrow = /\btomorrow\b/i.test(clean);
-  // "… in London", "… for New York, US today": the place follows the last preposition.
-  const prep = clean.match(/\b(?:in|for|at|around)\s+([A-Za-zÀ-ɏ][\wÀ-ɏ .,'-]*)$/i);
-  if (prep) {
-    const place = prep[1].replace(TRAILING_TIME, "").replace(/[\s,]+$/, "").trim();
+  // "… in London", "… for tomorrow in Paris": the place follows the last preposition that isn't a time ("for tomorrow").
+  const preps = [...clean.matchAll(/\b(?:in|for|at|around)\s+(?=[A-Za-zÀ-ɏ])/gi)];
+  for (const m of preps.reverse()) {
+    const after = clean.slice(m.index! + m[0].length);
+    const place = after.replace(TRAILING_TIME, "").replace(/\s+(?:in|for|at|around)\s.*$/i, "").replace(/[\s,]+$/, "").trim();
     if (place && !NOT_PLACE.has(place.toLowerCase())) return { place: titleCase(place), tomorrow };
   }
-  // "London weather", "weather Paris tomorrow": drop the question words and keep what's left.
-  const words = clean.split(/\s+/).filter((w) => !NOT_PLACE.has(w.toLowerCase().replace(/[^a-z'À-ɏ]/g, "")));
+  // Short questions only ("London weather", "Paris weather tomorrow"): drop the question words and keep what's left.
+  // A longer message's leftover words aren't a place, and must not be sent to the geocoder.
+  const all = clean.split(/\s+/).filter(Boolean);
+  const words = all.filter((w) => !NOT_PLACE.has(w.toLowerCase().replace(/[^a-z'À-ɏ]/g, "")));
   const rest = words.join(" ").replace(/^[\s,]+|[\s,]+$/g, "");
-  if (rest && words.length <= 4) return { place: titleCase(rest), tomorrow };
+  if (rest && all.length <= 4 && words.length <= 3) return { place: titleCase(rest), tomorrow };
   return { place: null, tomorrow };
 }
 

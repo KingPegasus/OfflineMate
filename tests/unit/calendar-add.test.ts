@@ -26,6 +26,9 @@ describe("adding a calendar event in everyday words", () => {
 
   it("needs a day or time, so coding and how-to questions stay direct", () => {
     expect(wantsCalendarAddIntent("how do i add an event listener in javascript")).toBe(false);
+    // The add verb has to start the request.
+    expect(wantsCalendarAddIntent("what should i make for dinner tonight?")).toBe(false);
+    expect(wantsCalendarAddIntent("can you book a meeting with the bank tomorrow at 10am")).toBe(true);
     expect(routeIntent("How do I make a meeting agenda?")).not.toBe("tool");
     expect(selectToolFromInput("Do I have a dentist appointment tomorrow?")?.name).not.toBe("calendar.createEvent");
   });
@@ -45,7 +48,15 @@ describe("calendar.createEvent from a plan", () => {
     expect(titleFromCommand("What's on my calendar tomorrow?")).toBeNull();
   });
 
-  it("runs each write tool once, so one request adds one event", () => {
+  it("keeps write steps that carry their own text (two different reminders)", () => {
+    const steps = [
+      { id: "1", description: "first", toolName: "reminders.set", args: { text: "at 9 to call mom" } },
+      { id: "2", description: "second", toolName: "reminders.set", args: { text: "at 5 to buy milk" } },
+    ];
+    expect(dropRepeatedWriteSteps(steps).map((s) => s.id)).toEqual(["1", "2"]);
+  });
+
+  it("drops a repeated write step for the same message, so one request adds one event", () => {
     const steps = [
       { id: "1", description: "add", toolName: "calendar.createEvent", args: { title: "The bank" } },
       { id: "2", description: "add again", toolName: "calendar.createEvent", args: { title: "Meeting with the bank" } },

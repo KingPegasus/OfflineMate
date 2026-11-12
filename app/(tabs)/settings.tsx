@@ -245,10 +245,11 @@ export default function SettingsScreen() {
           clearAllConversations();
           try {
             clearImportantMemories();
+            setMemoryCount(0);
           } catch (e) {
             console.warn("[OfflineMate] Settings: clearing memories failed", e);
+            setMemoryCount(safeMemoryCount());
           }
-          setMemoryCount(safeMemoryCount());
         },
       },
     ]);

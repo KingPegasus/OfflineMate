@@ -28,8 +28,5 @@ export function countImportantMemories(): number {
 
 /** Delete every saved memory. Deleting a chat leaves its memories, so Settings offers this separately. Returns the count removed. */
 export function clearImportantMemories(): number {
-  const db = getDb();
-  const count = countImportantMemories();
-  db.runSync("DELETE FROM conversation_memory");
-  return count;
+  return getDb().runSync("DELETE FROM conversation_memory").changes;
 }

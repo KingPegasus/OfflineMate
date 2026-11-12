@@ -47,6 +47,8 @@ describe("parseWeatherQuery", () => {
     ["london weather", "London", false],
     ["Paris weather tomorrow?", "Paris", true],
     ["What's the weather like?", null, false],
+    ["What's the weather for tomorrow in Paris?", "Paris", true],
+    ["Write a poem about the weather", null, false],
     ["Is it raining?", null, false],
   ])("%s → %s", (text, place, tomorrow) => {
     expect(parseWeatherQuery(text)).toEqual({ place, tomorrow });
@@ -128,7 +130,9 @@ describe("weather routing", () => {
     },
   );
 
-  it("leaves other temperatures and forecasts alone", () => {
+  it("leaves other mentions of weather, temperature and forecasts alone", () => {
+    expect(routeIntent("Write a poem about the weather")).toBe("direct");
+    expect(routeIntent("What's the forecast for Bitcoin?")).not.toBe("tool");
     expect(routeIntent("What temperature should I bake bread at?")).toBe("direct");
     expect(routeIntent("Explain how a sales forecast works")).toBe("direct");
     expect(selectToolFromInput("What's the current price of gold?")?.name).toBe("search.web");
