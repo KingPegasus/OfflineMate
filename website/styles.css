@@ -543,6 +543,68 @@ h1 {
   line-height: 1.4;
 }
 
+/* Feature showcase: one real multi-tool chat beside the prompts it shows. */
+.feature-showcase {
+  margin-top: clamp(2rem, 5vw, 3rem);
+  display: grid;
+  gap: clamp(1.25rem, 4vw, 3rem);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .feature-showcase {
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  }
+}
+
+.feature-showcase-shot {
+  margin: 0;
+}
+
+.feature-showcase-shot img {
+  display: block;
+  width: 100%;
+  max-width: 20rem;
+  height: auto;
+  margin: 0 auto;
+}
+
+.feature-showcase-text h3 {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  color: var(--text);
+}
+
+.feature-showcase-text p {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.feature-showcase-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.feature-showcase-list li {
+  padding: 0.7rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.feature-showcase-list span {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+}
+
 /* Device-framed screenshots: the frame is part of the image, so drop the card chrome. */
 .screenshot-grid--phones {
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1010,6 +1072,34 @@ tbody th a:hover {
   color: var(--accent-hover);
 }
 
+.tier-note {
+  margin-top: 1rem;
+  padding: 1.1rem 1.4rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+}
+
+.tier-note h3 {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tier-note p {
+  margin: 0 0 0.6rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.tier-note p:last-child {
+  margin-bottom: 0;
+}
+
 /* ——— Tables ——— */
 .table-wrap {
   overflow-x: auto;
@@ -1258,4 +1348,63 @@ td {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ——— Settings guide (settings.html) ——— */
+.settings-shots {
+  display: grid;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+@media (min-width: 900px) {
+  .settings-shots {
+    grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
+  }
+}
+
+.settings-shots .shot-card {
+  margin: 0;
+  text-align: center;
+}
+
+.settings-shots .shot {
+  width: 100%;
+  height: auto;
+}
+
+.settings-shots .shot-card:first-child .shot {
+  max-width: 17rem;
+  margin: 0 auto;
+}
+
+.settings-list {
+  margin: 0;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.settings-list dt {
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-list dd {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.settings-default {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
 }

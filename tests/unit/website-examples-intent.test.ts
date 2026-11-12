@@ -1,7 +1,8 @@
 /**
  * Regression tests for marketing copy on website/index.html (feature-example lines).
- * Validates routeIntent only: the gate for tool / context / direct in useLLMChat.
- * End-to-end behavior still depends on planner, permissions, STT, network, and model output.
+ * Validates routeIntent only: the gate for tool / context / direct in useLLMChat. What each tool replies
+ * is covered by keyword-notes, tool-wording and contacts-tool tests; all examples were also run end to end
+ * on the Lite tier for 0.11.0 (planner, permissions, network and model output aren't unit-testable here).
  */
 import { describe, expect, it } from "vitest";
 import { routeIntent } from "@/ai/intent-router";

@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>OfflineMate use-case video</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=block" rel="stylesheet" />
+<style>
+  /* Use-case videos: one template for the calm explainer cut and the flashy reel.
+     Open with ?tl=usecases/alarm.json&f=vertical&t=4 to preview a moment. The screen recording plays in a
+     <video> inside the phone, so render-uc.mjs seeks it frame by frame and every motion stays in CSS. */
+  :root {
+    --bg: #020617; --bg2: #0b1530; --text: #f8fafc; --muted: #c4ced9;
+    --accent: #5ac8fa; --blue: #2f8cff; --pink: #ff4fa3; --line: rgba(180, 198, 216, 0.18);
+    --surface: rgba(15, 23, 42, 0.92);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+  body { font-family: Inter, system-ui, sans-serif; color: var(--text); }
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  #bg { position: absolute; inset: -10%;
+    background:
+      radial-gradient(60% 45% at 78% 18%, rgba(47, 140, 255, 0.30), transparent 70%),
+      radial-gradient(55% 40% at 12% 88%, rgba(90, 200, 250, 0.18), transparent 70%),
+      linear-gradient(160deg, var(--bg2), var(--bg) 60%); }
+  #grid { position: absolute; inset: 0; opacity: .45;
+    background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 72px 72px;
+    -webkit-mask-image: radial-gradient(70% 60% at 50% 45%, #000, transparent); mask-image: radial-gradient(70% 60% at 50% 45%, #000, transparent); }
+  #phone { position: absolute; overflow: hidden; background: #0b1020; transform-origin: 50% 50%;
+    box-shadow: 0 0 0 14px #0f172a, 0 0 0 16px #334155, 0 40px 120px rgba(0,0,0,.6), 0 0 90px rgba(47,140,255,.25); }
+  #phone video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #phone .glare { position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255,255,255,.06), transparent 35%); }
+
+  #cap { position: absolute; display: flex; flex-direction: column; gap: 26px; }
+  .row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .kicker { font: 700 30px/1 Inter, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 16px; }
+  .kicker b { display: inline-grid; place-items: center; min-width: 56px; height: 56px; padding: 0 10px; border-radius: 16px; background: rgba(90,200,250,.14); border: 1px solid rgba(90,200,250,.4); letter-spacing: 0; }
+  .chip { font: 600 24px/1 Inter, sans-serif; padding: 12px 18px; border-radius: 999px; color: var(--muted); border: 1px solid var(--line); background: rgba(15,23,42,.7); white-space: nowrap; }
+  .chip i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #34d399; margin-right: 10px; vertical-align: 1px; box-shadow: 0 0 12px #34d399; }
+  .chip.online i { background: #fbbf24; box-shadow: 0 0 12px #fbbf24; }
+  .stack { position: relative; }
+  .head { font: 800 84px/1.04 Outfit, sans-serif; letter-spacing: -0.02em; }
+  .head em, .after em { font-style: normal; color: var(--accent); }
+  .bubbles { display: flex; flex-direction: column; gap: 22px; }
+  .bubble { max-width: 100%; padding: 24px 30px; border-radius: 30px; font: 500 40px/1.3 Inter, sans-serif; white-space: pre-line; }
+  .bubble.you { align-self: flex-end; background: linear-gradient(135deg, #2f8cff, #1f6fe0); border-bottom-right-radius: 10px; box-shadow: 0 18px 50px rgba(47,140,255,.35); }
+  .bubble.app { align-self: flex-start; background: var(--surface); border: 1px solid rgba(90,200,250,.35); border-bottom-left-radius: 10px; color: #e6edf5; }
+  .bubble.app .who { display: block; font: 700 22px/1 Inter, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .bubble .caret { display: inline-block; width: .5em; height: 1em; background: rgba(255,255,255,.85); vertical-align: -0.12em; margin-left: 4px; }
+  .after { font: 700 64px/1.1 Outfit, sans-serif; letter-spacing: -0.01em; }
+  .after small { display: block; margin-top: 18px; font: 500 34px/1.35 Inter, sans-serif; color: var(--muted); }
+
+  #title, #end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; text-align: center; padding: 0 70px;
+    background: radial-gradient(60% 50% at 50% 40%, rgba(47,140,255,.25), transparent 70%), linear-gradient(160deg, var(--bg2), var(--bg) 65%); }
+  #title .t-kick { font: 700 32px/1 Inter, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+  #title .t-head { font: 900 112px/1.02 Outfit, sans-serif; letter-spacing: -0.03em; }
+  #title .t-head em { font-style: normal; color: var(--accent); }
+  #title .t-sub { font: 500 40px/1.3 Inter, sans-serif; color: var(--muted); max-width: 900px; }
+  #end img { width: 240px; height: 240px; border-radius: 56px; box-shadow: 0 0 80px rgba(47,140,255,.45); }
+  #end .name { font: 800 104px/1 Outfit, sans-serif; letter-spacing: -0.02em; }
+  #end .tag { font: 500 42px/1.2 Inter, sans-serif; color: var(--muted); }
+  #end .url { font: 700 52px/1 Outfit, sans-serif; color: var(--accent); margin-top: 14px; }
+  #end .play { font: 600 32px/1 Inter, sans-serif; padding: 18px 30px; border-radius: 999px; border: 1px solid var(--line); background: rgba(15,23,42,.7); }
+
+  /* Flashy reel: full-screen kinetic words over the phone. */
+  #pop { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+  #pop .word { font: 900 190px/0.92 Outfit, sans-serif; letter-spacing: -0.04em; text-align: center; text-transform: uppercase;
+    text-shadow: 0 10px 60px rgba(0,0,0,.6); padding: 0 40px; }
+  #pop .word em { font-style: normal; color: var(--accent); }
+  #pop .word .pink { color: var(--pink); }
+  #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  #bar { position: absolute; left: 0; top: 0; height: 10px; background: linear-gradient(90deg, var(--accent), var(--pink)); }
+
+  body.vertical .stack { min-height: 330px; display: flex; flex-direction: column; justify-content: center; }
+  body.vertical .head { font-size: 104px; } body.vertical .bubble { font-size: 46px; }
+  body.vertical .bubbles.compact { gap: 16px; }
+  body.vertical .bubbles.compact .bubble { font-size: 36px; padding: 18px 24px; }
+  body.vertical .after { font-size: 76px; } body.vertical .after small { font-size: 40px; }
+  body.landscape .head { font-size: 88px; } body.landscape .bubble { font-size: 40px; }
+  body.landscape #title .t-head { font-size: 124px; }
+  body.square .head { font-size: 60px; } body.square .bubble { font-size: 30px; padding: 18px 22px; border-radius: 24px; }
+  body.square .bubble.app .who { font-size: 18px; } body.square .kicker { font-size: 24px; } body.square .chip { font-size: 19px; padding: 10px 14px; }
+  body.square .after { font-size: 48px; } body.square .after small { font-size: 26px; }
+  body.square #title .t-head { font-size: 88px; } body.square #title .t-sub { font-size: 32px; }
+  body.square #end img, body.landscape #end img { width: 190px; height: 190px; border-radius: 44px; }
+  body.square #end .name, body.landscape #end .name { font-size: 88px; }
+  body.square #end .tag { font-size: 34px; }
+  body.square #pop .word { font-size: 130px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div>
+  <div id="grid"></div>
+  <div id="phone"><video id="scr" muted playsinline preload="auto"></video><div class="glare"></div></div>
+  <div id="cap">
+    <div class="row"><div class="kicker"></div><div class="chip"></div></div>
+    <div class="stack">
+      <div class="head"></div>
+      <div class="bubbles"><div class="bubble you"></div><div class="bubble app"><span class="who">OfflineMate</span><span class="txt"></span></div></div>
+      <div class="after"></div>
+    </div>
+  </div>
+  <div id="pop"><div class="word"></div></div>
+  <div id="title"><div class="t-kick"></div><div class="t-head"></div><div class="t-sub"></div></div>
+  <div id="end">
+    <img src="logo.png" alt="" />
+    <div class="name">OfflineMate</div>
+    <div class="tag">Private AI that works offline</div>
+    <div class="url">offlinemate.com</div>
+    <div class="play">Get it on Google Play</div>
+  </div>
+  <div id="flash"></div>
+  <div id="bar"></div>
+</div>
+<script>
+const P = new URLSearchParams(location.search);
+const FORMAT = P.get('f') || 'vertical';
+document.body.classList.add(FORMAT);
+const SIZE = { vertical: [1080, 1920], landscape: [1920, 1080], square: [1080, 1080] }[FORMAT];
+// Phone rect keeps the recording's 1080x2400 (0.45) aspect. Captions sit above (vertical) or beside it.
+const PHONE = {
+  vertical: { x: 261, y: 640, w: 558, h: 1240 },
+  landscape: { x: 1230, y: 80, w: 414, h: 920 },
+  square: { x: 650, y: 90, w: 405, h: 900 },
+}[FORMAT];
+const CAP = {
+  vertical: { left: 80, top: 170, width: 920 },
+  landscape: { left: 140, top: 200, width: 960 },
+  square: { left: 56, top: 150, width: 560 },
+}[FORMAT];
+const R = { vertical: 56, landscape: 44, square: 42 }[FORMAT];
+
+const $ = s => document.querySelector(s);
+const css = (el, o) => Object.assign(el.style, o);
+const px = n => n + 'px';
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+const back = x => { x = clamp(x); const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const phone = $('#phone'), video = $('#scr'), cap = $('#cap');
+const kicker = cap.querySelector('.kicker'), chip = cap.querySelector('.chip');
+const head = cap.querySelector('.head'), bubbles = cap.querySelector('.bubbles');
+const you = cap.querySelector('.bubble.you'), app = cap.querySelector('.bubble.app'), appTxt = app.querySelector('.txt');
+const after = cap.querySelector('.after');
+const title = $('#title'), end = $('#end'), pop = $('#pop'), word = pop.querySelector('.word'), flash = $('#flash'), bar = $('#bar');
+
+css(phone, { left: px(PHONE.x), top: px(PHONE.y), width: px(PHONE.w), height: px(PHONE.h), borderRadius: px(R) });
+css(cap, { left: px(CAP.left), top: px(CAP.top), width: px(CAP.width) });
+
+// Fade an element in at a and out at b (seconds), with a small rise.
+function show(el, t, a, b, rise = 30, fin = 0.4, fout = 0.3) {
+  const pin = ease((t - a) / fin), pout = b == null ? 1 : ease((b - t) / fout);
+  const p = Math.min(pin, pout);
+  css(el, { opacity: String(p), transform: `translateY(${(1 - pin) * rise}px)` });
+  return p;
+}
+// Type out text from at, `cps` characters per second (the prompt is typed word by word on the device too).
+const typed = (text, t, at, cps) => text.slice(0, Math.max(0, Math.floor((t - at) * cps)));
+
+let TL = null;
+async function load() {
+  TL = await (await fetch('/' + P.get('tl'))).json();
+  window.DURATION = TL.duration;
+  if (TL.screen) {
+    video.src = '/' + TL.screen;
+    await new Promise((res, rej) => { video.onloadeddata = res; video.onerror = () => rej(new Error('screen video failed to load')); });
+  } else phone.style.display = 'none';
+}
+async function seek(s) {
+  s = clamp(s, 0, Math.max(0, video.duration - 0.02));
+  if (Math.abs(video.currentTime - s) < 0.001) return;
+  await new Promise(r => { video.onseeked = r; video.currentTime = s; });
+}
+
+function sceneAt(t) { return TL.scenes.find(s => t >= s.t[0] && t < s.t[1]); }
+
+window.renderFrame = async t => {
+  if (TL.screen) await seek(t - (TL.screenStart || 0));
+  const s = sceneAt(t);
+  const flashy = TL.style === 'flashy';
+
+  // Title card (compilation intro).
+  const ti = TL.title;
+  if (ti && t < ti.t[1] + 0.6) {
+    title.querySelector('.t-kick').textContent = ti.kicker || '';
+    title.querySelector('.t-head').innerHTML = ti.head;
+    title.querySelector('.t-sub').textContent = ti.sub || '';
+    const o = t < ti.t[1] ? 1 : 1 - ease((t - ti.t[1]) / 0.5);
+    css(title, { opacity: String(o), transform: `scale(${1 + 0.06 * clamp((t - ti.t[1]) / 0.5)})` });
+    [...title.children].forEach((c, j) => { const p = ease((t - ti.t[0] - 0.15 - j * 0.15) / 0.5); css(c, { opacity: String(p), transform: `translateY(${(1 - p) * 30}px)` }); });
+  } else css(title, { opacity: '0' });
+
+  // Phone: fades in, with a gentle zoom for the calm cut and beat pops for the reel.
+  const ph = TL.phone || {};
+  let scale = 1, dx = 0, dy = 0;
+  if (flashy && TL.pops) {
+    for (const p of TL.pops) if (t >= p.at && t < p.at + 0.35) scale += 0.06 * (1 - ease((t - p.at) / 0.35));
+  }
+  const zoom = (TL.zooms || []).find(z => t >= z.t[0] && t < z.t[1]);
+  if (zoom) {
+    const k = Math.min(ease((t - zoom.t[0]) / 0.6), ease((zoom.t[1] - t) / 0.6));
+    scale *= 1 + (zoom.scale - 1) * k; dy = (zoom.dy || 0) * k; dx = (zoom.dx || 0) * k;
+  }
+  const phoneIn = ph.in == null ? 0 : ph.in;
+  const po = ease((t - phoneIn) / 0.6);
+  css(phone, { opacity: String(po), transform: `translate(${dx}px, ${dy + (1 - po) * 60}px) scale(${scale})` });
+
+  // Caption block for the current use case.
+  if (s && s.kicker != null) {
+    kicker.innerHTML = (s.num ? `<b>${s.num}</b>` : '') + s.kicker;
+    chip.innerHTML = s.chip ? `<i></i>${s.chip}` : '';
+    chip.classList.toggle('online', !!s.online);
+    chip.style.display = s.chip ? '' : 'none';
+    show(cap.querySelector('.row'), t, s.t[0], s.t[1]);
+    const hookEnd = s.promptAt ?? s.t[1];
+    head.innerHTML = s.hook || '';
+    const hp = show(head, t, s.t[0] + 0.1, hookEnd - 0.05, 40);
+    head.style.position = t < hookEnd ? 'relative' : 'absolute';
+    // Bubbles: the prompt types in at the speed it's typed on the phone, then the real answer appears.
+    // Usually: prompt, answer, then the "after" line. When the result shows up first (the alarm opens the Clock
+    // app before the chat reply), the after line sits between the prompt and the answer.
+    const afterFirst = s.after && s.answerAt != null && s.answerAt > s.after.at;
+    const afterAt = s.after ? s.after.at : s.t[1];
+    const afterEnd = afterFirst ? s.answerAt : s.t[1];
+    const inBubbles = s.prompt && t >= s.promptAt && (t < afterAt || (afterFirst && t >= s.answerAt));
+    if (inBubbles) {
+      bubbles.style.position = 'relative';
+      // Long prompt + answer (weather): smaller type so the pair stays above the phone.
+      bubbles.classList.toggle('compact', (s.prompt.length + (s.answer || '').length) > 85);
+      if (afterFirst && t >= s.answerAt) show(bubbles, t, s.answerAt, null, 20, 0.3);
+      else show(bubbles, t, s.promptAt, afterAt, 30, 0.3);
+      const done = s.promptAt + s.prompt.length / (s.cps || 22);
+      you.innerHTML = `“${typed(s.prompt, t, s.promptAt, s.cps || 22)}${t < done ? '<span class="caret"></span>' : '”'}`;
+      if (s.answer && t >= s.answerAt) {
+        app.style.display = '';
+        appTxt.textContent = s.answer;
+        show(app, t, s.answerAt, null, 24, 0.35);
+      } else app.style.display = 'none';
+    } else { bubbles.style.position = 'absolute'; bubbles.style.opacity = '0'; }
+    if (s.after && t >= s.after.at && t < afterEnd) {
+      after.style.position = 'relative';
+      after.innerHTML = s.after.head + (s.after.sub ? `<small>${s.after.sub}</small>` : '');
+      show(after, t, s.after.at, afterEnd, 30);
+    } else { after.style.position = 'absolute'; after.style.opacity = '0'; }
+    cap.style.opacity = '1';
+  } else cap.style.opacity = '0';
+
+  // Kinetic words (reel) and white flashes on hard cuts.
+  const w = (TL.words || []).find(x => t >= x.t[0] && t < x.t[1]);
+  if (w) {
+    word.innerHTML = w.text;
+    const k = back((t - w.t[0]) / 0.22), o = Math.min(1, (w.t[1] - t) / 0.08);
+    css(word, { opacity: String(o), transform: `scale(${(w.from ?? 1.6) + (1 - (w.from ?? 1.6)) * k}) rotate(${(w.rot || 0) * (1 - clamp((t - w.t[0]) / 0.22))}deg)` });
+    pop.style.background = w.dim ? `rgba(2,6,23,${w.dim})` : 'transparent';
+    pop.style.opacity = '1';
+  } else pop.style.opacity = '0';
+  let f = 0;
+  for (const at of TL.flashes || []) if (t >= at && t < at + 0.25) f = Math.max(f, 0.85 * (1 - (t - at) / 0.25));
+  flash.style.opacity = String(f);
+  bar.style.display = TL.progress ? '' : 'none';
+  if (TL.progress) bar.style.width = px(SIZE[0] * clamp(t / TL.duration));
+
+  // End card.
+  const e = TL.end == null ? 0 : ease((t - TL.end) / 0.6);
+  css(end, { opacity: String(e), transform: `scale(${0.96 + 0.04 * e})` });
+  if (TL.end != null) [...end.children].forEach((c, j) => {
+    const p = ease((t - TL.end - 0.25 - j * 0.12) / 0.5);
+    css(c, { opacity: String(p), transform: `translateY(${(1 - p) * 30}px)` });
+  });
+};
+window.READY = document.fonts.ready
+  .then(() => new Promise(r => { const img = end.querySelector('img'); img.complete ? r() : img.onload = r; }))
+  .then(load)
+  .then(async () => { await window.renderFrame(P.has('t') ? Number(P.get('t')) : 0); return true; });
+</script>
+</body>
+</html>

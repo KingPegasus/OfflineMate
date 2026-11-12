@@ -1,0 +1,80 @@
+{
+  "id": "alarm",
+  "style": "calm",
+  "duration": 17.23,
+  "screen": "raw/uc/alarm-screen.mp4",
+  "screenStart": 0,
+  "phone": {
+    "in": 0
+  },
+  "scenes": [
+    {
+      "num": null,
+      "kicker": "Alarm",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "Up early <em>tomorrow?</em>",
+      "promptAt": 2.9,
+      "prompt": "Wake me up at 6:30 tomorrow",
+      "cps": 18.9,
+      "answerAt": 11.18,
+      "answer": "Alarm set for 06:30: Wake me up",
+      "after": {
+        "head": "A real alarm in your <em>Clock app</em>",
+        "sub": "Set on the phone. No internet needed.",
+        "at": 7.58
+      },
+      "t": [
+        0.0,
+        13.83
+      ]
+    }
+  ],
+  "end": 13.83,
+  "vo": [
+    {
+      "at": 0.25,
+      "text": "Need to be up early tomorrow? Just ask."
+    },
+    {
+      "at": 7.83,
+      "text": "OfflineMate sets a real alarm in your Clock app. No internet needed."
+    },
+    {
+      "at": 14.28,
+      "text": "Get OfflineMate free on Google Play."
+    }
+  ],
+  "clips": [
+    {
+      "src": "raw/uc/alarm.mp4",
+      "from": 2.81,
+      "to": 6.19,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/alarm.mp4",
+      "from": 9.6,
+      "to": 11.3
+    },
+    {
+      "src": "raw/uc/alarm.mp4",
+      "from": 11.3,
+      "to": 11.6
+    },
+    {
+      "src": "raw/uc/alarm.mp4",
+      "from": 12.85,
+      "to": 16.1
+    },
+    {
+      "src": "raw/uc/alarm.mp4",
+      "from": 16.1,
+      "to": 18.9
+    }
+  ],
+  "music": {
+    "style": "calm",
+    "bpm": 100
+  }
+}

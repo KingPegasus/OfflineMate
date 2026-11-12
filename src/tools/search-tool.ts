@@ -52,10 +52,6 @@ export const webSearchTool: Tool = {
     "is it true that",
     "verify online",
     "fact check",
-    // Weather (implies live/search)
-    "today's weather",
-    "current weather",
-    "weather now",
     "near me",
   ],
   params: { optional: ["query"] },
@@ -63,7 +59,7 @@ export const webSearchTool: Tool = {
     if (!useSettingsStore.getState().webSearchEnabled) {
       return {
         ok: false,
-        message: "Web search is disabled. Enable it in Settings to search the internet.",
+        message: "Web search is turned off. Turn it on in OfflineMate's Settings tab to search the internet.",
         errorCode: "PERMISSION_DENIED",
       };
     }

@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import type { Tool } from "@/tools/tool-registry";
+import { permissionOffMessage } from "@/tools/permission-message";
 import {
   describeReminderTime,
   isPastTimeToday,
@@ -62,7 +63,7 @@ export const setReminderTool: Tool = {
     if (!perm.granted) {
       return {
         ok: false,
-        message: "Notification permission denied.",
+        message: permissionOffMessage("Notifications"),
         errorCode: "PERMISSION_DENIED",
         retryable: true,
       };
@@ -78,7 +79,10 @@ export const setReminderTool: Tool = {
     });
     console.log("[OfflineMate] Reminder scheduled in", seconds, "seconds:", text);
     // A full sentence, because chat shows it as-is when the model can't phrase a confirmation.
-    return { ok: true, message: `Reminder set for ${describeReminderTime(seconds)}: ${text}.` };
+    // "in 20 minutes" needs "to go off", not "for": "Reminder set for in 20 minutes" read wrong.
+    const when = describeReminderTime(seconds);
+    const lead = when.startsWith("in ") ? `Reminder set to go off ${when}` : `Reminder set for ${when}`;
+    return { ok: true, message: `${lead}: ${text}.` };
   },
 };
 

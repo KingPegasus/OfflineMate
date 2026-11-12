@@ -5,6 +5,7 @@ import { searchContactsTool } from "@/tools/contacts-tool";
 import { createNoteTool, searchNotesTool } from "@/tools/notes-tool";
 import { setReminderTool } from "@/tools/reminders-tool";
 import { webSearchTool } from "@/tools/search-tool";
+import { weatherTool } from "@/tools/weather-tool";
 import type { ToolResult } from "@/types/assistant";
 
 export interface ToolParamSpec {
@@ -20,6 +21,8 @@ export interface Tool {
   description: string;
   keywords: string[];
   params?: ToolParamSpec;
+  /** Phrasings keywords can't list ("Add dentist appointment tomorrow"): a match outscores any keyword. */
+  matches?: (normalizedLower: string) => boolean;
   execute: (params: Record<string, string>) => Promise<ToolResult>;
 }
 
@@ -28,6 +31,7 @@ export const TOOL_REGISTRY: Tool[] = [
   createCalendarTool,
   setAlarmTool,
   webSearchTool,
+  weatherTool,
   searchContactsTool,
   createNoteTool,
   searchNotesTool,
@@ -41,7 +45,7 @@ export function scoreToolMatch(input: string, tool: Tool): number {
     .replace(/[\u2018\u2019\u02BC]/g, "'")
     .replace(/\btodays\b/g, "today's")
     .toLowerCase();
-  let best = 0;
+  let best = tool.matches?.(normalized) ? 40 : 0;
   for (const keyword of tool.keywords) {
     if (!keyword || keyword.length === 0) continue;
     const k = keyword.toLowerCase();
@@ -83,6 +87,25 @@ export function selectToolFromInput(input: string): Tool | undefined {
  * The LLM planner sometimes picks the wrong tool (e.g. reminders.set for "add a note …").
  * When keyword scoring clearly prefers another tool, use it for the first step instead.
  */
+/** Tools that change something. A step without its own text reads the whole message, like the step before it. */
+const WRITE_TOOLS = new Set(["calendar.createEvent", "notes.create", "alarms.set", "reminders.set"]);
+
+/**
+ * Drop a write step that repeats an earlier one for the same message. Gemma 4 E2B planned "Book a meeting with the
+ * bank on Friday at 10am" as two calendar.createEvent steps (only titles differed), which added the event twice.
+ * Steps with their own text ("at 9 to call mom", "at 5 to buy milk") are separate requests and are kept.
+ */
+export function dropRepeatedWriteSteps(steps: PlannerStepLike[]): PlannerStepLike[] {
+  const seen = new Set<string>();
+  return steps.filter((step) => {
+    if (!step.toolName || !WRITE_TOOLS.has(step.toolName)) return true;
+    const key = `${step.toolName}|${(step.args?.text ?? step.args?.query ?? "").trim().toLowerCase()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export function reconcilePlannerStepsWithKeywordMatch(prompt: string, steps: PlannerStepLike[]): PlannerStepLike[] {
   const selected = selectToolFromInput(prompt);
   if (!selected || steps.length === 0) return steps;

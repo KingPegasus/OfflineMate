@@ -1,0 +1,12 @@
+1
+00:00:00,250 --> 00:00:02,575
+Need to be up early tomorrow? Just ask.
+
+2
+00:00:07,830 --> 00:00:12,033
+OfflineMate sets a real alarm in your Clock app. No internet needed.
+
+3
+00:00:14,280 --> 00:00:16,307
+Get OfflineMate free on Google Play.
+

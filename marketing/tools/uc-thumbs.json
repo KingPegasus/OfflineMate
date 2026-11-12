@@ -1,0 +1,275 @@
+[
+  {
+    "out": "../out/usecases/thumbs/compilation-youtube-1280x720.png",
+    "w": 1280,
+    "h": 720,
+    "page": "thumb.html",
+    "params": {
+      "layout": "wide",
+      "head": "6 things your AI does <em>offline</em>",
+      "kicker": "Real use cases",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/tech.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/compilation-linkedin-1200x627.png",
+    "w": 1200,
+    "h": 627,
+    "page": "thumb.html",
+    "params": {
+      "layout": "wide",
+      "li": "1",
+      "head": "6 things your AI does <em>offline</em>",
+      "kicker": "Real use cases",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/tech.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/compilation-cover-1080x1920.png",
+    "w": 1080,
+    "h": 1920,
+    "page": "thumb.html",
+    "params": {
+      "layout": "tall",
+      "head": "6 things your AI does <em>offline</em>",
+      "kicker": "Real use cases",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/tech.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/compilation-square-1080x1080.png",
+    "w": 1080,
+    "h": 1080,
+    "page": "thumb.html",
+    "params": {
+      "layout": "square",
+      "head": "6 things your AI does <em>offline</em>",
+      "kicker": "Real use cases",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/tech.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/reel-cover-1080x1920.png",
+    "w": 1080,
+    "h": 1920,
+    "page": "thumb.html",
+    "params": {
+      "layout": "tall",
+      "head": "No internet? <span class=pink>No problem.</span>",
+      "badge": "Private AI on your phone",
+      "shot": "usecases/shots/alarm.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/reel-square-1080x1080.png",
+    "w": 1080,
+    "h": 1080,
+    "page": "thumb.html",
+    "params": {
+      "layout": "square",
+      "head": "No internet? <span class=pink>No problem.</span>",
+      "badge": "Private AI on your phone",
+      "shot": "usecases/shots/alarm.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/alarm-cover-1080x1920.png",
+    "w": 1080,
+    "h": 1920,
+    "page": "thumb.html",
+    "params": {
+      "layout": "tall",
+      "head": "Up early <em>tomorrow?</em>",
+      "kicker": "Alarm",
+      "bubble": "Wake me up at 6:30 tomorrow",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/alarm.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/alarm-square-1080x1080.png",
+    "w": 1080,
+    "h": 1080,
+    "page": "thumb.html",
+    "params": {
+      "layout": "square",
+      "head": "Up early <em>tomorrow?</em>",
+      "kicker": "Alarm",
+      "bubble": "Wake me up at 6:30 tomorrow",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/alarm.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/note-add-cover-1080x1920.png",
+    "w": 1080,
+    "h": 1920,
+    "page": "thumb.html",
+    "params": {
+      "layout": "tall",
+      "head": "Don't let it <em>slip</em>",
+      "kicker": "Save a note",
+      "bubble": "Save a note: book the car service for Saturday",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/note-add.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/note-add-square-1080x1080.png",
+    "w": 1080,
+    "h": 1080,
+    "page": "thumb.html",
+    "params": {
+      "layout": "square",
+      "head": "Don't let it <em>slip</em>",
+      "kicker": "Save a note",
+      "bubble": "Save a note: book the car service for Saturday",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/note-add.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/note-recall-cover-1080x1920.png",
+    "w": 1080,
+    "h": 1920,
+    "page": "thumb.html",
+    "params": {
+      "layout": "tall",
+      "head": "What did I <em>save?</em>",
+      "kicker": "Find a note",
+      "bubble": "What did I save about the dentist?",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/note-recall.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/note-recall-square-1080x1080.png",
+    "w": 1080,
+    "h": 1080,
+    "page": "thumb.html",
+    "params": {
+      "layout": "square",
+      "head": "What did I <em>save?</em>",
+      "kicker": "Find a note",
+      "bubble": "What did I save about the dentist?",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/note-recall.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/calendar-cover-1080x1920.png",
+    "w": 1080,
+    "h": 1920,
+    "page": "thumb.html",
+    "params": {
+      "layout": "tall",
+      "head": "What's on <em>tomorrow?</em>",
+      "kicker": "Calendar",
+      "bubble": "What's on my calendar tomorrow?",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/calendar.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/calendar-square-1080x1080.png",
+    "w": 1080,
+    "h": 1080,
+    "page": "thumb.html",
+    "params": {
+      "layout": "square",
+      "head": "What's on <em>tomorrow?</em>",
+      "kicker": "Calendar",
+      "bubble": "What's on my calendar tomorrow?",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/calendar.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/contact-cover-1080x1920.png",
+    "w": 1080,
+    "h": 1920,
+    "page": "thumb.html",
+    "params": {
+      "layout": "tall",
+      "head": "Need a number <em>fast?</em>",
+      "kicker": "Contacts",
+      "bubble": "What's Ali's number?",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/contact.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/contact-square-1080x1080.png",
+    "w": 1080,
+    "h": 1080,
+    "page": "thumb.html",
+    "params": {
+      "layout": "square",
+      "head": "Need a number <em>fast?</em>",
+      "kicker": "Contacts",
+      "bubble": "What's Ali's number?",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/contact.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/tech-cover-1080x1920.png",
+    "w": 1080,
+    "h": 1920,
+    "page": "thumb.html",
+    "params": {
+      "layout": "tall",
+      "head": "What is <em>RAG?</em>",
+      "kicker": "Ask anything",
+      "bubble": "What is RAG in AI? Explain simply.",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/tech.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/tech-square-1080x1080.png",
+    "w": 1080,
+    "h": 1080,
+    "page": "thumb.html",
+    "params": {
+      "layout": "square",
+      "head": "What is <em>RAG?</em>",
+      "kicker": "Ask anything",
+      "bubble": "What is RAG in AI? Explain simply.",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/tech.png"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/weather-cover-1080x1920.png",
+    "w": 1080,
+    "h": 1920,
+    "page": "thumb.html",
+    "params": {
+      "head": "Heading <em>out?</em>",
+      "kicker": "Weather",
+      "bubble": "What's the current weather in London?",
+      "badge": "Live weather, one switch to turn off",
+      "shot": "usecases/shots/weather.png",
+      "layout": "tall"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/weather-square-1080x1080.png",
+    "w": 1080,
+    "h": 1080,
+    "page": "thumb.html",
+    "params": {
+      "head": "Heading <em>out?</em>",
+      "kicker": "Weather",
+      "bubble": "What's the current weather in London?",
+      "badge": "Live weather, one switch to turn off",
+      "shot": "usecases/shots/weather.png",
+      "layout": "square"
+    }
+  }
+]

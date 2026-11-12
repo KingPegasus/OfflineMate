@@ -1,0 +1,279 @@
+{
+  "id": "reel",
+  "style": "flashy",
+  "duration": 16.39,
+  "screen": "raw/uc/reel-screen.mp4",
+  "screenStart": 0,
+  "phone": {
+    "in": 0
+  },
+  "scenes": [
+    {
+      "t": [
+        2.419,
+        3.145
+      ],
+      "num": "01",
+      "kicker": "Alarms",
+      "hook": "6:30 alarm, <em>set</em>"
+    },
+    {
+      "t": [
+        3.145,
+        3.871
+      ],
+      "num": "02",
+      "kicker": "Notes",
+      "hook": "Note <em>saved</em>"
+    },
+    {
+      "t": [
+        3.871,
+        4.597
+      ],
+      "num": "03",
+      "kicker": "Calendar",
+      "hook": "Tomorrow, <em>read</em>"
+    },
+    {
+      "t": [
+        4.597,
+        5.323
+      ],
+      "num": "04",
+      "kicker": "Contacts",
+      "hook": "Number, <em>found</em>"
+    },
+    {
+      "t": [
+        6.29,
+        10.29
+      ],
+      "num": "05",
+      "kicker": "Ask anything",
+      "hook": "What is <em>RAG?</em>",
+      "chip": "Airplane mode on"
+    }
+  ],
+  "words": [
+    {
+      "t": [
+        0.0,
+        1.4516129032258065
+      ],
+      "text": "No<br>internet?",
+      "dim": 0.55,
+      "from": 1.8,
+      "rot": -4
+    },
+    {
+      "t": [
+        1.4516129032258065,
+        2.4193548387096775
+      ],
+      "text": "No<br><span class=pink>problem.</span>",
+      "dim": 0.55,
+      "from": 1.8,
+      "rot": 3
+    },
+    {
+      "t": [
+        2.419,
+        2.839
+      ],
+      "text": "Alarms",
+      "dim": 0.35,
+      "from": 1.5
+    },
+    {
+      "t": [
+        3.145,
+        3.565
+      ],
+      "text": "Notes",
+      "dim": 0.35,
+      "from": 1.5
+    },
+    {
+      "t": [
+        3.871,
+        4.291
+      ],
+      "text": "Calendar",
+      "dim": 0.35,
+      "from": 1.5
+    },
+    {
+      "t": [
+        4.597,
+        5.017
+      ],
+      "text": "Contacts",
+      "dim": 0.35,
+      "from": 1.5
+    },
+    {
+      "t": [
+        5.323,
+        6.29
+      ],
+      "text": "Ask<br><em>anything</em>",
+      "dim": 0.5,
+      "from": 1.7,
+      "rot": -3
+    },
+    {
+      "t": [
+        10.29,
+        11.258
+      ],
+      "text": "100%<br><em>on-device</em>",
+      "dim": 0.6,
+      "from": 1.6,
+      "rot": -3
+    },
+    {
+      "t": [
+        11.258,
+        11.742
+      ],
+      "text": "No<br>cloud",
+      "dim": 0.6,
+      "from": 1.6,
+      "rot": 3
+    },
+    {
+      "t": [
+        11.742,
+        12.226
+      ],
+      "text": "No<br>account",
+      "dim": 0.6,
+      "from": 1.6,
+      "rot": -3
+    },
+    {
+      "t": [
+        12.226,
+        13.194
+      ],
+      "text": "Private<br><em>AI</em>",
+      "dim": 0.6,
+      "from": 1.6,
+      "rot": 3
+    }
+  ],
+  "flashes": [
+    0.0,
+    1.4516129032258065,
+    2.419,
+    3.145,
+    3.871,
+    4.597,
+    5.323,
+    10.29,
+    11.258,
+    11.742,
+    12.226
+  ],
+  "pops": [
+    0.0,
+    0.484,
+    0.968,
+    1.452,
+    1.935,
+    2.419,
+    2.903,
+    3.387,
+    3.871,
+    4.355,
+    4.839,
+    5.323,
+    5.806,
+    6.29,
+    6.774,
+    7.258,
+    7.742,
+    8.226,
+    8.71,
+    9.194,
+    9.677,
+    10.161,
+    10.645,
+    11.129,
+    11.613,
+    12.097,
+    12.581
+  ],
+  "risers": [
+    2.419,
+    13.194
+  ],
+  "progress": true,
+  "end": 13.19,
+  "vo": [
+    {
+      "at": 0.12,
+      "text": "No internet? No problem."
+    },
+    {
+      "at": 2.52,
+      "text": "Alarms. Notes. Your calendar. Contacts."
+    },
+    {
+      "at": 5.47,
+      "text": "Ask anything."
+    },
+    {
+      "at": 10.39,
+      "text": "All on your phone. OfflineMate."
+    },
+    {
+      "at": 13.79,
+      "text": "Get OfflineMate free on Google Play."
+    }
+  ],
+  "clips": [
+    {
+      "src": "raw/uc/contact.mp4",
+      "from": 2.9,
+      "to": 3.2,
+      "hold": 2.1193548387096777
+    },
+    {
+      "src": "raw/uc/alarm.mp4",
+      "from": 13.55,
+      "to": 14.276
+    },
+    {
+      "src": "raw/uc/note-add.mp4",
+      "from": 19.95,
+      "to": 20.676
+    },
+    {
+      "src": "raw/uc/calendar.mp4",
+      "from": 10.05,
+      "to": 10.776
+    },
+    {
+      "src": "raw/uc/contact.mp4",
+      "from": 8.95,
+      "to": 9.676
+    },
+    {
+      "src": "raw/uc/tech.mp4",
+      "from": 6.3,
+      "to": 10.3,
+      "hold": 0.967741935483871
+    },
+    {
+      "src": "raw/uc/note-recall.mp4",
+      "from": 9.0,
+      "to": 11.903
+    }
+  ],
+  "music": {
+    "style": "flashy",
+    "bpm": 124
+  }
+}

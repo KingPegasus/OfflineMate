@@ -44,7 +44,7 @@ describe("website content", () => {
       "https://www.linkedin.com/company/rhymesolutions",
       "https://www.instagram.com/rhymesolutions/",
     ];
-    for (const page of ["index.html", "models.html", "run-ai-offline-on-android.html", "privacy.html", "terms.html"]) {
+    for (const page of ["index.html", "models.html", "settings.html", "run-ai-offline-on-android.html", "privacy.html", "terms.html"]) {
       const source = readPage(page);
       // The source has only the marker, never its own copy of the footer.
       expect(source, page).toContain("<!--#include footer.html -->");
@@ -87,5 +87,33 @@ describe("website content", () => {
     for (const entry of faq.mainEntity) {
       expect(visible.get(entry.name), entry.name).toContain(entry.acceptedAnswer.text);
     }
+  });
+
+  it("the home page shows one real chat using four tools, with the prompts it shows", () => {
+    const html = readPage("index.html");
+    expect(html).toContain('src="/screenshots/tools-chat.webp"');
+    expect(html).toContain("https://offlinemate.com/screenshots/tools-chat.webp");
+    expect(fs.existsSync(path.join(process.cwd(), "website", "screenshots", "tools-chat.webp"))).toBe(true);
+    for (const prompt of [
+      "Remind me in 20 minutes to stretch",
+      "What’s on my calendar tomorrow?",
+      "Add a note to pick up bread",
+      "What did I save about the dentist?",
+    ]) {
+      expect(html).toContain(`“${prompt}”`);
+    }
+  });
+
+  it("the settings page explains every option in the app's Settings tab", () => {
+    const page = readPage("settings.html");
+    const app = fs.readFileSync(path.join(process.cwd(), "app/(tabs)/settings.tsx"), "utf8");
+    // Every option with an info button in the app has a section on the page.
+    const titles = [...app.matchAll(/title: "([^"]+)",\n\s+body:/g)].map((m) => m[1]);
+    expect(titles.length).toBeGreaterThanOrEqual(6);
+    for (const title of titles) expect(page, title).toContain(title.replace("Persist chat history", "Persist chat history on device"));
+    expect(page).toContain("/screenshots/settings.webp");
+    expect(page).toContain("/screenshots/tablet-settings.webp");
+    expect(readPage("index.html")).toContain('href="/settings.html"');
+    expect(fs.readFileSync(path.join(process.cwd(), "website/sitemap.xml"), "utf8")).toContain("https://offlinemate.com/settings.html");
   });
 });

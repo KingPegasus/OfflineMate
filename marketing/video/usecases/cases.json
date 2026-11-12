@@ -1,0 +1,110 @@
+{
+  "_comment": "Use cases for the use-case videos. tools/uc_timelines.py turns these plus the cut points in that script into timelines. 'answer' must match the reply on screen word for word (a trailing … marks a cut-off excerpt). All recorded on the ops_pixel emulator, release build 0.11.0 (then numbered 0.10.1), Standard tier (Gemma 4 E2B), airplane mode on.",
+  "cases": [
+    {
+      "id": "alarm",
+      "kicker": "Alarm",
+      "chip": "Airplane mode on",
+      "hook": "Up early <em>tomorrow?</em>",
+      "prompt": "Wake me up at 6:30 tomorrow",
+      "answer": "Alarm set for 06:30: Wake me up",
+      "after": {
+        "head": "A real alarm in your <em>Clock app</em>",
+        "sub": "Set on the phone. No internet needed."
+      },
+      "vo": [
+        "Need to be up early tomorrow? Just ask.",
+        "OfflineMate sets a real alarm in your Clock app. No internet needed."
+      ],
+      "word": "ALARMS"
+    },
+    {
+      "id": "note-add",
+      "kicker": "Save a note",
+      "chip": "Airplane mode on",
+      "hook": "Don't let it <em>slip</em>",
+      "prompt": "Save a note: book the car service for Saturday",
+      "answer": "Note saved: Book car service",
+      "after": {
+        "head": "Saved in <em>Notes</em>",
+        "sub": "Stored on your phone. No account, no cloud."
+      },
+      "vo": [
+        "Something you can't forget? Tell OfflineMate.",
+        "It's saved in Notes, and it stays on your phone."
+      ],
+      "word": "NOTES"
+    },
+    {
+      "id": "note-recall",
+      "kicker": "Find a note",
+      "chip": "Airplane mode on",
+      "hook": "What did I <em>save?</em>",
+      "prompt": "What did I save about the dentist?",
+      "answer": "You saved that a dentist appointment is on Friday at 3pm.",
+      "vo": [
+        "Can't remember the details? Ask your notes.",
+        "It finds the right note in seconds, on your device."
+      ],
+      "word": "RECALL"
+    },
+    {
+      "id": "calendar",
+      "kicker": "Calendar",
+      "chip": "Airplane mode on",
+      "hook": "What's on <em>tomorrow?</em>",
+      "prompt": "What's on my calendar tomorrow?",
+      "answer": "1 event tomorrow:\n- Dentist appointment, 3:00 PM – 4:00 PM",
+      "vo": [
+        "What does tomorrow look like? Just ask.",
+        "It reads your calendar privately, even in airplane mode."
+      ],
+      "word": "CALENDAR"
+    },
+    {
+      "id": "contact",
+      "kicker": "Contacts",
+      "chip": "Airplane mode on",
+      "hook": "Need a number <em>fast?</em>",
+      "prompt": "What's Ali's number?",
+      "answer": "Found 1 contact for \"Ali\".\n- Ali Khan: +92 300 1234567",
+      "vo": [
+        "Need a number, fast?",
+        "It looks up your contacts on the phone. Nothing is uploaded."
+      ],
+      "word": "CONTACTS"
+    },
+    {
+      "id": "tech",
+      "kicker": "Ask anything",
+      "chip": "Airplane mode on",
+      "hook": "What is <em>RAG?</em>",
+      "prompt": "What is RAG in AI? Explain simply.",
+      "answer": "RAG (Retrieval-Augmented Generation) in AI is a technique that improves large language models (LLMs)…",
+      "after": {
+        "head": "Written <em>on the phone</em>",
+        "sub": "Gemma 4 E2B, running offline at real speed."
+      },
+      "vo": [
+        "Curious about A.I.? Ask anything.",
+        "The answer is written by a model running on your phone. No cloud."
+      ],
+      "word": "ASK ANYTHING"
+    },
+    {
+      "id": "weather",
+      "kicker": "Weather",
+      "chip": "Online · Settings switch",
+      "online": true,
+      "hook": "Heading <em>out?</em>",
+      "prompt": "What's the current weather in London?",
+      "answer": "London, United Kingdom: 8°C (47°F), mainly clear. Feels like 4°C, wind 16 km/h. Today 4–8°C, 0% chance of rain.",
+      "vo": [
+        "Heading out? Ask about the weather.",
+        "Weather is the one feature that goes online. Only the city name is sent, and one switch turns it off."
+      ],
+      "word": "WEATHER",
+      "_note": "Recorded online (Wi-Fi), not in airplane mode, so it is a short only, not in the compilation."
+    }
+  ]
+}

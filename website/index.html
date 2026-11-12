@@ -84,6 +84,7 @@
               "https://offlinemate.com/screenshots/notes.webp",
               "https://offlinemate.com/screenshots/settings.webp",
               "https://offlinemate.com/screenshots/tools.webp",
+              "https://offlinemate.com/screenshots/tools-chat.webp",
               "https://offlinemate.com/screenshots/tablet-chat.webp",
               "https://offlinemate.com/screenshots/tablet-notes.webp"
             ],
@@ -294,7 +295,7 @@
                 </div>
                 <p class="feature-detail">
                   On <strong>Standard</strong> and <strong>Full</strong>, questions can trigger local embedding and vector
-                  search (RAG) over your indexed notes. <strong>Lite</strong> skips retrieval for speed.
+                  search (RAG) over your indexed notes. <strong>Lite</strong> matches keywords in your notes instead.
                 </p>
                 <p class="feature-example"><em>Example</em> “What did I save about the dentist?”</p>
               </article>
@@ -329,8 +330,9 @@
                   <h3 class="bento-card-title">Web search you can turn off</h3>
                 </div>
                 <p class="feature-detail">
-                  For questions that need current information, OfflineMate can fetch DuckDuckGo-backed results. It doesn’t
-                  run on every message. It’s on by default, and one setting turns it off.
+                  For questions that need current information, OfflineMate can fetch DuckDuckGo-backed results, and weather
+                  from Open-Meteo (only the place name is sent). It doesn’t run on every message. It’s on by default, and one
+                  setting turns it off.
                 </p>
                 <p class="feature-example"><em>Example</em> “Search for population of Tokyo”</p>
               </article>
@@ -358,6 +360,31 @@
                 </p>
                 <p class="feature-example"><em>Examples</em> “Open chats”; “Delete this conversation”; “Keep chat history on device.”</p>
               </article>
+            </div>
+            <div class="feature-showcase">
+              <figure class="feature-showcase-shot">
+                <img
+                  src="/screenshots/tools-chat.webp"
+                  width="480"
+                  height="990"
+                  alt="One OfflineMate chat on the Lite tier: a reminder set to go off in 20 minutes, one dentist appointment on tomorrow's calendar, a note saved to pick up bread, and the saved dentist note found when asked."
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <div class="feature-showcase-text">
+                <h3>One chat, four tools</h3>
+                <p>
+                  A real conversation on the smallest tier (SmolLM2 135M), with no account and no cloud. Each request goes to
+                  the right tool on the phone, and the reply comes back in seconds.
+                </p>
+                <ul class="feature-showcase-list">
+                  <li><span>“Remind me in 20 minutes to stretch”</span> sets a reminder</li>
+                  <li><span>“What’s on my calendar tomorrow?”</span> reads your calendar</li>
+                  <li><span>“Add a note to pick up bread”</span> saves a note</li>
+                  <li><span>“What did I save about the dentist?”</span> searches your notes</li>
+                </ul>
+              </div>
             </div>
           </section>
 
@@ -439,6 +466,20 @@
                 </ul>
               </article>
             </div>
+            <aside class="tier-note" aria-labelledby="tier-note-heading">
+              <h3 id="tier-note-heading">Why is a 1 GB model in Standard, not Lite?</h3>
+              <p>
+                Download size doesn’t decide how hard a model is for your phone to run. The number in its name does. That
+                number, like the “1B” or “1.7B”, is how many parameters (billions of small values) the model has. Models are
+                compressed so a 1.7B model downloads at about 1 GB. Your phone still works through every one of those
+                1.7 billion values for each word it writes, which is many times more work than a Lite model.
+              </p>
+              <p>
+                On a phone with 3–4 GB of RAM, Android and your other apps already use most of the memory. A 1–2B model there
+                would answer very slowly or be closed by the system. Phones with 6 GB or more run these models smoothly. So
+                the tiers follow your phone’s RAM, not the download size.
+              </p>
+            </aside>
           </section>
 
           <section id="app-preview" aria-labelledby="app-preview-heading">
@@ -535,11 +576,11 @@
                   src="/screenshots/settings.webp"
                   width="480"
                   height="990"
-                  alt="OfflineMate settings screen with the model tiers and a privacy and network boundaries panel."
+                  alt="OfflineMate settings screen: the model tiers, then Open Onboarding, Speak responses and Web search and weather, each with an info button, and the privacy and network boundaries panel."
                   loading="lazy"
                   decoding="async"
                 />
-                <figcaption>Settings and privacy boundaries</figcaption>
+                <figcaption>Settings and privacy boundaries · <a href="/settings.html">every option explained</a></figcaption>
               </figure>
             </div>
             <div class="tablet-showcase">

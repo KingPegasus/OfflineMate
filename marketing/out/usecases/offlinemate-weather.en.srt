@@ -1,0 +1,12 @@
+1
+00:00:00,250 --> 00:00:02,085
+Heading out? Ask about the weather.
+
+2
+00:00:08,210 --> 00:00:14,013
+Weather is the one feature that goes online. Only the city name is sent, and one switch turns it off.
+
+3
+00:00:14,960 --> 00:00:16,987
+Get OfflineMate free on Google Play.
+

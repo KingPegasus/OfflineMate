@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Constants from "expo-constants";
@@ -13,11 +14,68 @@ import {
   redownloadTierChatModel,
 } from "@/ai/model-manager";
 import { useChatStore } from "@/stores/chat-store";
+import { clearImportantMemories, countImportantMemories } from "@/context/long-term-memory";
 import { getStoreListingUrl, openStoreListingForRating } from "@/stores/review-store";
 import { llmEngine } from "@/ai/llm-engine";
 import type { ModelTier } from "@/types/assistant";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { DIALOG_MAX_WIDTH, READABLE_MAX_WIDTH } from "@/utils/layout";
+
+function safeMemoryCount(): number {
+  try {
+    return countImportantMemories();
+  } catch {
+    return 0;
+  }
+}
+
+/** What each Settings option does, shown from its info button. Keep in step with docs/legal/privacy-policy.md. */
+const SETTING_INFO = {
+  onboarding: {
+    title: "Open Onboarding",
+    body: "Runs the first-time setup again: pick a tier and download its model. Your chats, notes and settings stay.",
+  },
+  tts: {
+    title: "Speak responses (TTS)",
+    body: "Reads each reply aloud with your phone's built-in voice. Off by default. Depending on your phone and voice settings, the voice provider may process the text online.",
+  },
+  webSearch: {
+    title: "Web search and weather",
+    body: "When on, questions that need current information are looked up online. Web searches go to DuckDuckGo, and the query can be your whole message. Weather questions send only the place name to Open-Meteo. On by default. Turn it off to keep every request on this device.",
+  },
+  history: {
+    title: "Persist chat history",
+    body: "When on, your chats are saved on this device and are still there after you close the app. When off (the default), chats are cleared when the app closes, and turning it off deletes saved chats. Nothing is uploaded either way.",
+  },
+  clear: {
+    title: "Clear chats and memories",
+    body: "Deletes all chats and every saved memory on this device. Memories are messages that start with \"remember\" (for example \"remember my locker code is 42\"); OfflineMate keeps them for later answers even when chat history is off. Notes aren't affected. To delete one chat, use Open chats in the Chat tab.",
+  },
+  rate: {
+    title: "Rate OfflineMate",
+    body: "Opens OfflineMate's Google Play page so you can rate or review it.",
+  },
+} as const;
+
+/** A tappable setting with an info button that explains it. */
+function SettingRow({ label, info, onPress }: { label: string; info: { title: string; body: string }; onPress: () => void }) {
+  return (
+    <View style={styles.settingRow}>
+      <Text style={[styles.link, styles.settingLabel]} onPress={onPress} accessibilityRole="button">
+        {label}
+      </Text>
+      <Pressable
+        onPress={() => Alert.alert(info.title, info.body)}
+        hitSlop={10}
+        accessibilityRole="button"
+        accessibilityLabel={`About ${info.title}`}
+        style={styles.infoButton}
+      >
+        <Ionicons name="information-circle-outline" size={20} color="#9ca3af" />
+      </Pressable>
+    </View>
+  );
+}
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -32,7 +90,14 @@ export default function SettingsScreen() {
   const setWebSearchEnabled = useSettingsStore((s) => s.setWebSearchEnabled);
   const persistChatHistory = useSettingsStore((s) => s.persistChatHistory);
   const setPersistChatHistory = useSettingsStore((s) => s.setPersistChatHistory);
-  const clearMessages = useChatStore((s) => s.clearMessages);
+  const clearAllConversations = useChatStore((s) => s.clearAllConversations);
+  const [memoryCount, setMemoryCount] = useState(0);
+  // Re-count when the tab is shown: "remember ..." messages add memories from the Chat tab.
+  useFocusEffect(
+    useCallback(() => {
+      setMemoryCount(safeMemoryCount());
+    }, []),
+  );
   const tierSpec = getTierSpec(selectedTier);
   const activeModelId = tierModelIds[selectedTier] ?? null;
   const activeModel = resolveModelForTier(selectedTier, activeModelId);
@@ -168,10 +233,25 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleClearCurrentChat = () => {
-    Alert.alert("Clear current chat", "Delete this chat permanently?", [
+  const handleClearChatsAndMemories = () => {
+    const memories = safeMemoryCount();
+    const what = memories > 0 ? `all chats and ${memories} saved ${memories === 1 ? "memory" : "memories"}` : "all chats";
+    Alert.alert("Clear chats and memories", `Delete ${what} on this device? Notes aren't affected. This can't be undone.`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: clearMessages },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          clearAllConversations();
+          try {
+            clearImportantMemories();
+            setMemoryCount(0);
+          } catch (e) {
+            console.warn("[OfflineMate] Settings: clearing memories failed", e);
+            setMemoryCount(safeMemoryCount());
+          }
+        },
+      },
     ]);
   };
   const handleTogglePersistHistory = () => {
@@ -186,7 +266,8 @@ export default function SettingsScreen() {
             style: "destructive",
             onPress: () => {
               setPersistChatHistory(false);
-              clearMessages();
+              // All saved chats, not just the open one (the dialog promises "saved chats").
+              clearAllConversations();
             },
           },
         ],
@@ -226,48 +307,50 @@ export default function SettingsScreen() {
             );
           })}
         </View>
-        <Text style={styles.link} onPress={() => router.push("/onboarding")}>
-          Open Onboarding
-        </Text>
-        <Text style={styles.link} onPress={() => setVoiceEnabled(!voiceEnabled)}>
-          Speak responses (TTS): {voiceEnabled ? "On" : "Off"}
-        </Text>
-        <Text style={styles.link} onPress={() => setWebSearchEnabled(!webSearchEnabled)}>
-          Web search fallback: {webSearchEnabled ? "On" : "Off"}
-        </Text>
+        <SettingRow label="Open Onboarding" info={SETTING_INFO.onboarding} onPress={() => router.push("/onboarding")} />
+        <SettingRow
+          label={`Speak responses (TTS): ${voiceEnabled ? "On" : "Off"}`}
+          info={SETTING_INFO.tts}
+          onPress={() => setVoiceEnabled(!voiceEnabled)}
+        />
+        <SettingRow
+          label={`Web search and weather: ${webSearchEnabled ? "On" : "Off"}`}
+          info={SETTING_INFO.webSearch}
+          onPress={() => setWebSearchEnabled(!webSearchEnabled)}
+        />
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Privacy and network boundaries</Text>
           <Text style={styles.sectionBody}>
             Core chat, retrieval, and tools run on device after models are downloaded. Network use is mainly for model
-            downloads and optional web search.
+            downloads, and for web search (queries go to DuckDuckGo) and weather (only the place name goes to Open-Meteo).
+            Both are on by default; turn off “Web search and weather” above to keep everything on this device.
           </Text>
           <Text style={styles.sectionBody}>
             Text-to-speech uses device OS voices and may use vendor online services.
           </Text>
         </View>
 
-        <Text
-          style={styles.link}
+        <SettingRow
+          label={`Persist chat history on device: ${persistChatHistory ? "On" : "Off"} (default Off)`}
+          info={SETTING_INFO.history}
           onPress={handleTogglePersistHistory}
-        >
-          Persist chat history on device: {persistChatHistory ? "On" : "Off"} (default Off)
-        </Text>
-        <Text style={styles.link} onPress={handleClearCurrentChat}>
-          Clear current chat
-        </Text>
+        />
+        <SettingRow
+          label={memoryCount > 0 ? `Clear chats and memories (${memoryCount} saved)` : "Clear chats and memories"}
+          info={SETTING_INFO.clear}
+          onPress={handleClearChatsAndMemories}
+        />
         {canRateApp ? (
-          <Text
-            style={styles.link}
-            accessibilityRole="link"
+          <SettingRow
+            label="Rate OfflineMate"
+            info={SETTING_INFO.rate}
             onPress={() => {
               void openStoreListingForRating().then((opened) => {
                 if (!opened) Alert.alert("Couldn't open the store", "Search for OfflineMate in Google Play to rate it.");
               });
             }}
-          >
-            Rate OfflineMate
-          </Text>
+          />
         ) : null}
         <Text style={styles.versionLabel}>App version: {appVersion}</Text>
       </ScrollView>
@@ -384,6 +467,9 @@ const styles = StyleSheet.create({
   itemSubtitle: { color: "#9ca3af", marginTop: 4, fontSize: 12 },
   selected: { borderWidth: 1, borderColor: "#60a5fa" },
   link: { marginTop: 16, color: "#93c5fd", fontWeight: "600" },
+  settingRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  settingLabel: { flex: 1 },
+  infoButton: { marginTop: 16, padding: 2 },
   disabledLink: { color: "#64748b" },
   modalBackdrop: {
     flex: 1,

@@ -32,6 +32,8 @@ interface ChatState {
   renameConversation: (conversationId: string, nextTitle: string) => void;
   pushMessage: (message: ChatMessage, conversationId?: string) => void;
   clearMessages: () => void;
+  /** Delete every chat (Settings "Clear chats and memories", and turning off chat history). */
+  clearAllConversations: () => void;
   setStreamingResponse: (text: string) => void;
   setStreamingThinking: (steps: string[]) => void;
   setStreamingHasThinkTag: (value: boolean) => void;
@@ -192,6 +194,18 @@ export const useChatStore = create<ChatState>()(
             error: null,
             errorTier: null,
           };
+        }),
+      clearAllConversations: () =>
+        set({
+          conversations: [],
+          messages: [],
+          activeConversationId: null,
+          streamingResponse: "",
+          streamingThinking: [],
+          streamingHasThinkTag: false,
+          streamingThinkClosed: false,
+          error: null,
+          errorTier: null,
         }),
       setStreamingResponse: (streamingResponse) => set({ streamingResponse }),
       setStreamingThinking: (streamingThinking) => set({ streamingThinking }),

@@ -11,8 +11,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 OUT = ROOT / "marketing" / "out"
 WEB = ROOT / "website"
 
-FRAMES = ["chat", "notes", "onboarding", "picker-lite", "tools", "settings"]
-TABLET_FRAMES = ["chat", "notes", "picker-lite"]
+FRAMES = ["chat", "notes", "onboarding", "picker-lite", "tools", "settings", "tools-chat"]
+TABLET_FRAMES = ["chat", "notes", "picker-lite", "settings"]
 
 
 def ffmpeg():
