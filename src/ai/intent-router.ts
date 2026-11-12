@@ -103,9 +103,19 @@ const TOOL_KEYWORDS = [
   "is it true that",
   "verify online",
   "fact check",
-  "today's weather",
-  "current weather",
-  "weather now",
+  // Weather (weather.current, Open-Meteo): bare "weather", and phrases for temperature and rain
+  // (no bare "temperature" or "forecast": "oven temperature", "sales forecast")
+  "weather",
+  "weather forecast",
+  "forecast for",
+  "temperature in",
+  "temperature outside",
+  "how hot is it",
+  "how cold is it",
+  "will it rain",
+  "is it raining",
+  "going to rain",
+  "need an umbrella",
   "near me",
   "today's date",
   "todays date",
@@ -141,8 +151,28 @@ export function wantsPhoneCallIntent(normalizedLower: string): boolean {
 }
 
 /**
+ * Contact number questions: "what's Ali's number", "phone number of Sara", "Ali's mobile number".
+ * Bare "number" is everywhere ("the number of planets"), so it must follow a possessive or "phone"/"mobile".
+ */
+export function wantsContactLookupIntent(normalizedLower: string): boolean {
+  if (/\b(phone|mobile|cell|contact)\s+(number|no)\b/.test(normalizedLower)) return true;
+  return /[a-z]'s\s+(phone\s+|mobile\s+|cell\s+)?(number|no|contact)\b/.test(normalizedLower);
+}
+
+/**
  * Relative-time reminder phrasing. STT often turns "Remind me" into "Find me".
  */
+/**
+ * "Add dentist appointment tomorrow at 3pm", "Schedule lunch with Sara on Friday at 1pm": a verb that adds something,
+ * an appointment/meeting/event word, and a day or time. The time cue keeps "how do I add an event listener" direct.
+ */
+export function wantsCalendarAddIntent(normalizedLower: string): boolean {
+  const adds = /\b(add|create|schedule|book|put|set up|make)\b[^.?!]{0,50}\b(appointment|meeting|event|lunch|dinner|interview)s?\b/;
+  const when =
+    /\b(today|tomorrow|tonight|this (morning|afternoon|evening)|next (week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|on (monday|tuesday|wednesday|thursday|friday|saturday|sunday)|at \d|\d{1,2}(:\d{2})?\s?(am|pm)|\d{1,2}:\d{2})\b/;
+  return adds.test(normalizedLower) && when.test(normalizedLower);
+}
+
 export function wantsReminderRelativeTimeIntent(normalizedLower: string): boolean {
   if (/\bremind me in \d/.test(normalizedLower)) return true;
   if (/\bremind me after \d/.test(normalizedLower)) return true;
@@ -191,7 +221,9 @@ export function routeIntent(input: string): IntentType {
   // (e.g. "remind me about the meeting").
   if (TOOL_KEYWORDS.some((k) => hasKeywordMatch(normalized, k))) return "tool";
   if (wantsPhoneCallIntent(normalized)) return "tool";
+  if (wantsContactLookupIntent(normalized)) return "tool";
   if (wantsReminderRelativeTimeIntent(normalized)) return "tool";
+  if (wantsCalendarAddIntent(normalized)) return "tool";
   if (CONTEXT_KEYWORDS.some((k) => hasKeywordMatch(normalized, k))) return "context";
   return "direct";
 }

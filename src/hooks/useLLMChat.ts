@@ -11,6 +11,7 @@ import {
 import { routeIntent } from "@/ai/intent-router";
 import { buildLocalDateTimeAnswer } from "@/utils/local-datetime";
 import { retrieveContextForQuery } from "@/ai/rag-pipeline";
+import { buildKeywordNotesReply, searchNotesByKeywords } from "@/context/keyword-notes";
 import { buildPrompt } from "@/ai/prompt-builder";
 import { filterArgsForTool, getToolByName, selectToolFromInput, type Tool } from "@/tools/tool-registry";
 import { WEB_SEARCH_NO_RESULTS_PREFIX } from "@/tools/search-tool";
@@ -505,6 +506,29 @@ export function useLLMChat() {
           }
         }
 
+        if (intent === "context" && activeTier === "lite") {
+          // Lite has no semantic search, and the 135M model given no notes made an answer up (it copied
+          // the previous reply). Search the notes by keyword and reply with what was found instead.
+          let notesReply: string | null = null;
+          try {
+            const { terms, notes } = searchNotesByKeywords(cleaned);
+            notesReply = buildKeywordNotesReply(terms, notes);
+            if (notesReply && notes.length === 0) replyWasClean = false;
+          } catch (err) {
+            console.warn("[OfflineMate] Lite keyword note search failed:", err);
+          }
+          if (notesReply) {
+            console.log("[OfflineMate] Lite notes reply (keyword search):", JSON.stringify(notesReply.slice(0, 120)));
+            setStreamingHasThinkTag(false);
+            setStreamingThinkClosed(true);
+            setStreamingThinking([]);
+            setStreamingResponse(notesReply);
+            pushMessage(createAssistantMessage(notesReply, null), requestConversationId);
+            if (voiceEnabled) await speak(notesReply);
+            return;
+          }
+        }
+
         if (intent === "context") {
           contextSnippets = await retrieveContextForQuery(cleaned, activeTier);
           console.log(
@@ -704,9 +728,11 @@ export function useLLMChat() {
           return;
         }
 
-        // Lite models garble replies written from tool output, so show the tool's own sentences instead.
+        // Models garble or drop facts from on-device tool output (all of it on Lite), so show the tool's own sentences.
         const liteToolReply =
-          intent === "tool" && usesDeterministicToolReplies(activeTier) ? buildDeterministicToolReply(toolResult) : null;
+          intent === "tool" && usesDeterministicToolReplies(activeTier, toolResult)
+            ? buildDeterministicToolReply(toolResult)
+            : null;
         if (liteToolReply) {
           const replyText = cleanModelOutput(liteToolReply);
           setStreamingHasThinkTag(false);
@@ -714,7 +740,7 @@ export function useLLMChat() {
           setStreamingThinking([]);
           setStreamingResponse(replyText);
           pushMessage(createAssistantMessage(replyText, null), requestConversationId);
-          console.log(`[OfflineMate] Lite tool reply (deterministic): ${JSON.stringify(replyText.slice(0, 200))}`);
+          console.log(`[OfflineMate] Tool reply (deterministic): ${JSON.stringify(replyText.slice(0, 200))}`);
           if (voiceEnabled) {
             await speak(replyText);
           }

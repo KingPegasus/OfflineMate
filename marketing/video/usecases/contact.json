@@ -1,0 +1,66 @@
+{
+  "id": "contact",
+  "style": "calm",
+  "duration": 14.4,
+  "screen": "raw/uc/contact-screen.mp4",
+  "screenStart": 0,
+  "phone": {
+    "in": 0
+  },
+  "scenes": [
+    {
+      "num": null,
+      "kicker": "Contacts",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "Need a number <em>fast?</em>",
+      "promptAt": 2.9,
+      "prompt": "What's Ali's number?",
+      "cps": 25.3,
+      "answerAt": 6.99,
+      "answer": "Found 1 contact for \"Ali\".\n- Ali Khan: +92 300 1234567",
+      "t": [
+        0.0,
+        11.0
+      ]
+    }
+  ],
+  "end": 11.0,
+  "vo": [
+    {
+      "at": 0.25,
+      "text": "Need a number, fast?"
+    },
+    {
+      "at": 7.24,
+      "text": "It looks up your contacts on the phone. Nothing is uploaded."
+    },
+    {
+      "at": 11.45,
+      "text": "Get OfflineMate free on Google Play."
+    }
+  ],
+  "clips": [
+    {
+      "src": "raw/uc/contact.mp4",
+      "from": 2.82,
+      "to": 5.56,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/contact.mp4",
+      "from": 7.2,
+      "to": 8.9
+    },
+    {
+      "src": "raw/uc/contact.mp4",
+      "from": 8.9,
+      "to": 12.6,
+      "holdEnd": 0.46
+    }
+  ],
+  "music": {
+    "style": "calm",
+    "bpm": 100
+  }
+}

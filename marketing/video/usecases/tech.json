@@ -1,0 +1,65 @@
+{
+  "id": "tech",
+  "style": "calm",
+  "duration": 17.59,
+  "screen": "raw/uc/tech-screen.mp4",
+  "screenStart": 0,
+  "phone": {
+    "in": 0
+  },
+  "scenes": [
+    {
+      "num": null,
+      "kicker": "Ask anything",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "What is <em>RAG?</em>",
+      "promptAt": 2.9,
+      "prompt": "What is RAG in AI? Explain simply.",
+      "cps": 20.2,
+      "answerAt": 7.62,
+      "answer": "RAG (Retrieval-Augmented Generation) in AI is a technique that improves large language models (LLMs)…",
+      "after": {
+        "head": "Written <em>on the phone</em>",
+        "sub": "Gemma 4 E2B, running offline at real speed.",
+        "at": 12.59
+      },
+      "t": [
+        0.0,
+        14.19
+      ]
+    }
+  ],
+  "end": 14.19,
+  "vo": [
+    {
+      "at": 0.25,
+      "text": "Curious about A.I.? Ask anything."
+    },
+    {
+      "at": 7.87,
+      "text": "The answer is written by a model running on your phone. No cloud."
+    },
+    {
+      "at": 14.64,
+      "text": "Get OfflineMate free on Google Play."
+    }
+  ],
+  "clips": [
+    {
+      "src": "raw/uc/tech.mp4",
+      "from": 2.81,
+      "to": 6.43,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/tech.mp4",
+      "from": 6.43,
+      "to": 14.6
+    }
+  ],
+  "music": {
+    "style": "calm",
+    "bpm": 100
+  }
+}

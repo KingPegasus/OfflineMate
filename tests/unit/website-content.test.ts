@@ -88,4 +88,19 @@ describe("website content", () => {
       expect(visible.get(entry.name), entry.name).toContain(entry.acceptedAnswer.text);
     }
   });
+
+  it("the home page shows one real chat using four tools, with the prompts it shows", () => {
+    const html = readPage("index.html");
+    expect(html).toContain('src="/screenshots/tools-chat.webp"');
+    expect(html).toContain("https://offlinemate.com/screenshots/tools-chat.webp");
+    expect(fs.existsSync(path.join(process.cwd(), "website", "screenshots", "tools-chat.webp"))).toBe(true);
+    for (const prompt of [
+      "Remind me in 20 minutes to stretch",
+      "What’s on my calendar tomorrow?",
+      "Add a note to pick up bread",
+      "What did I save about the dentist?",
+    ]) {
+      expect(html).toContain(`“${prompt}”`);
+    }
+  });
 });

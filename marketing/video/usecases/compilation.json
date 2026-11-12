@@ -1,0 +1,322 @@
+{
+  "id": "compilation",
+  "style": "calm",
+  "duration": 92.11,
+  "screen": "raw/uc/compilation-screen.mp4",
+  "screenStart": 6.0,
+  "phone": {
+    "in": 5.7
+  },
+  "title": {
+    "t": [
+      0,
+      6.0
+    ],
+    "kicker": "Real use cases",
+    "head": "Things you can ask <em>OfflineMate</em>",
+    "sub": "Six real requests, recorded at real speed, with airplane mode on."
+  },
+  "scenes": [
+    {
+      "num": "01",
+      "kicker": "Alarm",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "Up early <em>tomorrow?</em>",
+      "promptAt": 8.9,
+      "prompt": "Wake me up at 6:30 tomorrow",
+      "cps": 18.9,
+      "answerAt": 17.18,
+      "answer": "Alarm set for 06:30: Wake me up",
+      "after": {
+        "head": "A real alarm in your <em>Clock app</em>",
+        "sub": "Set on the phone. No internet needed.",
+        "at": 13.58
+      },
+      "t": [
+        6.0,
+        19.83
+      ]
+    },
+    {
+      "num": "02",
+      "kicker": "Save a note",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "Don't let it <em>slip</em>",
+      "promptAt": 22.93,
+      "prompt": "Save a note: book the car service for Saturday",
+      "cps": 22.1,
+      "answerAt": 28.31,
+      "answer": "Note saved: Book car service",
+      "after": {
+        "head": "Saved in <em>Notes</em>",
+        "sub": "Stored on your phone. No account, no cloud.",
+        "at": 31.56
+      },
+      "t": [
+        20.03,
+        33.16
+      ]
+    },
+    {
+      "num": "03",
+      "kicker": "Find a note",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "What did I <em>save?</em>",
+      "promptAt": 36.26,
+      "prompt": "What did I save about the dentist?",
+      "cps": 20.7,
+      "answerAt": 41.21,
+      "answer": "You saved that a dentist appointment is on Friday at 3pm.",
+      "t": [
+        33.36,
+        44.96
+      ]
+    },
+    {
+      "num": "04",
+      "kicker": "Calendar",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "What's on <em>tomorrow?</em>",
+      "promptAt": 48.06,
+      "prompt": "What's on my calendar tomorrow?",
+      "cps": 24.2,
+      "answerAt": 52.64,
+      "answer": "1 event tomorrow:\n- Dentist appointment, 3:00 PM – 4:00 PM",
+      "t": [
+        45.16,
+        56.46
+      ]
+    },
+    {
+      "num": "05",
+      "kicker": "Contacts",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "Need a number <em>fast?</em>",
+      "promptAt": 59.56,
+      "prompt": "What's Ali's number?",
+      "cps": 25.3,
+      "answerAt": 63.65,
+      "answer": "Found 1 contact for \"Ali\".\n- Ali Khan: +92 300 1234567",
+      "t": [
+        56.66,
+        67.67
+      ]
+    },
+    {
+      "num": "06",
+      "kicker": "Ask anything",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "What is <em>RAG?</em>",
+      "promptAt": 70.77,
+      "prompt": "What is RAG in AI? Explain simply.",
+      "cps": 20.2,
+      "answerAt": 75.49,
+      "answer": "RAG (Retrieval-Augmented Generation) in AI is a technique that improves large language models (LLMs)…",
+      "after": {
+        "head": "Written <em>on the phone</em>",
+        "sub": "Gemma 4 E2B, running offline at real speed.",
+        "at": 80.46
+      },
+      "t": [
+        67.87,
+        82.06
+      ]
+    },
+    {
+      "t": [
+        82.26,
+        85.89
+      ],
+      "kicker": "Offline",
+      "chip": "No internet at all",
+      "hook": "Recorded in <em>airplane mode</em>"
+    }
+  ],
+  "end": 85.89,
+  "vo": [
+    {
+      "at": 0.35,
+      "text": "Here are real things you can ask OfflineMate, the A.I. assistant that runs on your phone."
+    },
+    {
+      "at": 6.25,
+      "text": "Need to be up early tomorrow? Just ask."
+    },
+    {
+      "at": 13.83,
+      "text": "OfflineMate sets a real alarm in your Clock app. No internet needed."
+    },
+    {
+      "at": 20.28,
+      "text": "Something you can't forget? Tell OfflineMate."
+    },
+    {
+      "at": 28.56,
+      "text": "It's saved in Notes, and it stays on your phone."
+    },
+    {
+      "at": 33.61,
+      "text": "Can't remember the details? Ask your notes."
+    },
+    {
+      "at": 41.46,
+      "text": "It finds the right note in seconds, on your device."
+    },
+    {
+      "at": 45.41,
+      "text": "What does tomorrow look like? Just ask."
+    },
+    {
+      "at": 52.89,
+      "text": "It reads your calendar privately, even in airplane mode."
+    },
+    {
+      "at": 56.91,
+      "text": "Need a number, fast?"
+    },
+    {
+      "at": 63.9,
+      "text": "It looks up your contacts on the phone. Nothing is uploaded."
+    },
+    {
+      "at": 68.12,
+      "text": "Curious about A.I.? Ask anything."
+    },
+    {
+      "at": 75.74,
+      "text": "The answer is written by a model running on your phone. No cloud."
+    },
+    {
+      "at": 82.56,
+      "text": "Everything you just saw was recorded in airplane mode."
+    },
+    {
+      "at": 86.39,
+      "text": "OfflineMate. Private A.I. that works offline. Get it free on Google Play."
+    }
+  ],
+  "clips": [
+    {
+      "src": "raw/uc/alarm.mp4",
+      "from": 2.81,
+      "to": 6.19,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/alarm.mp4",
+      "from": 9.6,
+      "to": 11.3
+    },
+    {
+      "src": "raw/uc/alarm.mp4",
+      "from": 11.3,
+      "to": 11.6
+    },
+    {
+      "src": "raw/uc/alarm.mp4",
+      "from": 12.85,
+      "to": 16.1
+    },
+    {
+      "src": "raw/uc/alarm.mp4",
+      "from": 16.1,
+      "to": 18.9,
+      "holdEnd": 0.2
+    },
+    {
+      "src": "raw/uc/note-add.mp4",
+      "from": 2.78,
+      "to": 6.81,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/note-add.mp4",
+      "from": 9.6,
+      "to": 11.3
+    },
+    {
+      "src": "raw/uc/note-add.mp4",
+      "from": 11.3,
+      "to": 14.6
+    },
+    {
+      "src": "raw/uc/note-add.mp4",
+      "from": 19.9,
+      "to": 21.6,
+      "holdEnd": 0.2
+    },
+    {
+      "src": "raw/uc/note-recall.mp4",
+      "from": 2.8,
+      "to": 6.4,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/note-recall.mp4",
+      "from": 6.4,
+      "to": 8.1
+    },
+    {
+      "src": "raw/uc/note-recall.mp4",
+      "from": 8.1,
+      "to": 12.0,
+      "holdEnd": 0.2
+    },
+    {
+      "src": "raw/uc/calendar.mp4",
+      "from": 2.8,
+      "to": 6.03,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/calendar.mp4",
+      "from": 8.3,
+      "to": 10.0
+    },
+    {
+      "src": "raw/uc/calendar.mp4",
+      "from": 10.0,
+      "to": 13.8,
+      "holdEnd": 0.37
+    },
+    {
+      "src": "raw/uc/contact.mp4",
+      "from": 2.82,
+      "to": 5.56,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/contact.mp4",
+      "from": 7.2,
+      "to": 8.9
+    },
+    {
+      "src": "raw/uc/contact.mp4",
+      "from": 8.9,
+      "to": 12.6,
+      "holdEnd": 0.66
+    },
+    {
+      "src": "raw/uc/tech.mp4",
+      "from": 2.81,
+      "to": 6.43,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/tech.mp4",
+      "from": 6.43,
+      "to": 14.6,
+      "holdEnd": 3.84
+    }
+  ],
+  "music": {
+    "style": "calm",
+    "bpm": 100
+  }
+}

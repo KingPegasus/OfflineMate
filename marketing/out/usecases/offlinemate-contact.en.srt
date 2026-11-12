@@ -1,0 +1,12 @@
+1
+00:00:00,250 --> 00:00:01,445
+Need a number, fast?
+
+2
+00:00:07,240 --> 00:00:10,504
+It looks up your contacts on the phone. Nothing is uploaded.
+
+3
+00:00:11,450 --> 00:00:13,477
+Get OfflineMate free on Google Play.
+

@@ -46,6 +46,9 @@
 - **Use:** `text `, `phone `, `send a message`, `message me` / `message you` / …, `email `, `contact ` (avoid bare `message ` — it matched “error **message** is …”).
 - **Phone calls:** `wantsPhoneCallIntent()` — `\bcall\s+[a-z0-9]` after lowercasing, but **not** when preceded by programming terms (`function call`, `recursive call`, `method call`, `callback`, `tail call`, `roll call`, etc.).
 - **Examples:** “**call** Sarah”, “**text** me the link”, “**contact** support”.
+- **Contact numbers:** `wantsContactLookupIntent()` — `phone|mobile|cell|contact` + `number|no`, or a possessive before `number`/`contact` (“what’s **Ali’s number**”, “Sara’s mobile number”). Bare `number` stays direct (“the number of planets”).
+- **Weather:** bare `weather`, plus `weather forecast`, `forecast for`, `temperature in|outside`, `how hot|cold is it`, `will it rain`, `is it raining`, `going to rain`, `need an umbrella` route to `weather.current` (Open-Meteo). Bare `temperature` and `forecast` stay direct (“oven temperature”, “sales forecast”). Its longer keywords (“what’s the current weather”) outscore `search.web`’s “what’s the current”, so weather no longer goes to web search.
+- **Adding calendar events:** `wantsCalendarAddIntent()` — add/create/schedule/book/put/set up/make + appointment/meeting/event/lunch/dinner/interview + a day or time (“Add dentist appointment tomorrow at 3pm”). It also outscores keywords for `calendar.createEvent` through the tool’s `matches` hook. Without a day or time it stays direct (“how do I add an event listener”).
 - **Stays direct:** “recursive **call** in JavaScript”, “error **message**” (no `message ` substring).
 
 ### Notes — **phrases**

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>OfflineMate thumbnail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=Outfit:wght@700;800;900&display=block" rel="stylesheet" />
+<style>
+  /* Video thumbnails and covers. Rendered by tools/stills.mjs with "page": "thumb.html".
+     Params: layout = wide (YouTube 1280x720, LinkedIn 1200x627) | tall (Reels/Shorts cover 1080x1920) | square,
+     shot (usecases/shots/<id>.png), head (HTML, <em> for the accent), kicker, badge, bubble (the prompt). */
+  :root { --bg: #020617; --bg2: #0b1530; --text: #f8fafc; --muted: #c4ced9; --accent: #5ac8fa; --pink: #ff4fa3; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body { font-family: Inter, sans-serif; color: var(--text); position: relative;
+    background:
+      radial-gradient(55% 60% at 80% 30%, rgba(47,140,255,.45), transparent 70%),
+      radial-gradient(50% 50% at 5% 100%, rgba(255,79,163,.22), transparent 70%),
+      linear-gradient(160deg, var(--bg2), var(--bg) 65%); }
+  .grid { position: absolute; inset: 0; opacity: .35;
+    background-image: linear-gradient(rgba(180,198,216,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(180,198,216,.18) 1px, transparent 1px);
+    background-size: 64px 64px; -webkit-mask-image: radial-gradient(70% 70% at 60% 40%, #000, transparent); }
+  .phone { position: absolute; border-radius: 9%/4%; overflow: hidden; background: #0b1020; transform: rotate(var(--rot, 6deg));
+    box-shadow: 0 0 0 12px #0f172a, 0 0 0 14px #334155, 0 40px 120px rgba(0,0,0,.7), 0 0 120px rgba(47,140,255,.45); }
+  .phone img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .text { position: absolute; display: flex; flex-direction: column; gap: 22px; }
+  .kicker { font: 700 30px/1 Inter, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  .head { font: 900 104px/0.98 Outfit, sans-serif; letter-spacing: -0.035em; text-shadow: 0 8px 40px rgba(0,0,0,.5); }
+  .head em { font-style: normal; color: var(--accent); }
+  .head .pink { color: var(--pink); }
+  .bubble { align-self: flex-start; padding: 18px 26px; border-radius: 26px; border-bottom-left-radius: 8px; font: 600 34px/1.25 Inter, sans-serif;
+    background: linear-gradient(135deg, #2f8cff, #1f6fe0); box-shadow: 0 18px 50px rgba(47,140,255,.4); max-width: 100%; }
+  .badge { align-self: flex-start; display: inline-flex; align-items: center; gap: 12px; padding: 14px 22px; border-radius: 999px;
+    font: 700 28px/1 Inter, sans-serif; background: rgba(15,23,42,.85); border: 1px solid rgba(90,200,250,.45); }
+  .badge i { width: 14px; height: 14px; border-radius: 50%; background: #34d399; box-shadow: 0 0 14px #34d399; }
+  .brand { position: absolute; display: flex; align-items: center; gap: 16px; font: 800 40px/1 Outfit, sans-serif; }
+  .brand img { width: 64px; height: 64px; border-radius: 16px; }
+
+  body.wide .phone { width: 330px; height: 733px; right: 90px; top: 50%; margin-top: -366px; --rot: 7deg; }
+  body.wide .text { left: 70px; top: 70px; width: 760px; }
+  body.wide .brand { left: 70px; bottom: 56px; }
+  body.wide.li .head { font-size: 92px; } body.wide.li .phone { width: 300px; height: 667px; margin-top: -333px; }
+  body.tall .phone { width: 600px; height: 1333px; left: 50%; margin-left: -300px; top: 650px; --rot: 5deg; }
+  body.tall .text { left: 80px; top: 150px; width: 920px; }
+  body.tall .head { font-size: 132px; }
+  body.tall .brand { left: 80px; bottom: 90px; z-index: 2; padding: 14px 22px 14px 14px; border-radius: 22px; background: rgba(2,6,23,.75); }
+  body.square .phone { width: 380px; height: 844px; right: 60px; top: 150px; --rot: 6deg; }
+  body.square .text { left: 60px; top: 80px; width: 600px; }
+  body.square .head { font-size: 96px; }
+  body.square .bubble { font-size: 28px; }
+  body.square .brand { left: 60px; bottom: 60px; font-size: 36px; }
+</style>
+</head>
+<body>
+<div class="grid"></div>
+<div class="phone"><img alt="" /></div>
+<div class="text"><div class="kicker"></div><div class="head"></div><div class="bubble"></div><div class="badge"><i></i><span></span></div></div>
+<div class="brand"><img src="logo.png" alt="" />OfflineMate</div>
+<script>
+const P = new URLSearchParams(location.search);
+document.body.classList.add(P.get('layout') || 'wide');
+if (P.get('li')) document.body.classList.add('li');
+const q = s => document.querySelector(s);
+q('.phone img').src = P.get('shot');
+q('.kicker').textContent = P.get('kicker') || '';
+q('.head').innerHTML = P.get('head') || '';
+P.get('bubble') ? q('.bubble').textContent = `“${P.get('bubble')}”` : q('.bubble').remove();
+P.get('badge') ? q('.badge span').textContent = P.get('badge') : q('.badge').remove();
+if (!P.get('kicker')) q('.kicker').remove();
+window.READY = document.fonts.ready.then(() => Promise.all([...document.images].map(i => i.complete ? 1 : new Promise(r => i.onload = r))));
+</script>
+</body>
+</html>

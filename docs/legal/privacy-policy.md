@@ -37,6 +37,7 @@ When the device is online, parts of the app may contact:
 
 - **Model and asset hosts** (for example, CDNs or repositories used to download quantized models, tokenizers, or speech-related assets). Those servers may receive **standard technical metadata** typical of HTTPS requests (such as IP address, user agent, and timing). The exact endpoints depend on the build and configuration in source (see `src/ai/model-manager.ts`, `src/ai/model-registry.ts`, and related code).
 - **Web search providers** when a web search tool is used (for example, DuckDuckGo-related endpoints in `src/tools/providers/duckduckgo-provider.ts`). **Search queries** you trigger can be sent to that provider under **their** policies.
+- **Open-Meteo** (`geocoding-api.open-meteo.com`, `api.open-meteo.com`) when you ask about the weather (`src/tools/weather.ts`). Only the **place name** you ask about is sent to find it, then its coordinates to get the forecast; your device location is not used. Weather and web search share one switch in Settings, so turning it off sends neither.
 
 We do not control third-party services. Review their privacy policies if you need detail beyond what this document states.
 

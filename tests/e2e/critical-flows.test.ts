@@ -8,6 +8,7 @@ vi.mock("@/tools/tool-registry", () => ({
   getToolByName: (name: string) => (name === "notes.search" ? { name } : undefined),
   listToolDescriptors: () => [{ name: "notes.search", description: "Search notes", params: {} }],
   selectToolFromInput: () => ({ name: "notes.search" }),
+  dropRepeatedWriteSteps: (steps: unknown[]) => steps,
 }));
 
 vi.mock("@/context/long-term-memory", () => ({

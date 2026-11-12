@@ -1,5 +1,6 @@
 import { getDb } from "@/db/database";
 import { indexNoteForRetrieval } from "@/context/context-indexer";
+import { searchNotesByKeywords } from "@/context/keyword-notes";
 import type { Tool } from "@/tools/tool-registry";
 
 /** Planner often passes only `text` / `query` (full user line); strip common note-taking prefixes for body. */
@@ -71,14 +72,10 @@ export const searchNotesTool: Tool = {
     if (!raw) {
       return { ok: true, message: "Found 0 notes.", payload: { rows: [] } };
     }
-    const db = getDb();
-    const rows = db.getAllSync<{ id: string; title: string }>(
-      `SELECT id, title FROM notes
-       WHERE instr(lower(title), lower(?)) > 0 OR instr(lower(content), lower(?)) > 0
-       LIMIT 5`,
-      [raw, raw],
-    );
-    return { ok: true, message: `Found ${rows.length} notes.`, payload: { rows } };
+    // Keywords, not the whole line: "find my note about the dentist" looked for that exact sentence.
+    const { notes } = searchNotesByKeywords(raw);
+    const rows = notes.map(({ id, title }) => ({ id, title }));
+    return { ok: true, message: `Found ${rows.length} ${rows.length === 1 ? "note" : "notes"}.`, payload: { rows } };
   },
 };
 

@@ -5,6 +5,7 @@ import { searchContactsTool } from "@/tools/contacts-tool";
 import { createNoteTool, searchNotesTool } from "@/tools/notes-tool";
 import { setReminderTool } from "@/tools/reminders-tool";
 import { webSearchTool } from "@/tools/search-tool";
+import { weatherTool } from "@/tools/weather-tool";
 import type { ToolResult } from "@/types/assistant";
 
 export interface ToolParamSpec {
@@ -20,6 +21,8 @@ export interface Tool {
   description: string;
   keywords: string[];
   params?: ToolParamSpec;
+  /** Phrasings keywords can't list ("Add dentist appointment tomorrow"): a match outscores any keyword. */
+  matches?: (normalizedLower: string) => boolean;
   execute: (params: Record<string, string>) => Promise<ToolResult>;
 }
 
@@ -28,6 +31,7 @@ export const TOOL_REGISTRY: Tool[] = [
   createCalendarTool,
   setAlarmTool,
   webSearchTool,
+  weatherTool,
   searchContactsTool,
   createNoteTool,
   searchNotesTool,
@@ -41,7 +45,7 @@ export function scoreToolMatch(input: string, tool: Tool): number {
     .replace(/[\u2018\u2019\u02BC]/g, "'")
     .replace(/\btodays\b/g, "today's")
     .toLowerCase();
-  let best = 0;
+  let best = tool.matches?.(normalized) ? 40 : 0;
   for (const keyword of tool.keywords) {
     if (!keyword || keyword.length === 0) continue;
     const k = keyword.toLowerCase();
@@ -83,7 +87,25 @@ export function selectToolFromInput(input: string): Tool | undefined {
  * The LLM planner sometimes picks the wrong tool (e.g. reminders.set for "add a note …").
  * When keyword scoring clearly prefers another tool, use it for the first step instead.
  */
-export function reconcilePlannerStepsWithKeywordMatch(prompt: string, steps: PlannerStepLike[]): PlannerStepLike[] {
+/** Tools that change something. Each reads the whole message, so a second step only makes a duplicate. */
+const WRITE_TOOLS = new Set(["calendar.createEvent", "notes.create", "alarms.set", "reminders.set"]);
+
+/**
+ * Keep the first step for each write tool. Gemma 4 E2B planned "Book a meeting with the bank on Friday at 10am" as
+ * two calendar.createEvent steps, which added the event twice.
+ */
+export function dropRepeatedWriteSteps(steps: PlannerStepLike[]): PlannerStepLike[] {
+  const seen = new Set<string>();
+  return steps.filter((step) => {
+    if (!step.toolName || !WRITE_TOOLS.has(step.toolName)) return true;
+    if (seen.has(step.toolName)) return false;
+    seen.add(step.toolName);
+    return true;
+  });
+}
+
+export function reconcilePlannerStepsWithKeywordMatch(prompt: string, plannedSteps: PlannerStepLike[]): PlannerStepLike[] {
+  const steps = dropRepeatedWriteSteps(plannedSteps);
   const selected = selectToolFromInput(prompt);
   if (!selected || steps.length === 0) return steps;
   const first = steps[0];

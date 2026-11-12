@@ -83,4 +83,14 @@ describe("routeIntent", () => {
     expect(routeIntent("Play this musical note on the piano")).toBe("direct");
     expect(routeIntent("I need to add notebook pages")).toBe("direct");
   });
+
+  it("routes contact number questions to tool, not number prose", () => {
+    expect(routeIntent("What is Ali's number?")).toBe("tool");
+    expect(routeIntent("What’s Ali’s number")).toBe("tool");
+    expect(routeIntent("Give me Sara's mobile number")).toBe("tool");
+    expect(routeIntent("contact number of Ali")).toBe("tool");
+    expect(routeIntent("What is the number of planets in the solar system?")).toBe("direct");
+    expect(routeIntent("Pick a number between 1 and 10")).toBe("direct");
+    expect(routeIntent("What's pi's value to 5 digits")).toBe("direct");
+  });
 });

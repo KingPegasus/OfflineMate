@@ -1,0 +1,66 @@
+{
+  "id": "calendar",
+  "style": "calm",
+  "duration": 14.7,
+  "screen": "raw/uc/calendar-screen.mp4",
+  "screenStart": 0,
+  "phone": {
+    "in": 0
+  },
+  "scenes": [
+    {
+      "num": null,
+      "kicker": "Calendar",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "What's on <em>tomorrow?</em>",
+      "promptAt": 2.9,
+      "prompt": "What's on my calendar tomorrow?",
+      "cps": 24.2,
+      "answerAt": 7.48,
+      "answer": "1 event tomorrow:\n- Dentist appointment, 3:00 PM – 4:00 PM",
+      "t": [
+        0.0,
+        11.3
+      ]
+    }
+  ],
+  "end": 11.3,
+  "vo": [
+    {
+      "at": 0.25,
+      "text": "What does tomorrow look like? Just ask."
+    },
+    {
+      "at": 7.73,
+      "text": "It reads your calendar privately, even in airplane mode."
+    },
+    {
+      "at": 11.75,
+      "text": "Get OfflineMate free on Google Play."
+    }
+  ],
+  "clips": [
+    {
+      "src": "raw/uc/calendar.mp4",
+      "from": 2.8,
+      "to": 6.03,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/calendar.mp4",
+      "from": 8.3,
+      "to": 10.0
+    },
+    {
+      "src": "raw/uc/calendar.mp4",
+      "from": 10.0,
+      "to": 13.8,
+      "holdEnd": 0.17
+    }
+  ],
+  "music": {
+    "style": "calm",
+    "bpm": 100
+  }
+}

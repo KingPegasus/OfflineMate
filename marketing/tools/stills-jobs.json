@@ -150,6 +150,16 @@
     }
   },
   {
+    "out": "../out/web/frame-tools-chat.png",
+    "w": 640,
+    "h": 1320,
+    "transparent": true,
+    "params": {
+      "layout": "device",
+      "shot": "tools-chat"
+    }
+  },
+  {
     "out": "../out/web/frame-tablet-chat.png",
     "w": 1600,
     "h": 1100,

@@ -233,14 +233,14 @@ export default function SettingsScreen() {
           Speak responses (TTS): {voiceEnabled ? "On" : "Off"}
         </Text>
         <Text style={styles.link} onPress={() => setWebSearchEnabled(!webSearchEnabled)}>
-          Web search fallback: {webSearchEnabled ? "On" : "Off"}
+          Web search and weather: {webSearchEnabled ? "On" : "Off"}
         </Text>
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Privacy and network boundaries</Text>
           <Text style={styles.sectionBody}>
             Core chat, retrieval, and tools run on device after models are downloaded. Network use is mainly for model
-            downloads and optional web search.
+            downloads, and for optional web search and weather (only the place name is sent to Open-Meteo).
           </Text>
           <Text style={styles.sectionBody}>
             Text-to-speech uses device OS voices and may use vendor online services.

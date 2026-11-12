@@ -1,0 +1,65 @@
+{
+  "id": "note-recall",
+  "style": "calm",
+  "duration": 15.0,
+  "screen": "raw/uc/note-recall-screen.mp4",
+  "screenStart": 0,
+  "phone": {
+    "in": 0
+  },
+  "scenes": [
+    {
+      "num": null,
+      "kicker": "Find a note",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "What did I <em>save?</em>",
+      "promptAt": 2.9,
+      "prompt": "What did I save about the dentist?",
+      "cps": 20.7,
+      "answerAt": 7.85,
+      "answer": "You saved that a dentist appointment is on Friday at 3pm.",
+      "t": [
+        0.0,
+        11.6
+      ]
+    }
+  ],
+  "end": 11.6,
+  "vo": [
+    {
+      "at": 0.25,
+      "text": "Can't remember the details? Ask your notes."
+    },
+    {
+      "at": 8.1,
+      "text": "It finds the right note in seconds, on your device."
+    },
+    {
+      "at": 12.05,
+      "text": "Get OfflineMate free on Google Play."
+    }
+  ],
+  "clips": [
+    {
+      "src": "raw/uc/note-recall.mp4",
+      "from": 2.8,
+      "to": 6.4,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/note-recall.mp4",
+      "from": 6.4,
+      "to": 8.1
+    },
+    {
+      "src": "raw/uc/note-recall.mp4",
+      "from": 8.1,
+      "to": 12.0
+    }
+  ],
+  "music": {
+    "style": "calm",
+    "bpm": 100
+  }
+}

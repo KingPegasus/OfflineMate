@@ -1,0 +1,12 @@
+1
+00:00:00,250 --> 00:00:02,319
+Curious about A.I.? Ask anything.
+
+2
+00:00:07,870 --> 00:00:11,539
+The answer is written by a model running on your phone. No cloud.
+
+3
+00:00:14,640 --> 00:00:16,667
+Get OfflineMate free on Google Play.
+

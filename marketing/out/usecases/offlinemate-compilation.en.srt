@@ -1,0 +1,60 @@
+1
+00:00:00,350 --> 00:00:05,747
+Here are real things you can ask OfflineMate, the A.I. assistant that runs on your phone.
+
+2
+00:00:06,250 --> 00:00:08,575
+Need to be up early tomorrow? Just ask.
+
+3
+00:00:13,830 --> 00:00:18,033
+OfflineMate sets a real alarm in your Clock app. No internet needed.
+
+4
+00:00:20,280 --> 00:00:22,755
+Something you can't forget? Tell OfflineMate.
+
+5
+00:00:28,560 --> 00:00:30,992
+It's saved in Notes, and it stays on your phone.
+
+6
+00:00:33,610 --> 00:00:35,871
+Can't remember the details? Ask your notes.
+
+7
+00:00:41,460 --> 00:00:44,255
+It finds the right note in seconds, on your device.
+
+8
+00:00:45,410 --> 00:00:47,565
+What does tomorrow look like? Just ask.
+
+9
+00:00:52,890 --> 00:00:55,962
+It reads your calendar privately, even in airplane mode.
+
+10
+00:00:56,910 --> 00:00:58,105
+Need a number, fast?
+
+11
+00:01:03,900 --> 00:01:07,164
+It looks up your contacts on the phone. Nothing is uploaded.
+
+12
+00:01:08,120 --> 00:01:10,189
+Curious about A.I.? Ask anything.
+
+13
+00:01:15,740 --> 00:01:19,409
+The answer is written by a model running on your phone. No cloud.
+
+14
+00:01:22,560 --> 00:01:25,397
+Everything you just saw was recorded in airplane mode.
+
+15
+00:01:26,390 --> 00:01:31,105
+OfflineMate. Private A.I. that works offline. Get it free on Google Play.
+
