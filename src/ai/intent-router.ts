@@ -148,12 +148,20 @@ export function wantsPhoneCallIntent(normalizedLower: string): boolean {
   return /\bcall\s+[a-z0-9]/.test(normalizedLower);
 }
 
+/** "find my note about milk", "search my notes for the wifi password", "show me the note about rent". */
+export function wantsNoteSearchIntent(normalizedLower: string): boolean {
+  return /\b(find|search|show|open|get|look\s+for)\s+(me\s+)?(my|the)\s+notes?\b/.test(normalizedLower);
+}
+
 /**
  * Contact number questions: "what's Ali's number", "phone number of Sara", "Ali's mobile number".
  * Bare "number" is everywhere ("the number of planets"), so it must follow a possessive or "phone"/"mobile".
  */
 export function wantsContactLookupIntent(normalizedLower: string): boolean {
   if (/\b(phone|mobile|cell|contact)\s+(number|no)\b/.test(normalizedLower)) return true;
+  // "find Sara in my contacts", "search my contacts for Ali". Not a bare "my contacts" ("I lost my contacts").
+  if (/\b(in|from)\s+(my\s+)?(phone\s+)?contacts?\b/.test(normalizedLower)) return true;
+  if (/\b(search|check|look\s+through)\s+(my\s+)?contacts\b/.test(normalizedLower)) return true;
   return /[a-z]'s\s+(phone\s+|mobile\s+|cell\s+)?(number|no|contact)\b/.test(normalizedLower);
 }
 
@@ -235,6 +243,7 @@ export function routeIntent(input: string): IntentType {
   if (TOOL_KEYWORDS.some((k) => hasKeywordMatch(normalized, k))) return "tool";
   if (wantsPhoneCallIntent(normalized)) return "tool";
   if (wantsContactLookupIntent(normalized)) return "tool";
+  if (wantsNoteSearchIntent(normalized)) return "tool";
   if (wantsReminderRelativeTimeIntent(normalized)) return "tool";
   if (wantsCalendarAddIntent(normalized)) return "tool";
   if (wantsWeatherIntent(normalized)) return "tool";

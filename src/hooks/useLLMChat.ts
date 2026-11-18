@@ -7,8 +7,9 @@ import {
   getFallbackTier,
   getTierSpec,
   resolveModelForTier,
+  visionUnsupportedMessage,
 } from "@/ai/model-registry";
-import { routeIntent } from "@/ai/intent-router";
+import { routeIntent, type IntentType } from "@/ai/intent-router";
 import { buildLocalDateTimeAnswer } from "@/utils/local-datetime";
 import { retrieveContextForQuery } from "@/ai/rag-pipeline";
 import { buildKeywordNotesReply, searchNotesByKeywords } from "@/context/keyword-notes";
@@ -38,6 +39,7 @@ import { parseToolActionDecision } from "@/ai/tool-action-schema";
 import { isEnabled } from "@/config/feature-flags";
 import { approximateTokenCount } from "@/utils/tokenizer";
 import { stripTokPerSecLines } from "@/utils/tok-per-sec";
+import { createRateTracker } from "@/utils/download-format";
 import type { ChatMessage, ModelTier, ToolResult } from "@/types/assistant";
 
 /** Cold load from storage + runtime init can take several minutes on mid-range phones; partial downloads also stall until complete. */
@@ -50,11 +52,15 @@ const LLM_INIT_POLL_MS = 30_000;
 let llmIdleCheckpointMs = Date.now();
 let lastLlmDownloadProgressAt = 0;
 let llmInitDownloadFileLabel = "";
+let llmInitDownloadTotalBytes = 0;
+const llmInitDownloadRate = createRateTracker();
 let llmInitDownloadModelName = "";
 
 function setLlmInitDownloadContext(tier: ModelTier, modelId?: string | null) {
   llmInitDownloadModelName = getActiveModelDisplayName(tier, modelId);
   llmInitDownloadFileLabel = getActiveModelFileLabel(tier, modelId);
+  llmInitDownloadTotalBytes = resolveModelForTier(tier, modelId).estimatedSizeMb * 1024 * 1024;
+  llmInitDownloadRate.reset();
 }
 
 function isLlmAssetDownloading(): boolean {
@@ -70,6 +76,8 @@ function reportLlmInitDownloadProgress(progress: number) {
       progress: p,
       modelName: llmInitDownloadModelName || undefined,
       fileLabel: llmInitDownloadFileLabel || undefined,
+      totalBytes: llmInitDownloadTotalBytes || undefined,
+      bytesPerSecond: llmInitDownloadRate.update(p * llmInitDownloadTotalBytes, Date.now()),
     });
   } else {
     useModelStore.getState().setLlmInitDownload(null);
@@ -199,6 +207,12 @@ function buildGemmaFallbackMessages(messages: ChatMessage[]): ChatMessage[] {
   ];
 }
 
+/**
+ * Below this, the span after the first token batch is too short to time (two batches can arrive a
+ * few ms apart), so the speed falls back to the whole call, prompt reading included.
+ */
+const MIN_GENERATION_WINDOW_MS = 300;
+
 function estimateTokensPerSecond(text: string, elapsedMs: number): number | null {
   if (!text.trim() || elapsedMs <= 0) return null;
   const tokenCount = approximateTokenCount(text);
@@ -212,6 +226,13 @@ function createAssistantMessage(content: string, tokensPerSecond: number | null)
 }
 
 /** Model load/download failure the user fixes from the tier's model picker in Settings. */
+export type SendMessageOptions = {
+  /** Gallery image (app-private `file://` copy) sent with the prompt to a vision model. */
+  imageUri?: string;
+};
+
+export const DEFAULT_IMAGE_PROMPT = "Describe this image.";
+
 export class ModelSetupError extends Error {
   constructor(
     readonly tier: ModelTier,
@@ -356,15 +377,19 @@ export function useLLMChat() {
   }, []);
 
   const sendMessage = useCallback(
-    async (content: string) => {
-      const cleaned = content.trim();
+    async (content: string, options?: SendMessageOptions) => {
+      const imageUri = options?.imageUri;
+      // An image on its own still needs a question; ask for a description by default.
+      const cleaned = content.trim() || (imageUri ? DEFAULT_IMAGE_PROMPT : "");
       if (!cleaned) return;
       if (isLoading) {
         setError("The model is currently generating. Please wait for the current response to finish.");
         return;
       }
       const requestConversationId = activeConversationId ?? createConversation(cleaned);
-      const userMessage = createMessage("user", cleaned);
+      const userMessage: ChatMessage = imageUri
+        ? { ...createMessage("user", cleaned), imageUri }
+        : createMessage("user", cleaned);
       pushMessage(userMessage, requestConversationId);
       if (cleaned.toLowerCase().startsWith("remember ")) {
         saveImportantMemory(cleaned.replace(/^remember\s+/i, ""));
@@ -393,6 +418,11 @@ export function useLLMChat() {
         let activeTier = tier;
         const activeModelId = tierModelIds[activeTier] ?? null;
         let initError: Error | null = null;
+        if (imageUri) {
+          // Check before loading so a text-only model is not loaded just to reject the image.
+          const visionError = visionUnsupportedMessage(activeTier, activeModelId);
+          if (visionError) throw new ModelSetupError(activeTier, visionError);
+        }
         const llmInitOpts = {
           modelId: activeModelId,
           onDownloadProgress: reportLlmInitDownloadProgress,
@@ -476,7 +506,13 @@ export function useLLMChat() {
           activeTier = "standard";
           setTier("standard");
         }
-        const intent = routeIntent(cleaned);
+        if (imageUri) {
+          // A failed load may have fallen back to a smaller tier whose model has no vision.
+          const visionError = visionUnsupportedMessage(activeTier, tierModelIds[activeTier] ?? null);
+          if (visionError) throw new ModelSetupError(activeTier, visionError);
+        }
+        // Image questions go straight to the vision model: no tools, notes search or web search.
+        const intent: IntentType = imageUri ? "direct" : routeIntent(cleaned);
         console.log("[OfflineMate] User:", JSON.stringify(cleaned));
         console.log("[OfflineMate] Intent:", intent, "prompt length:", cleaned.length);
         let contextSnippets: string[] = [];
@@ -540,7 +576,7 @@ export function useLLMChat() {
           );
         } else if (
           intent === "tool" ||
-          (activeTier === "full" && /\b(and|then|after)\b/i.test(cleaned))
+          (!imageUri && activeTier === "full" && /\b(and|then|after)\b/i.test(cleaned))
         ) {
           let handledByAgenticSearch = false;
           const selectedTool = selectToolFromInput(cleaned);
@@ -789,12 +825,21 @@ export function useLLMChat() {
         let output: string;
         let parsedOutput: { response: string; thinking: string; hasThinkTag: boolean; isClosed: boolean };
         let llmElapsedMsTotal = 0;
+        let llmGeneratedAfterFirstBatch = "";
         try {
           const runGenerate = async (messagesForGenerate: ChatMessage[]) => {
             let rawStreamedSoFar = "";
             const startedAt = Date.now();
+            // Speed is measured from the first token batch, so reading the prompt (and an attached
+            // image, which takes most of the time on a vision model) doesn't count as generation.
+            let firstBatchAt = 0;
+            let firstBatchLength = 0;
             const result = await withTimeout(
               llmEngine.generate(messagesForGenerate, (token) => {
+                if (firstBatchAt === 0) {
+                  firstBatchAt = Date.now();
+                  firstBatchLength = token.length;
+                }
                 rawStreamedSoFar += token;
                 const parsed = parseThinkTaggedContent(rawStreamedSoFar);
                 setStreamingHasThinkTag(parsed.hasThinkTag);
@@ -809,7 +854,14 @@ export function useLLMChat() {
               "The model is taking too long to respond. Try Lite tier or ensure model assets are downloaded.",
               () => llmEngine.interrupt(),
             );
-            llmElapsedMsTotal += Date.now() - startedAt;
+            const endedAt = Date.now();
+            if (firstBatchAt > 0 && endedAt - firstBatchAt >= MIN_GENERATION_WINDOW_MS) {
+              llmElapsedMsTotal += endedAt - firstBatchAt;
+              llmGeneratedAfterFirstBatch += result.slice(firstBatchLength);
+            } else {
+              llmElapsedMsTotal += endedAt - startedAt;
+              llmGeneratedAfterFirstBatch += result;
+            }
             return result;
           };
 
@@ -912,7 +964,7 @@ export function useLLMChat() {
             "I could not generate a reply from this model just now. Please try again, or switch to Qwen 3 1.7B in Settings.";
           console.warn("[OfflineMate] Empty direct/context output; using deterministic fallback copy");
         }
-        const tokensPerSecond = estimateTokensPerSecond(output, llmElapsedMsTotal);
+        const tokensPerSecond = estimateTokensPerSecond(llmGeneratedAfterFirstBatch, llmElapsedMsTotal);
         // Drop any speed line the model copied from older history; the real speed is stored on the message.
         const replyText = stripTokPerSecLines(finalOutput);
         setStreamingHasThinkTag(parsedOutput.hasThinkTag);

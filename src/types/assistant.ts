@@ -7,6 +7,8 @@ export interface ChatMessage {
   content: string;
   createdAt: number;
   thinking?: string[];
+  /** `file://` URI of a gallery image copied into app storage (user messages only). */
+  imageUri?: string;
   /** Generation speed for assistant replies; null when not measured (shown as "n/a"). */
   tokensPerSecond?: number | null;
 }

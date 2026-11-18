@@ -1,6 +1,6 @@
 # OfflineMate Privacy Policy
 
-**Effective date:** November 13, 2026 (app version 0.11.0)  
+**Effective date:** November 17, 2026 (app version 0.12.0)  
 
 **Applies to:** the OfflineMate mobile application for **Android** (package identifier `com.offlinemate.app`), distributed by the project maintainers (“we”, “us”). The source code also builds for iOS, but **no iOS version is distributed yet**; if one is released, this policy covers it in the same way.
 
@@ -25,10 +25,11 @@ Depending on how you use OfflineMate, the app may process:
 - **Voice audio** when you use speech features (processed for speech-to-text on device per the app’s implementation).
 - **Calendar and reminders data** when you grant permission and use scheduling-related features.
 - **Contacts** when you grant permission and use contact-related features.
+- **Photos you pick** to ask a vision model about. You choose one image at a time in your phone's own photo picker; the app sees only that image, not your gallery.
 - **Notes or documents** you choose to index for retrieval (RAG) features, and **derived data** such as embeddings or index entries stored locally.
 - **Files and model weights** downloaded for on-device models (stored in app storage).
 
-This processing is performed **on the device** to provide the assistant. Voice is turned into text on the device; recordings are not sent anywhere. Contacts, calendar entries and notes are read and stored only on the device. **Chat history** is not kept after you close the app unless you turn on “Persist chat history” in Settings (off by default); when on, it is stored only on the device. A message that starts with **“remember”** (for example “remember my locker code is 42”) is saved as a **memory** on the device and used in later answers, whether or not chat history is kept.
+This processing is performed **on the device** to provide the assistant. Voice is turned into text on the device; recordings are not sent anywhere. Contacts, calendar entries and notes are read and stored only on the device. A photo you attach is copied into the app's private storage as a smaller JPEG without its metadata (such as GPS location), read by the model on the device and never uploaded; deleting the chat, or **Clear chats and memories**, deletes the copy. **Chat history** is not kept after you close the app unless you turn on “Persist chat history” in Settings (off by default); when on, it is stored only on the device. A message that starts with **“remember”** (for example “remember my locker code is 42”) is saved as a **memory** on the device and used in later answers, whether or not chat history is kept.
 
 **Uninstalling the app** removes app-specific data subject to your operating system’s rules (some residual data may remain until the OS reclaims storage).
 
@@ -60,6 +61,8 @@ The app requests OS permissions only for stated features (see `app.json` and in-
 - **Calendar / reminders** — scheduling assistance.
 - **Contacts** — contact lookup when you use related commands.
 - **Notifications** — local reminders and alerts.
+
+Attaching a photo uses the system photo picker (Android Photo Picker, iOS photo picker), which needs no photo, media or storage permission; on Android the app declares none. The app does not use the camera.
 
 You can refuse permissions; features that depend on them may not work.
 

@@ -1,6 +1,6 @@
 [
   {
-    "out": "../out/store/phone/01-offline-chat.png",
+    "out": "../out/store/phone/phone-01-offline-chat.png",
     "w": 1080,
     "h": 1920,
     "params": {
@@ -12,19 +12,19 @@
     }
   },
   {
-    "out": "../out/store/phone/02-private-notes.png",
+    "out": "../out/store/phone/phone-02-ask-about-a-photo.png",
     "w": 1080,
     "h": 1920,
     "params": {
       "layout": "store",
-      "shot": "notes",
-      "kicker": "Private",
-      "head": "Notes stay <em>on your device</em>",
-      "sub": "No cloud sync and no account."
+      "shot": "photo-chat",
+      "kicker": "New: photos",
+      "head": "Ask about <em>any photo</em>, offline",
+      "sub": "Read menus, signs and charts on your phone."
     }
   },
   {
-    "out": "../out/store/phone/03-built-in-tools.png",
+    "out": "../out/store/phone/phone-03-built-in-tools.png",
     "w": 1080,
     "h": 1920,
     "params": {
@@ -36,7 +36,19 @@
     }
   },
   {
-    "out": "../out/store/phone/04-pick-a-tier.png",
+    "out": "../out/store/phone/phone-04-private-notes.png",
+    "w": 1080,
+    "h": 1920,
+    "params": {
+      "layout": "store",
+      "shot": "notes",
+      "kicker": "Private",
+      "head": "Notes stay <em>on your device</em>",
+      "sub": "No cloud sync and no account."
+    }
+  },
+  {
+    "out": "../out/store/phone/phone-05-pick-a-tier.png",
     "w": 1080,
     "h": 1920,
     "params": {
@@ -48,7 +60,7 @@
     }
   },
   {
-    "out": "../out/store/phone/05-choose-a-model.png",
+    "out": "../out/store/phone/phone-06-choose-a-model.png",
     "w": 1080,
     "h": 1920,
     "params": {
@@ -56,11 +68,11 @@
       "shot": "picker-lite",
       "kicker": "Open models",
       "head": "Choose your <em>model</em>",
-      "sub": "SmolLM2, LFM, Gemma, Qwen, Llama and more."
+      "sub": "Image icon = reads photos. Gemma, Qwen, LFM and more."
     }
   },
   {
-    "out": "../out/store/phone/06-privacy.png",
+    "out": "../out/store/phone/phone-07-privacy.png",
     "w": 1080,
     "h": 1920,
     "params": {
@@ -160,6 +172,16 @@
     }
   },
   {
+    "out": "../out/web/frame-photo-chat.png",
+    "w": 640,
+    "h": 1320,
+    "transparent": true,
+    "params": {
+      "layout": "device",
+      "shot": "photo-chat"
+    }
+  },
+  {
     "out": "../out/web/frame-tablet-chat.png",
     "w": 1600,
     "h": 1100,
@@ -204,7 +226,18 @@
     }
   },
   {
-    "out": "../out/store/tablet7/01-offline-chat.png",
+    "out": "../out/web/frame-tablet-photo-chat.png",
+    "w": 1600,
+    "h": 1100,
+    "transparent": true,
+    "params": {
+      "layout": "tablet-device",
+      "shot": "tablet-photo-chat",
+      "ar": "1.6"
+    }
+  },
+  {
+    "out": "../out/store/tablet7/tab7-01-offline-chat.png",
     "w": 1920,
     "h": 1200,
     "params": {
@@ -217,7 +250,20 @@
     }
   },
   {
-    "out": "../out/store/tablet7/02-private-notes.png",
+    "out": "../out/store/tablet7/tab7-02-ask-about-a-photo.png",
+    "w": 1920,
+    "h": 1200,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet7-photo-chat",
+      "ar": "1.6",
+      "kicker": "New: photos",
+      "head": "Ask about <em>any photo</em>, offline",
+      "sub": "Read menus, signs and charts on the device."
+    }
+  },
+  {
+    "out": "../out/store/tablet7/tab7-03-private-notes.png",
     "w": 1920,
     "h": 1200,
     "params": {
@@ -230,7 +276,7 @@
     }
   },
   {
-    "out": "../out/store/tablet7/03-pick-a-tier.png",
+    "out": "../out/store/tablet7/tab7-04-pick-a-tier.png",
     "w": 1920,
     "h": 1200,
     "params": {
@@ -243,7 +289,7 @@
     }
   },
   {
-    "out": "../out/store/tablet7/04-choose-a-model.png",
+    "out": "../out/store/tablet7/tab7-05-choose-a-model.png",
     "w": 1920,
     "h": 1200,
     "params": {
@@ -252,11 +298,11 @@
       "ar": "1.6",
       "kicker": "Open models",
       "head": "Choose your <em>model</em>",
-      "sub": "SmolLM2, LFM, Gemma, Qwen, Llama and more."
+      "sub": "Image icon = reads photos. Gemma, Qwen, LFM and more."
     }
   },
   {
-    "out": "../out/store/tablet7/05-privacy.png",
+    "out": "../out/store/tablet7/tab7-06-privacy.png",
     "w": 1920,
     "h": 1200,
     "params": {
@@ -269,7 +315,7 @@
     }
   },
   {
-    "out": "../out/store/tablet10/01-offline-chat.png",
+    "out": "../out/store/tablet10/tab10-01-offline-chat.png",
     "w": 2560,
     "h": 1600,
     "params": {
@@ -282,7 +328,20 @@
     }
   },
   {
-    "out": "../out/store/tablet10/02-private-notes.png",
+    "out": "../out/store/tablet10/tab10-02-ask-about-a-photo.png",
+    "w": 2560,
+    "h": 1600,
+    "params": {
+      "layout": "tablet",
+      "shot": "tablet-photo-chat",
+      "ar": "1.6",
+      "kicker": "New: photos",
+      "head": "Ask about <em>any photo</em>, offline",
+      "sub": "Read menus, signs and charts on the device."
+    }
+  },
+  {
+    "out": "../out/store/tablet10/tab10-03-private-notes.png",
     "w": 2560,
     "h": 1600,
     "params": {
@@ -295,7 +354,7 @@
     }
   },
   {
-    "out": "../out/store/tablet10/03-pick-a-tier.png",
+    "out": "../out/store/tablet10/tab10-04-pick-a-tier.png",
     "w": 2560,
     "h": 1600,
     "params": {
@@ -308,7 +367,7 @@
     }
   },
   {
-    "out": "../out/store/tablet10/04-choose-a-model.png",
+    "out": "../out/store/tablet10/tab10-05-choose-a-model.png",
     "w": 2560,
     "h": 1600,
     "params": {
@@ -317,11 +376,11 @@
       "ar": "1.6",
       "kicker": "Open models",
       "head": "Choose your <em>model</em>",
-      "sub": "SmolLM2, LFM, Gemma, Qwen, Llama and more."
+      "sub": "Image icon = reads photos. Gemma, Qwen, LFM and more."
     }
   },
   {
-    "out": "../out/store/tablet10/05-privacy.png",
+    "out": "../out/store/tablet10/tab10-06-privacy.png",
     "w": 2560,
     "h": 1600,
     "params": {

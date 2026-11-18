@@ -1,7 +1,12 @@
 import { beforeEach, vi } from "vitest";
 import {
+  cancelActiveDownloads,
   cleanupStalePartFiles,
+  DownloadCancelledError,
+  downloadTierChatModel,
   downloadTierVoiceModel,
+  getMissingDownloadBytes,
+  hasEnoughSpace,
   getTierChatAssets,
   removeTruncatedChatModel,
 } from "@/ai/model-manager";
@@ -92,8 +97,99 @@ describe("model asset download", () => {
     await new Promise((r) => setTimeout(r, 0));
     release();
     await Promise.all([a, b]);
-    expect(first).toHaveBeenCalledWith(0.5, "whisper-model");
-    expect(second).toHaveBeenCalledWith(0.5, "whisper-model");
+    expect(first).toHaveBeenCalledWith(0.5, "Voice model", {
+      bytesWritten: 50,
+      bytesTotal: 100,
+    });
+    expect(second).toHaveBeenCalledWith(0.5, "Voice model", {
+      bytesWritten: 50,
+      bytesTotal: 100,
+    });
+  });
+
+  it("weights progress by bytes, not by file count", async () => {
+    // MiniCPM5: 1292 MB model, ~5 MB tokenizer, tiny config. Half the model is ~50%, not 17% (1 of 3 files / 2).
+    const MB = 1024 * 1024;
+    const sizes: Record<string, number> = {
+      pte: 1292 * MB,
+      json: 5 * MB,
+      config: 3000,
+    };
+    const events: [number, string | undefined][] = [];
+    fs.createDownloadResumable.mockImplementation(
+      (url: string, uri: string, _opts: unknown, onEvent: (e: object) => void) => ({
+        downloadAsync: vi.fn(async () => {
+          const total = url.endsWith(".pte") ? sizes.pte : url.includes("tokenizer_config") ? sizes.config : sizes.json;
+          onEvent({
+            totalBytesWritten: total / 2,
+            totalBytesExpectedToWrite: total,
+          });
+          onEvent({
+            totalBytesWritten: total,
+            totalBytesExpectedToWrite: total,
+          });
+          return { uri, status: 200 };
+        }),
+      }),
+    );
+    await downloadTierChatModel("standard", "minicpm5-2b", (progress, label) =>
+      events.push([Math.round(progress * 100), label]),
+    );
+    expect(events).toContainEqual([50, "Chat model"]);
+    expect(events.at(-1)?.[0]).toBe(100);
+  });
+
+  it("stops and rejects with DownloadCancelledError when cancelled", async () => {
+    const cancelAsync = vi.fn(async () => undefined);
+    let finish: (v: unknown) => void = () => undefined;
+    fs.createDownloadResumable.mockImplementation(() => ({
+      downloadAsync: vi.fn(() => new Promise((resolve) => (finish = resolve))),
+      cancelAsync,
+    }));
+    const pending = downloadTierVoiceModel("lite");
+    await vi.waitFor(() => expect(fs.createDownloadResumable).toHaveBeenCalled());
+    await cancelActiveDownloads();
+    finish(undefined);
+    await expect(pending).rejects.toBeInstanceOf(DownloadCancelledError);
+    expect(cancelAsync).toHaveBeenCalled();
+    expect(fs.moveAsync).not.toHaveBeenCalled();
+    expect(fs.createDownloadResumable).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("cancelling one screen's download", () => {
+  it("leaves downloads of other files running", async () => {
+    const cancelAsync = vi.fn(async () => undefined);
+    let finish: (v: unknown) => void = () => undefined;
+    fs.createDownloadResumable.mockImplementation((_url: string, uri: string) => ({
+      downloadAsync: vi.fn(() => new Promise((resolve) => (finish = () => resolve({ uri, status: 200 })))),
+      cancelAsync,
+    }));
+    const pending = downloadTierVoiceModel("lite");
+    await vi.waitFor(() => expect(fs.createDownloadResumable).toHaveBeenCalled());
+    await cancelActiveDownloads(["file:///data/app/files/models/some-other-model.pte"]);
+    expect(cancelAsync).not.toHaveBeenCalled();
+    finish(undefined);
+    await expect(pending).resolves.toBeDefined();
+  });
+});
+
+describe("download size before a re-download", () => {
+  it("counts files that will be replaced even though they exist", async () => {
+    const assets = getTierChatAssets("standard", "minicpm5-2b");
+    fs.getInfoAsync.mockImplementation(async () => ({ exists: true }));
+    await expect(getMissingDownloadBytes(assets)).resolves.toBe(0);
+    const all = assets.reduce((n, a) => n + a.estimatedBytes, 0);
+    await expect(getMissingDownloadBytes(assets, assets)).resolves.toBe(all);
+  });
+});
+
+describe("download space check", () => {
+  const MB = 1024 * 1024;
+  it("wants the download plus 10% and 200 MB free", () => {
+    expect(hasEnoughSpace(1000 * MB, 1300 * MB)).toBe(true);
+    expect(hasEnoughSpace(1000 * MB, 1299 * MB)).toBe(false);
+    expect(hasEnoughSpace(1000 * MB, null)).toBe(true);
   });
 });
 

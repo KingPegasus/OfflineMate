@@ -1,3 +1,4 @@
+import { wantsNoteSearchIntent } from "@/ai/intent-router";
 import { getDb } from "@/db/database";
 import { indexNoteForRetrieval } from "@/context/context-indexer";
 import { searchNotesByKeywords } from "@/context/keyword-notes";
@@ -66,6 +67,8 @@ export const searchNotesTool: Tool = {
   name: "notes.search",
   description: "Search notes by title/content text matching",
   keywords: ["find note", "search note"],
+  // "find my note about milk" also contains "note", which would otherwise pick notes.create.
+  matches: wantsNoteSearchIntent,
   params: { required: ["query"], optional: ["text", "search"] },
   execute: async (params) => {
     const raw = String(params.query ?? params.text ?? params.search ?? "").trim();

@@ -1,9 +1,9 @@
 import { resolvePrimaryRuntimeForLoad } from "@/ai/model-manager";
-import { resolveModelForTier } from "@/ai/model-registry";
+import { resolveModelForTier, type ModelSpec } from "@/ai/model-registry";
 import { parseToolActionDecision } from "@/ai/tool-action-schema";
 import type { ChatMessage, ModelTier } from "@/types/assistant";
 import { LLMModule } from "react-native-executorch/legacy";
-import type { Message } from "react-native-executorch/legacy";
+import type { LLMModelName, Message } from "react-native-executorch/legacy";
 
 export type LLMInitializeOptions = {
   /** When set, loads this registry model instead of the tier primary. */
@@ -19,6 +19,8 @@ export type LLMInitializeOptions = {
 type LLMGenerationConfig = {
   temperature?: number;
   topp?: number;
+  minP?: number;
+  repetitionPenalty?: number;
   outputTokenBatchSize?: number;
   batchTimeInterval?: number;
 };
@@ -47,6 +49,36 @@ function getGenerationConfigForTier(tier: ModelTier): LLMGenerationConfig {
     outputTokenBatchSize: 12,
     batchTimeInterval: 25,
   };
+}
+
+/** Tier defaults with the model card's recommended sampling (e.g. LFM2.5-VL) layered on top. */
+function getGenerationConfig(tier: ModelTier, spec: ModelSpec): LLMGenerationConfig {
+  return { ...getGenerationConfigForTier(tier), ...spec.generationOverrides };
+}
+
+/**
+ * How many later questions still get the photo, so "and the cappuccino?" right after a menu photo
+ * works. After that the photo is dropped: re-encoding it costs hundreds of visual tokens and most of
+ * the reply time on every turn, and unrelated questions would drift toward it.
+ */
+export const IMAGE_FOLLOW_UP_TURNS = 1;
+
+/**
+ * The native runner only sees an image when the message carries `mediaPath`. Only the newest image
+ * is sent, and only on its own turn and the next IMAGE_FOLLOW_UP_TURNS questions.
+ */
+export function toRuntimeMessages(messages: ChatMessage[], includeImages: boolean): Message[] {
+  let lastImageIndex = -1;
+  if (includeImages) {
+    const userIndexes = messages.flatMap((m, i) => (m.role === "user" ? [i] : []));
+    const recent = userIndexes.slice(-(IMAGE_FOLLOW_UP_TURNS + 1));
+    for (const i of recent) if (messages[i]!.imageUri) lastImageIndex = i;
+  }
+  return messages.map((m, i) =>
+    i === lastImageIndex
+      ? { role: m.role, content: m.content, mediaPath: m.imageUri }
+      : { role: m.role, content: m.content },
+  );
 }
 
 function shouldInterruptForRepetition(text: string): boolean {
@@ -99,6 +131,8 @@ export class LLMEngine {
   private static readonly GENERATE_BUSY_RETRY_DELAYS_MS = [120, 260, 500, 900];
   private initializedTier: ModelTier | null = null;
   private initializedModelId: string | null = null;
+  /** Text-only models would fail on an image, so images are sent only when the loaded model has vision. */
+  private loadedSupportsVision = false;
   private llm: LLMModule | null = null;
   private isLoaded = false;
   /** True while `load()` is in progress; native interrupt can cancel in-flight fetch/download before `isLoaded`. */
@@ -198,10 +232,16 @@ export class LLMEngine {
         options?.modelId,
         !options?.forceRuntimeSources,
       );
-      const moduleForInit = await LLMModule.fromCustomModel(
-        runtime.modelSource,
-        runtime.tokenizerSource,
-        runtime.tokenizerConfigSource,
+      // fromModelName (rather than fromCustomModel) so vision models load with their image encoder enabled.
+      const moduleForInit = await LLMModule.fromModelName(
+        {
+          modelName: "custom" as LLMModelName,
+          modelSource: runtime.modelSource,
+          tokenizerSource: runtime.tokenizerSource,
+          tokenizerConfigSource: runtime.tokenizerConfigSource,
+          capabilities: spec.capabilities,
+          audioConfig: spec.audioConfig,
+        },
         onDownloadProgress ?? (() => {}),
         tokenCallback,
       );
@@ -215,11 +255,12 @@ export class LLMEngine {
           initialMessageHistory: [],
           systemPrompt: "You are OfflineMate, a local private assistant.",
         },
-        generationConfig: getGenerationConfigForTier(tier),
+        generationConfig: getGenerationConfig(tier, spec),
       });
       this.isLoaded = true;
       this.initializedTier = tier;
       this.initializedModelId = spec.id;
+      this.loadedSupportsVision = spec.capabilities?.includes("vision") ?? false;
       return spec;
     } catch (error) {
       if (myGen === this.loadGeneration && this.llm) {
@@ -247,7 +288,7 @@ export class LLMEngine {
       const lastUser = [...messages].reverse().find((m) => m.role === "user");
       return `OfflineMate fallback response: ${lastUser?.content ?? "hello"}`;
     }
-    const mapped: Message[] = messages.map((m) => ({ role: m.role, content: m.content }));
+    const mapped = toRuntimeMessages(messages, this.loadedSupportsVision);
     await this.waitForPostInterruptCooldown();
     let retries = 0;
     let buffer = "";
@@ -297,10 +338,7 @@ export class LLMEngine {
       return `OfflineMate fallback response: ${lastUser?.content ?? "hello"}`;
     }
 
-    const mapped: Message[] = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    const mapped = toRuntimeMessages(messages, this.loadedSupportsVision);
     await this.waitForPostInterruptCooldown();
     let retries = 0;
     while (true) {

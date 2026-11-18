@@ -6,10 +6,10 @@ interface ModelState {
   isDownloading: boolean;
   progress: number;
   /** Set while ExecuTorch downloads the LLM binary during chat init (remote URL). */
-  llmInitDownload: { progress: number; modelName?: string; fileLabel?: string } | null;
+  llmInitDownload: { progress: number; modelName?: string; fileLabel?: string; totalBytes?: number; bytesPerSecond?: number } | null;
   setActiveTier: (tier: ModelTier) => void;
   setDownloadState: (downloading: boolean, progress: number) => void;
-  setLlmInitDownload: (state: { progress: number; modelName?: string; fileLabel?: string } | null) => void;
+  setLlmInitDownload: (state: { progress: number; modelName?: string; fileLabel?: string; totalBytes?: number; bytesPerSecond?: number } | null) => void;
 }
 
 export const useModelStore = create<ModelState>((set) => ({

@@ -557,6 +557,16 @@ h1 {
   }
 }
 
+/* Second showcase (photos): text left, screenshot right on wide screens. */
+@media (min-width: 768px) {
+  .feature-showcase--flip {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+  }
+  .feature-showcase--flip .feature-showcase-shot {
+    order: 2;
+  }
+}
+
 .feature-showcase-shot {
   margin: 0;
 }
