@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getDeviceTierRecommendation } from "@/utils/device-profiler";
 import {
@@ -53,7 +53,9 @@ export default function OnboardingScreen() {
 
   const tierSpec = getTierSpec(selectedTier);
   const activeModel = resolveModelForTier(selectedTier, selectedModelId);
-  const isRecommended = recommended === selectedTier && selectedModelId === null;
+  // The default can also be saved by id (picked from the list, or saved before it became the default).
+  const usesDefaultModel = activeModel.id === tierSpec.primary.id;
+  const isRecommended = recommended === selectedTier && usesDefaultModel;
   const headline = describeRecommendation(tierSpec.label, formatBytes(totalDownloadBytes(selectedTier, selectedModelId)));
 
   const chooseTier = (tier: ModelTier) => {
@@ -83,7 +85,7 @@ export default function OnboardingScreen() {
           <Text style={styles.eyebrow}>{isRecommended ? "Recommended for your phone" : "Your choice"}</Text>
           <Text style={styles.headline}>{headline}</Text>
           <Text style={styles.body}>
-            {selectedModelId === null ? tierSpec.summary : `Uses ${modelDisplayName(activeModel)}.`}
+            {usesDefaultModel ? tierSpec.summary : `Uses ${modelDisplayName(activeModel)}.`}
             {modelSupportsVision(activeModel) ? " Can also look at your photos." : ""}
           </Text>
           <ModelDownloader
@@ -106,44 +108,48 @@ export default function OnboardingScreen() {
 
         {showChoices ? (
           <View style={styles.choices}>
-            <View style={styles.legend}>
-              <Text style={styles.legendText}>Smaller: faster, and a smaller download.</Text>
-              <Text style={styles.legendText}>Bigger: smarter, but needs a newer phone.</Text>
-              <View style={styles.legendRow}>
-                <VisionBadge size={14} />
-                <Text style={styles.legendText}>Can look at photos.</Text>
-              </View>
-            </View>
-            {MODEL_TIERS.map((tier) => {
-              const selected = tier.key === selectedTier;
-              return (
-                <Pressable
-                  key={tier.key}
-                  onPress={() => chooseTier(tier.key)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected, disabled: isDownloading }}
-                  style={[styles.option, selected && styles.optionSelected, isDownloading && styles.disabled]}
-                >
-                  <View style={styles.optionTitleRow}>
+            <Text style={styles.legendText}>Smaller is faster and a smaller download; bigger is smarter but needs a newer phone.</Text>
+            <View style={styles.sizeRow}>
+              {MODEL_TIERS.map((tier) => {
+                const selected = tier.key === selectedTier;
+                return (
+                  <Pressable
+                    key={tier.key}
+                    onPress={() => chooseTier(tier.key)}
+                    accessibilityRole="radio"
+                    accessibilityLabel={`${tier.label}, ${formatBytes(totalDownloadBytes(tier.key, null))}${tier.key === recommended ? ", recommended" : ""}`}
+                    accessibilityState={{ selected, disabled: isDownloading }}
+                    style={[styles.sizeCell, selected && styles.optionSelected, isDownloading && styles.disabled]}
+                  >
                     <Text style={styles.optionTitle}>{tier.label}</Text>
                     <Text style={styles.meta}>{formatBytes(totalDownloadBytes(tier.key, null))}</Text>
                     {tier.key === recommended ? <Text style={styles.tag}>Recommended</Text> : null}
-                  </View>
-                  <Text style={styles.optionBody}>{tier.summary}</Text>
-                </Pressable>
-              );
-            })}
-            <Pressable
-              onPress={() => setShowAllModels((v) => !v)}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: showAllModels }}
-            >
-              <Text style={styles.link}>
-                {showAllModels ? "Hide the model list" : `See every model for ${tierSpec.label}`}
-              </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Pressable onPress={() => setShowAllModels(true)} accessibilityRole="button" style={styles.choiceToggle}>
+              <Text style={styles.link}>See every model for {tierSpec.label}</Text>
+              <Ionicons name="chevron-forward" size={16} color="#93c5fd" />
             </Pressable>
-            {showAllModels
-              ? getModelsForTier(selectedTier).map((model) => {
+          </View>
+        ) : null}
+
+        <Modal
+          transparent
+          visible={showAllModels}
+          animationType="slide"
+          onRequestClose={() => setShowAllModels(false)}
+        >
+          <View style={styles.sheetBackdrop}>
+            <View style={[styles.sheet, isWide && styles.sheetWide]}>
+              <Text style={styles.sheetTitle}>{tierSpec.label}: every model</Text>
+              <View style={styles.legendRow}>
+                <VisionBadge size={14} />
+                <Text style={styles.legendText}>Can look at photos. You can change this any time in Settings.</Text>
+              </View>
+              <ScrollView contentContainerStyle={styles.sheetList}>
+                {getModelsForTier(selectedTier).map((model) => {
                   const selected = model.id === activeModel.id;
                   return (
                     <Pressable
@@ -163,11 +169,14 @@ export default function OnboardingScreen() {
                       </View>
                     </Pressable>
                   );
-                })
-              : null}
-            <Text style={styles.note}>You can change this any time in Settings.</Text>
+                })}
+              </ScrollView>
+              <Pressable onPress={() => setShowAllModels(false)} accessibilityRole="button" style={styles.sheetDone}>
+                <Text style={styles.continueText}>Done</Text>
+              </Pressable>
+            </View>
           </View>
-        ) : null}
+        </Modal>
 
         <Pressable
           style={[styles.continue, !isSelectedTierReady && styles.continueLater]}
@@ -201,14 +210,37 @@ const styles = StyleSheet.create({
   choiceToggle: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", paddingVertical: 4 },
   link: { color: "#93c5fd", fontWeight: "600" },
   choices: { gap: 8 },
-  legend: { gap: 4, marginBottom: 4 },
+  sizeRow: { flexDirection: "row", gap: 8 },
+  sizeCell: {
+    flex: 1,
+    backgroundColor: "#111827",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderColor: "#1f2937",
+    alignItems: "center",
+    gap: 4,
+  },
+  sheetBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: "#0f172a",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16,
+    gap: 10,
+    maxHeight: "80%",
+  },
+  sheetWide: { width: "100%", maxWidth: READABLE_MAX_WIDTH, alignSelf: "center" },
+  sheetTitle: { color: "#e5e7eb", fontSize: 18, fontWeight: "700" },
+  sheetList: { gap: 8 },
+  sheetDone: { backgroundColor: "#2563eb", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
   legendRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   legendText: { color: "#9ca3af", fontSize: 13 },
   option: { backgroundColor: "#111827", borderRadius: 10, padding: 12, borderWidth: 1, borderColor: "#1f2937", gap: 4 },
   optionSelected: { borderColor: "#60a5fa" },
   optionTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   optionTitle: { color: "#e5e7eb", fontWeight: "700", flexShrink: 1 },
-  optionBody: { color: "#9ca3af", fontSize: 13, lineHeight: 18 },
   tag: {
     color: "#0b1020",
     backgroundColor: "#93c5fd",

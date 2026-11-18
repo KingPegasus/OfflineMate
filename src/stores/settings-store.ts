@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import * as SecureStore from "expo-secure-store";
-import { getModelsForTier } from "@/ai/model-registry";
+import { getModelsForTier, OLD_TIER_DEFAULT_IDS } from "@/ai/model-registry";
 import type { ModelTier } from "@/types/assistant";
 
 type TierModelIds = Record<ModelTier, string | null>;
@@ -78,6 +78,16 @@ export function migrateSettingsState(
     out.tierModelIds = normalizeTierModelIds(out.tierModelIds);
   }
   out.tierModelIds = normalizeTierModelIds(out.tierModelIds);
+  if (version < 8 && out.hasCompletedOnboarding) {
+    // 0.14.0 made photo models the tier defaults. Someone already set up has the old default
+    // downloaded (stored as null = "tier default"), so pin it rather than ask for a new download.
+    const ids = out.tierModelIds as TierModelIds;
+    out.tierModelIds = {
+      lite: ids.lite ?? OLD_TIER_DEFAULT_IDS.lite,
+      standard: ids.standard ?? OLD_TIER_DEFAULT_IDS.standard,
+      full: ids.full ?? OLD_TIER_DEFAULT_IDS.full,
+    };
+  }
   out.persistChatHistory = Boolean(out.persistChatHistory);
   out.showTechnicalDetails = Boolean(out.showTechnicalDetails);
   return out;
@@ -177,7 +187,7 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: "offlinemate-settings",
       storage: createJSONStorage(() => secureStorage),
-      version: 7,
+      version: 8,
       migrate: migrateSettingsState,
       partialize: (s) => ({
         selectedTier: s.selectedTier,

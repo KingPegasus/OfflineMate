@@ -68,6 +68,10 @@ const SETTING_INFO = {
     title: "Rate OfflineMate",
     body: "Opens OfflineMate's Google Play page so you can rate or review it.",
   },
+  privacy: {
+    title: "Privacy and internet use",
+    body: "Chat, notes, reminders and the other phone actions work on this phone once the download is done. The internet is used for downloads, web search (your question goes to DuckDuckGo) and weather (only the place name goes to Open-Meteo). Turn off \u201cWeb search and weather\u201d to keep everything on this phone. Reading replies aloud uses your phone's built-in voice, which may use an online service.",
+  },
   technical: {
     title: "Show technical details",
     body: "Shows the reply speed under each answer (in tokens per second), the exact model name and id in Chat and Settings, and tool ids in the Tools tab. Off by default.",
@@ -387,18 +391,15 @@ export default function SettingsScreen() {
             </Pressable>
           ) : null}
           <View style={styles.divider} />
-          <SummaryLine icon="volume-high-outline" text={voiceEnabled ? "Reads replies aloud" : "Doesn't read replies aloud"} />
           <SummaryLine
-            icon="globe-outline"
-            text={webSearchEnabled ? "Web search and weather are on" : "Web search and weather are off: nothing goes online"}
+            icon="options-outline"
+            text={[
+              `Read aloud ${voiceEnabled ? "on" : "off"}`,
+              `web search ${webSearchEnabled ? "on" : "off"}`,
+              persistChatHistory ? "chats kept" : "chats cleared on close",
+              ...(memoryCount > 0 ? [`${memoryCount} ${memoryCount === 1 ? "memory" : "memories"}`] : []),
+            ].join(" · ")}
           />
-          <SummaryLine
-            icon="time-outline"
-            text={persistChatHistory ? "Chats are kept after you close the app" : "Chats are cleared when you close the app"}
-          />
-          {memoryCount > 0 ? (
-            <SummaryLine icon="bookmark-outline" text={`${memoryCount} saved ${memoryCount === 1 ? "memory" : "memories"}`} />
-          ) : null}
         </View>
         {isDownloadingSelected && modelPickerTier === null ? (
           <DownloadProgressCard
@@ -411,37 +412,30 @@ export default function SettingsScreen() {
 
         <Text style={[styles.title, styles.titleGap]}>Change settings</Text>
         <Text style={styles.groupTitle}>Assistant size</Text>
-        <Text style={styles.hint}>
-          Smaller is faster and a smaller download; bigger is smarter but needs a newer phone. Tap one to switch or
-          download it.
-        </Text>
-        <View style={styles.section}>
+        <Text style={styles.hint}>Smaller is faster; bigger is smarter but needs a newer phone. Tap one to change it.</Text>
+        <View style={styles.sizeRow}>
           {MODEL_TIERS.map((tier) => {
-            const tierActiveModelId = tierModelIds[tier.key] ?? null;
-            const tierActiveModel = resolveModelForTier(tier.key, tierActiveModelId);
             const inUse = tier.key === selectedTier;
             return (
               <Pressable
                 key={tier.key}
-                style={[styles.item, inUse && styles.selected]}
+                style={[styles.sizeCell, inUse && styles.selected]}
                 onPress={() => handleOpenTierPicker(tier.key)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: inUse }}
+                accessibilityHint="Choose or download a model for this size"
               >
-                <View style={styles.itemTitleRow}>
-                  <Text style={styles.itemTitle}>{tier.label}</Text>
-                  {inUse ? <Text style={styles.inUseTag}>In use</Text> : null}
-                </View>
-                <Text style={styles.itemSubtitle}>{tier.summary}</Text>
-                <Text style={styles.itemSubtitle}>
-                  {modelDisplayName(tierActiveModel)}
-                  {tierActiveModel.id === tier.primary.id ? " (recommended)" : " (your choice)"}
-                  {showTechnicalDetails ? ` · ${tier.name}, ${tier.targetRam}` : ""}
-                </Text>
+                <Text style={styles.itemTitle}>{tier.label}</Text>
+                {inUse ? <Text style={styles.inUseTag}>In use</Text> : null}
+                {showTechnicalDetails ? <Text style={styles.itemSubtitle}>{tier.targetRam}</Text> : null}
               </Pressable>
             );
           })}
         </View>
+        <Text style={styles.itemSubtitle}>
+          {tierSpec.summary} Uses {modelDisplayName(activeModel)}
+          {activeModel.id === tierSpec.primary.id ? " (recommended)." : " (your choice)."}
+        </Text>
 
         <Text style={styles.groupTitle}>Options</Text>
         <View style={styles.group}>
@@ -463,6 +457,11 @@ export default function SettingsScreen() {
             info={SETTING_INFO.clear}
             onPress={handleClearChatsAndMemories}
           />
+          <SettingRow
+            label="Privacy and internet use"
+            info={SETTING_INFO.privacy}
+            onPress={() => Alert.alert(SETTING_INFO.privacy.title, SETTING_INFO.privacy.body)}
+          />
           <SettingRow label="Set up again" info={SETTING_INFO.onboarding} onPress={() => router.push("/onboarding")} last={!canRateApp} />
           {canRateApp ? (
             <SettingRow
@@ -476,18 +475,6 @@ export default function SettingsScreen() {
               last
             />
           ) : null}
-        </View>
-
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Privacy and internet use</Text>
-          <Text style={styles.sectionBody}>
-            Chat, notes, reminders and the other phone actions work on this phone once the download is done. The
-            internet is used for downloads, web search (your question goes to DuckDuckGo) and weather (only the place
-            name goes to Open-Meteo). Turn off “Web search and weather” to keep everything on this phone.
-          </Text>
-          <Text style={styles.sectionBody}>
-            Reading replies aloud uses your phone’s built-in voice, which may use an online service.
-          </Text>
         </View>
 
         <Text style={styles.groupTitle}>Advanced</Text>
@@ -633,6 +620,17 @@ const styles = StyleSheet.create({
   summaryButtonText: { color: "#f9fafb", fontWeight: "700" },
   divider: { height: 1, backgroundColor: "#1f2937", marginVertical: 2 },
   itemTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  sizeRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
+  sizeCell: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#111827",
+    borderRadius: 10,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: "#1f2937",
+  },
   inUseTag: {
     color: "#0b1020",
     backgroundColor: "#93c5fd",

@@ -5,6 +5,7 @@ import { toRuntimeMessages } from "@/ai/llm-engine";
 import {
   getModelsForTier,
   getVisionModelsForTier,
+  OLD_TIER_DEFAULT_IDS,
   modelSupportsVision,
   resolveModelForTier,
   visionUnsupportedMessage,
@@ -31,19 +32,23 @@ describe("vision models in the registry", () => {
     const spec = resolveModelForTier("full", "gemma4-e2b-multimodal");
     expect(spec.capabilities).toEqual(["vision", "audio"]);
     expect(spec.audioConfig).toEqual({ samplesPerBlock: 7680, tokensPerBlock: 12 });
-    expect(visionUnsupportedMessage("full", null)).toContain("LFM 2.5 VL 1.6B or Gemma 4 E2B multimodal for Smartest");
+    expect(visionUnsupportedMessage("full", "qwen3-4b")).toContain("LFM 2.5 VL 1.6B or Gemma 4 E2B multimodal for Smartest");
   });
 
-  it("keeps text-only tier defaults unchanged", () => {
+  it("makes a photo model the default on every tier, keeping the old text-only defaults as choices", () => {
     for (const tier of ["lite", "standard", "full"] as const) {
-      expect(modelSupportsVision(resolveModelForTier(tier, null))).toBe(false);
+      expect(modelSupportsVision(resolveModelForTier(tier, null))).toBe(true);
+      const old = resolveModelForTier(tier, OLD_TIER_DEFAULT_IDS[tier]);
+      expect(old.id).toBe(OLD_TIER_DEFAULT_IDS[tier]);
+      expect(modelSupportsVision(old)).toBe(false);
     }
     expect(getModelsForTier("standard").filter(modelSupportsVision)).toHaveLength(1);
   });
 
   it("explains which model to pick when the active one is text-only", () => {
     expect(visionUnsupportedMessage("standard", "lfm2.5-vl-1.6b")).toBeNull();
-    const message = visionUnsupportedMessage("standard", null);
+    expect(visionUnsupportedMessage("standard", null)).toBeNull();
+    const message = visionUnsupportedMessage("standard", "gemma4-e2b");
     expect(message).toContain("Gemma 4 E2B can only read text");
     expect(message).toContain("LFM 2.5 VL 1.6B for Balanced in Settings");
   });
