@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { routeIntent } from "@/ai/intent-router";
 import { chatModelBadgeText } from "@/utils/chat-model-label";
 import { selectToolFromInput, TOOL_REGISTRY } from "@/tools/tool-registry";
-import { TOOL_DISPLAY, toolTitle } from "@/tools/tool-display";
+import { HELP_TOPICS, TOOL_DISPLAY, toolTitle } from "@/tools/tool-display";
 
 // The registry imports every tool; stub their native modules (these tests only need routing).
 vi.mock("react-native", () => ({ Platform: { OS: "android" } }));
@@ -37,6 +37,14 @@ describe("Tools tab wording", () => {
   it("the find-a-note example searches saved notes", () => {
     const example = TOOL_DISPLAY.find((t) => t.name === "notes.search")!.example;
     expect(routeIntent(example)).toBe("context");
+  });
+
+  it("Help topics are short and free of jargon", () => {
+    expect(HELP_TOPICS.length).toBeGreaterThanOrEqual(4);
+    for (const topic of HELP_TOPICS) {
+      expect(topic.body.length).toBeLessThan(200);
+      expect(`${topic.title} ${topic.body}`).not.toMatch(/(LLM|RAG|model file|tier|DNS|token|API|Whisper)/i);
+    }
   });
 
   it("toolTitle names a tool in plain words and falls back to the id", () => {

@@ -3,7 +3,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { VisionBadge } from "@/components/VisionBadge";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import Constants from "expo-constants";
 import { useSettingsStore } from "@/stores/settings-store";
 import {
@@ -74,22 +74,80 @@ const SETTING_INFO = {
   },
 } as const;
 
-/** A tappable setting with an info button that explains it. */
-function SettingRow({ label, info, onPress }: { label: string; info: { title: string; body: string }; onPress: () => void }) {
+type SettingInfo = { title: string; body: string };
+
+function InfoButton({ info }: { info: SettingInfo }) {
   return (
-    <View style={styles.settingRow}>
+    <Pressable
+      onPress={() => Alert.alert(info.title, info.body)}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={`About ${info.title}`}
+      style={styles.infoButton}
+    >
+      <Ionicons name="information-circle-outline" size={20} color="#9ca3af" />
+    </Pressable>
+  );
+}
+
+/** A tappable action with an info button that explains it. */
+function SettingRow({ label, info, onPress, last }: { label: string; info: SettingInfo; onPress: () => void; last?: boolean }) {
+  return (
+    <View style={[styles.settingRow, last && styles.settingRowLast]}>
       <Text style={[styles.link, styles.settingLabel]} onPress={onPress} accessibilityRole="button">
         {label}
       </Text>
-      <Pressable
-        onPress={() => Alert.alert(info.title, info.body)}
-        hitSlop={10}
-        accessibilityRole="button"
-        accessibilityLabel={`About ${info.title}`}
-        style={styles.infoButton}
-      >
-        <Ionicons name="information-circle-outline" size={20} color="#9ca3af" />
-      </Pressable>
+      <InfoButton info={info} />
+    </View>
+  );
+}
+
+/** An on/off option: the label and the switch both toggle it. */
+function ToggleRow({
+  label,
+  value,
+  info,
+  onValueChange,
+  last,
+}: {
+  label: string;
+  value: boolean;
+  info: SettingInfo;
+  onValueChange: (value: boolean) => void;
+  last?: boolean;
+}) {
+  return (
+    <View style={[styles.settingRow, last && styles.settingRowLast]}>
+      <Text style={[styles.toggleLabel, styles.settingLabel]} onPress={() => onValueChange(!value)}>
+        {label}
+      </Text>
+      <InfoButton info={info} />
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: "#374151", true: "#2563eb" }}
+        thumbColor="#f9fafb"
+        accessibilityLabel={label}
+      />
+    </View>
+  );
+}
+
+/** One line of the "Your setup" summary. */
+function SummaryLine({
+  icon,
+  text,
+  tone,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  text: string;
+  tone?: "good" | "warn";
+}) {
+  const color = tone === "good" ? "#86efac" : tone === "warn" ? "#fcd34d" : "#9ca3af";
+  return (
+    <View style={styles.summaryLine}>
+      <Ionicons name={icon} size={18} color={color} />
+      <Text style={[styles.summaryText, tone && { color }]}>{text}</Text>
     </View>
   );
 }
@@ -248,8 +306,8 @@ export default function SettingsScreen() {
     );
     await refreshReadinessForTier(tier);
     if (outcome === "done") {
-      const voiceNote = voiceFailed ? " The voice input model didn't download; the mic will offer to retry." : "";
-      Alert.alert("Model downloaded", `${model.family} ${model.size} is ready for chat.${voiceNote}`);
+      const voiceNote = voiceFailed ? " Voice typing didn't download; tap the mic to try again." : "";
+      Alert.alert("Ready to chat", `${model.family} ${model.size} is downloaded and works without internet.${voiceNote}`);
     }
   };
 
@@ -297,16 +355,50 @@ export default function SettingsScreen() {
     setPersistChatHistory(true);
   };
 
+  const currentReady: boolean | undefined = modelReadinessByTier[selectedTier][activeModel.id];
+  const assistantStatus =
+    currentReady === undefined ? "Checking…" : currentReady ? "Downloaded · works without internet" : "Not downloaded yet";
+
   return (
-    <SafeAreaView style={styles.root} edges={isWide ? ["top", "bottom"] : ["top"]}>
+    // The header already covers the status bar; padding the top again left an empty band.
+    <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, isWide && styles.contentWide]} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Assistant</Text>
-        <View style={styles.activeModelCard}>
-          <Text style={styles.activeLabel}>In use</Text>
-          <Text style={styles.activeValue}>
-            {tierSpec.label} · {modelDisplayName(activeModel)}
-            {showTechnicalDetails ? ` (${activeModel.id})` : ""}
-          </Text>
+        <Text style={styles.title}>Your setup</Text>
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryHead}>
+            <Ionicons name="sparkles-outline" size={24} color="#93c5fd" />
+            <View style={styles.summaryHeadText}>
+              <Text style={styles.summaryName}>{tierSpec.label} assistant</Text>
+              <Text style={styles.summaryModel}>
+                {modelDisplayName(activeModel)}
+                {showTechnicalDetails ? ` (${activeModel.id})` : ""}
+              </Text>
+            </View>
+          </View>
+          <SummaryLine
+            icon={currentReady ? "checkmark-circle-outline" : "cloud-download-outline"}
+            text={assistantStatus}
+            tone={currentReady ? "good" : currentReady === false ? "warn" : undefined}
+          />
+          {modelSupportsVision(activeModel) ? <SummaryLine icon="image-outline" text="Can look at photos" /> : null}
+          {currentReady === false && !isDownloadingSelected ? (
+            <Pressable style={styles.summaryButton} onPress={() => handleOpenTierPicker(selectedTier)} accessibilityRole="button">
+              <Text style={styles.summaryButtonText}>Download now</Text>
+            </Pressable>
+          ) : null}
+          <View style={styles.divider} />
+          <SummaryLine icon="volume-high-outline" text={voiceEnabled ? "Reads replies aloud" : "Doesn't read replies aloud"} />
+          <SummaryLine
+            icon="globe-outline"
+            text={webSearchEnabled ? "Web search and weather are on" : "Web search and weather are off: nothing goes online"}
+          />
+          <SummaryLine
+            icon="time-outline"
+            text={persistChatHistory ? "Chats are kept after you close the app" : "Chats are cleared when you close the app"}
+          />
+          {memoryCount > 0 ? (
+            <SummaryLine icon="bookmark-outline" text={`${memoryCount} saved ${memoryCount === 1 ? "memory" : "memories"}`} />
+          ) : null}
         </View>
         {isDownloadingSelected && modelPickerTier === null ? (
           <DownloadProgressCard
@@ -316,20 +408,30 @@ export default function SettingsScreen() {
             style={styles.downloadCard}
           />
         ) : null}
+
+        <Text style={[styles.title, styles.titleGap]}>Change settings</Text>
+        <Text style={styles.groupTitle}>Assistant size</Text>
         <Text style={styles.hint}>
-          Tap a size to switch to it or download it. Smaller is faster; bigger is smarter but needs a newer phone.
+          Smaller is faster and a smaller download; bigger is smarter but needs a newer phone. Tap one to switch or
+          download it.
         </Text>
         <View style={styles.section}>
           {MODEL_TIERS.map((tier) => {
             const tierActiveModelId = tierModelIds[tier.key] ?? null;
             const tierActiveModel = resolveModelForTier(tier.key, tierActiveModelId);
+            const inUse = tier.key === selectedTier;
             return (
               <Pressable
                 key={tier.key}
-                style={[styles.item, tier.key === selectedTier && styles.selected]}
+                style={[styles.item, inUse && styles.selected]}
                 onPress={() => handleOpenTierPicker(tier.key)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: inUse }}
               >
-                <Text style={styles.itemTitle}>{tier.label}</Text>
+                <View style={styles.itemTitleRow}>
+                  <Text style={styles.itemTitle}>{tier.label}</Text>
+                  {inUse ? <Text style={styles.inUseTag}>In use</Text> : null}
+                </View>
                 <Text style={styles.itemSubtitle}>{tier.summary}</Text>
                 <Text style={styles.itemSubtitle}>
                   {modelDisplayName(tierActiveModel)}
@@ -340,58 +442,64 @@ export default function SettingsScreen() {
             );
           })}
         </View>
-        <SettingRow label="Set up again" info={SETTING_INFO.onboarding} onPress={() => router.push("/onboarding")} />
-        <SettingRow
-          label={`Read replies aloud: ${voiceEnabled ? "On" : "Off"}`}
-          info={SETTING_INFO.tts}
-          onPress={() => setVoiceEnabled(!voiceEnabled)}
-        />
-        <SettingRow
-          label={`Web search and weather: ${webSearchEnabled ? "On" : "Off"}`}
-          info={SETTING_INFO.webSearch}
-          onPress={() => setWebSearchEnabled(!webSearchEnabled)}
-        />
+
+        <Text style={styles.groupTitle}>Options</Text>
+        <View style={styles.group}>
+          <ToggleRow label="Read replies aloud" value={voiceEnabled} info={SETTING_INFO.tts} onValueChange={setVoiceEnabled} />
+          <ToggleRow
+            label="Web search and weather"
+            value={webSearchEnabled}
+            info={SETTING_INFO.webSearch}
+            onValueChange={setWebSearchEnabled}
+          />
+          <ToggleRow
+            label="Keep chats after closing the app"
+            value={persistChatHistory}
+            info={SETTING_INFO.history}
+            onValueChange={() => handleTogglePersistHistory()}
+          />
+          <SettingRow
+            label={memoryCount > 0 ? `Clear chats and memories (${memoryCount} saved)` : "Clear chats and memories"}
+            info={SETTING_INFO.clear}
+            onPress={handleClearChatsAndMemories}
+          />
+          <SettingRow label="Set up again" info={SETTING_INFO.onboarding} onPress={() => router.push("/onboarding")} last={!canRateApp} />
+          {canRateApp ? (
+            <SettingRow
+              label="Rate OfflineMate"
+              info={SETTING_INFO.rate}
+              onPress={() => {
+                void openStoreListingForRating().then((opened) => {
+                  if (!opened) Alert.alert("Couldn't open the store", "Search for OfflineMate in Google Play to rate it.");
+                });
+              }}
+              last
+            />
+          ) : null}
+        </View>
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Privacy and internet use</Text>
           <Text style={styles.sectionBody}>
-            Chat, notes search, reminders and the other phone actions run on this phone once the download is done. The
+            Chat, notes, reminders and the other phone actions work on this phone once the download is done. The
             internet is used for downloads, web search (your question goes to DuckDuckGo) and weather (only the place
-            name goes to Open-Meteo). Both are on by default; turn off “Web search and weather” above to keep everything
-            on this phone.
+            name goes to Open-Meteo). Turn off “Web search and weather” to keep everything on this phone.
           </Text>
           <Text style={styles.sectionBody}>
             Reading replies aloud uses your phone’s built-in voice, which may use an online service.
           </Text>
         </View>
 
-        <SettingRow
-          label={`Keep chats after closing the app: ${persistChatHistory ? "On" : "Off"}`}
-          info={SETTING_INFO.history}
-          onPress={handleTogglePersistHistory}
-        />
-        <SettingRow
-          label={memoryCount > 0 ? `Clear chats and memories (${memoryCount} saved)` : "Clear chats and memories"}
-          info={SETTING_INFO.clear}
-          onPress={handleClearChatsAndMemories}
-        />
-        {canRateApp ? (
-          <SettingRow
-            label="Rate OfflineMate"
-            info={SETTING_INFO.rate}
-            onPress={() => {
-              void openStoreListingForRating().then((opened) => {
-                if (!opened) Alert.alert("Couldn't open the store", "Search for OfflineMate in Google Play to rate it.");
-              });
-            }}
+        <Text style={styles.groupTitle}>Advanced</Text>
+        <View style={styles.group}>
+          <ToggleRow
+            label="Show technical details"
+            value={showTechnicalDetails}
+            info={SETTING_INFO.technical}
+            onValueChange={setShowTechnicalDetails}
+            last
           />
-        ) : null}
-        <Text style={styles.advancedTitle}>Advanced</Text>
-        <SettingRow
-          label={`Show technical details: ${showTechnicalDetails ? "On" : "Off"}`}
-          info={SETTING_INFO.technical}
-          onPress={() => setShowTechnicalDetails(!showTechnicalDetails)}
-        />
+        </View>
         {showTechnicalDetails ? (
           <View style={styles.sectionCard}>
             <Text style={styles.sectionBody}>
@@ -511,6 +619,31 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 36 },
   contentWide: { width: "100%", maxWidth: READABLE_MAX_WIDTH, alignSelf: "center", paddingTop: 24 },
   title: { color: "#e5e7eb", fontSize: 20, fontWeight: "700", marginBottom: 12 },
+  titleGap: { marginTop: 24, marginBottom: 4 },
+  groupTitle: { color: "#93c5fd", fontSize: 13, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 18, marginBottom: 8 },
+  group: { backgroundColor: "#111827", borderRadius: 10, borderWidth: 1, borderColor: "#1f2937", paddingHorizontal: 12 },
+  summaryCard: { backgroundColor: "#111827", borderWidth: 1, borderColor: "#1f2937", borderRadius: 12, padding: 14, gap: 8 },
+  summaryHead: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 2 },
+  summaryHeadText: { flex: 1 },
+  summaryName: { color: "#f9fafb", fontSize: 18, fontWeight: "800" },
+  summaryModel: { color: "#9ca3af", fontSize: 12, marginTop: 2 },
+  summaryLine: { flexDirection: "row", alignItems: "center", gap: 8 },
+  summaryText: { color: "#cbd5e1", flex: 1 },
+  summaryButton: { backgroundColor: "#2563eb", borderRadius: 8, paddingVertical: 10, alignItems: "center", marginTop: 2 },
+  summaryButtonText: { color: "#f9fafb", fontWeight: "700" },
+  divider: { height: 1, backgroundColor: "#1f2937", marginVertical: 2 },
+  itemTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  inUseTag: {
+    color: "#0b1020",
+    backgroundColor: "#93c5fd",
+    fontSize: 11,
+    fontWeight: "700",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 1,
+    overflow: "hidden",
+  },
+  toggleLabel: { color: "#e5e7eb", fontWeight: "600" },
   subtitle: { color: "#e5e7eb", fontSize: 16, fontWeight: "600", marginTop: 4, marginBottom: 8 },
   hint: { color: "#9ca3af", fontSize: 12, lineHeight: 18, marginBottom: 8 },
   activeModelCard: {
@@ -528,10 +661,11 @@ const styles = StyleSheet.create({
   itemTitle: { color: "#e5e7eb", fontWeight: "700" },
   itemSubtitle: { color: "#9ca3af", marginTop: 4, fontSize: 12 },
   selected: { borderWidth: 1, borderColor: "#60a5fa" },
-  link: { marginTop: 16, color: "#93c5fd", fontWeight: "600" },
-  settingRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  link: { color: "#93c5fd", fontWeight: "600" },
+  settingRow: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 52, borderBottomWidth: 1, borderBottomColor: "#1f2937" },
+  settingRowLast: { borderBottomWidth: 0 },
   settingLabel: { flex: 1 },
-  infoButton: { marginTop: 16, padding: 2 },
+  infoButton: { padding: 2 },
   disabledLink: { color: "#64748b" },
   modalBackdrop: {
     flex: 1,

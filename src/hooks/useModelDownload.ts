@@ -7,7 +7,7 @@ import {
   type AssetToDownload,
   type DownloadProgressCallback,
 } from "@/ai/model-manager";
-import { createRateTracker, describeDownload, formatBytes } from "@/utils/download-format";
+import { createRateTracker, describeDownload, downloadFailureMessage, formatBytes } from "@/utils/download-format";
 
 /** Above this, a download on mobile data asks first (model files are hundreds of MB to several GB). */
 const MOBILE_DATA_CONFIRM_BYTES = 50 * 1024 * 1024;
@@ -39,17 +39,6 @@ function confirm(title: string, message: string, okLabel: string, cancelLabel: s
   });
 }
 
-export function downloadFailureHint(message: string): string {
-  const m = message.toLowerCase();
-  if (m.includes("resolve") || m.includes("hostname") || m.includes("enotfound")) {
-    return "Your phone couldn't reach the download server. Try Wi-Fi instead of mobile data, or turn off Private DNS (Settings → Network → Private DNS → Off), then try again.";
-  }
-  if (m.includes("space") || m.includes("enospc") || m.includes("storage")) {
-    return "Your phone ran out of storage. Free up some space, then try again.";
-  }
-  return "Check your connection and try again. Downloads start over if they're interrupted, so Wi-Fi works best.";
-}
-
 /**
  * One model download at a time, with the checks a multi-GB download needs: offline, free storage,
  * and a confirmation on mobile data. Progress is reported in bytes with speed and time left.
@@ -71,16 +60,34 @@ export function useModelDownload() {
       busy.current = true;
       destinations.current = assets.map((a) => a.destination);
       try {
+        // Each pass is one try; offline and failed downloads offer Try again, which loops.
+        for (;;) {
+          const outcome = await attempt();
+          if (outcome !== "retry") return outcome;
+        }
+      } finally {
+        busy.current = false;
+        destinations.current = [];
+        setState(IDLE);
+      }
+
+      async function attempt(): Promise<DownloadOutcome | "retry"> {
+      try {
         const preflight = await checkDownloadPreflight(assets, options?.replacing);
         if (preflight.offline) {
-          Alert.alert("You're offline", "Connect to Wi-Fi or mobile data to download the model. After that, OfflineMate works without internet.");
-          return "declined";
+          const retry = await confirm(
+            "No internet connection",
+            "Connect to Wi-Fi or mobile data, then try again. You only need internet for this download.",
+            "Try again",
+            "Not now",
+          );
+          return retry ? "retry" : "declined";
         }
         if (!preflight.enoughSpace) {
           const free = preflight.freeBytes === null ? "" : ` Your phone has ${formatBytes(preflight.freeBytes)} free.`;
           Alert.alert(
-            "Not enough storage",
-            `This download needs about ${formatBytes(preflight.bytesNeeded)}, plus some room to spare.${free} Free up space or pick a smaller model.`,
+            "Not enough space",
+            `This download needs about ${formatBytes(preflight.bytesNeeded)}, plus a little room to spare.${free} Delete some photos, videos or apps you don't need, or choose a smaller size.`,
           );
           return "declined";
         }
@@ -110,12 +117,11 @@ export function useModelDownload() {
         if (err instanceof DownloadCancelledError) return "cancelled";
         const raw = err instanceof Error ? err.message : String(err);
         console.warn("[OfflineMate] Model download failed:", raw);
-        Alert.alert("Download didn't finish", downloadFailureHint(raw));
-        return "failed";
-      } finally {
-        busy.current = false;
-        destinations.current = [];
         setState(IDLE);
+        const { title, message } = downloadFailureMessage(raw);
+        const retry = await confirm(title, message, "Try again", "Not now");
+        return retry ? "retry" : "failed";
+      }
       }
     },
     [],

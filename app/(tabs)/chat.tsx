@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useRouter } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
@@ -47,6 +47,17 @@ export default function ChatScreen() {
   } = useHingeSplit(hinge?.posture === "tabletop" ? hinge : null, TABLETOP_MIN_PANE);
   const [prompt, setPrompt] = useState("");
   const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
+  // Help tab examples open Chat with ?prompt=…; put the text in the box so the user can send or edit it.
+  const { prompt: promptParam, at: promptParamAt } = useLocalSearchParams<{ prompt?: string; at?: string }>();
+  useEffect(() => {
+    if (!promptParam) return;
+    const timeoutId = setTimeout(() => {
+      setPrompt(promptParam);
+      router.setParams({ prompt: undefined, at: undefined } as never);
+    }, 0);
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per incoming link
+  }, [promptParam, promptParamAt]);
   const {
     messages,
     startNewConversation,
@@ -115,7 +126,8 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={isWide ? ["top", "bottom"] : ["top"]}>
+    // The header already covers the status bar; padding the top again left an empty band above the chat.
+    <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
       <LlmInitDownloadModal />
       <View style={styles.panes} ref={bookRef} onLayout={onBookLayout}>
         {isTwoPane ? (

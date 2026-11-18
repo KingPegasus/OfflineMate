@@ -79,8 +79,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="tools"
         options={{
-          title: "Tools",
-          tabBarIcon: ({ focused }) => tabIcon("construct-outline", focused),
+          // The route stays "tools" so existing links keep working; it's the Help tab now.
+          title: "Help",
+          tabBarIcon: ({ focused }) => tabIcon("help-circle-outline", focused),
         }}
       />
       <Tabs.Screen

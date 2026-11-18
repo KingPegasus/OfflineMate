@@ -87,3 +87,32 @@ export const TOOL_DISPLAY: readonly ToolDisplay[] = [
 export function toolTitle(name: string): string {
   return TOOL_DISPLAY.find((t) => t.name === name)?.title ?? name;
 }
+
+/** Short answers on the Help tab, below "What you can ask". */
+export const HELP_TOPICS: readonly { title: string; body: string; icon: ComponentProps<typeof Ionicons>["name"] }[] = [
+  {
+    title: "Works without internet",
+    body: "After the one-time download, chatting works with no connection. Only weather and web search need internet.",
+    icon: "cloud-offline-outline",
+  },
+  {
+    title: "Ask about a photo",
+    body: "Tap the picture button next to the message box and choose a photo. Your assistant needs to be one that can look at photos; Settings shows which can.",
+    icon: "image-outline",
+  },
+  {
+    title: "Talk instead of typing",
+    body: "Hold the mic button, speak, then let go. The first time, voice typing downloads once.",
+    icon: "mic-outline",
+  },
+  {
+    title: "Slow answers?",
+    body: "Choose a smaller size in Settings, such as Light. Smaller sizes answer faster on older phones.",
+    icon: "speedometer-outline",
+  },
+  {
+    title: "Your information stays with you",
+    body: "Chats, notes, contacts and your calendar stay on this phone, and there's no account. Only weather and web search questions go online.",
+    icon: "lock-closed-outline",
+  },
+];
