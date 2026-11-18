@@ -2,7 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { getModelsForTier, MODEL_TIERS, modelSupportsVision } from "@/ai/model-registry";
 
-const listing = fs.readFileSync(path.join(process.cwd(), "assets", "play-store-listing", "listing.md"), "utf8");
+// Normalise line endings: a Windows checkout with core.autocrlf has CRLF files.
+const listing = fs
+  .readFileSync(path.join(process.cwd(), "assets", "play-store-listing", "listing.md"), "utf8")
+  .replace(/\r\n/g, "\n");
 
 function block(name: string): string {
   const match = listing.match(new RegExp(`<!-- listing:${name} -->\\n([\\s\\S]*?)\\n<!-- /listing:${name} -->`));

@@ -3,7 +3,7 @@
     "name": "OfflineMate",
     "slug": "offlinemate",
     "scheme": "offlinemate",
-    "version": "0.12.0",
+    "version": "0.13.0",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -60,7 +60,8 @@
         }
       ],
       "./plugins/with-cmake-object-path-max",
-      "./plugins/with-native-debug-symbols"
+      "./plugins/with-native-debug-symbols",
+      "./plugins/with-foldable-activity"
     ],
     "experiments": {
       "typedRoutes": true

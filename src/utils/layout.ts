@@ -39,15 +39,91 @@ export type Breakpoint = {
   windowClass: WindowClass;
   /** medium or expanded: use the navigation rail and capped content widths. */
   isWide: boolean;
-  /** expanded: show list and detail side by side. */
+  /** expanded, or a wide window in book posture: show list and detail side by side. */
   isTwoPane: boolean;
+  /** A half-opened fold to keep content off, or null when the screen is flat. */
+  hinge: Hinge | null;
 };
 
-export function getBreakpoint(width: number): Breakpoint {
+export function getBreakpoint(width: number, hinge: Hinge | null = null): Breakpoint {
   const windowClass = getWindowClass(width);
+  const isWide = windowClass !== "compact";
   return {
     windowClass,
-    isWide: windowClass !== "compact",
-    isTwoPane: windowClass === "expanded",
+    isWide,
+    // Book posture splits the screen in two anyway, so use both halves as panes.
+    isTwoPane: windowClass === "expanded" || (isWide && hinge?.posture === "book"),
+    hinge,
   };
+}
+
+/** A fold or hinge in the app window, as reported by Jetpack WindowManager (dp, window space). */
+export type FoldFeature = {
+  state: "flat" | "halfOpened";
+  orientation: "vertical" | "horizontal";
+  /** True when the fold splits the window into two areas: half-opened, or a physical hinge gap. */
+  isSeparating: boolean;
+  occludesContent: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+/**
+ * A fold content should stay off. `start`/`end` are window coordinates along the split axis
+ * (x for a vertical fold, y for a horizontal one); they're equal for a fold with no gap.
+ * - book:     vertical fold, device held like a book. Two side-by-side panes.
+ * - tabletop: horizontal fold, bottom half resting on a table. Content on top, controls below.
+ */
+export type Hinge = {
+  posture: "book" | "tabletop";
+  start: number;
+  end: number;
+};
+
+export type Rect = { x: number; y: number; width: number; height: number };
+
+/** The first separating fold that crosses the window, or null (flat, folded shut, or no fold). */
+export function getSeparatingHinge(
+  features: readonly FoldFeature[],
+  windowWidth: number,
+  windowHeight: number,
+): Hinge | null {
+  for (const f of features) {
+    if (!f.isSeparating) continue;
+    const vertical = f.orientation === "vertical";
+    const start = vertical ? f.x : f.y;
+    const end = start + (vertical ? f.width : f.height);
+    const size = vertical ? windowWidth : windowHeight;
+    if (start <= 0 || end >= size) continue;
+    return { posture: vertical ? "book" : "tabletop", start, end };
+  }
+  return null;
+}
+
+/** Smallest pane worth showing on either side of a hinge. */
+export const MIN_HINGE_PANE = 240;
+
+/**
+ * How a container splits around a hinge: the leading pane (left, or top) ends at the hinge,
+ * then `gap` (the hinge width) is skipped, and the trailing pane fills the rest.
+ * Null when the hinge doesn't cross the container or would leave a pane under `minPane`.
+ */
+export type HingeSplit = { leading: number; gap: number; trailing: number };
+
+export function splitAroundHinge(
+  hinge: Hinge | null,
+  container: Rect | null,
+  minPane = MIN_HINGE_PANE,
+): HingeSplit | null {
+  if (!hinge || !container) return null;
+  const vertical = hinge.posture === "book";
+  const origin = vertical ? container.x : container.y;
+  const size = vertical ? container.width : container.height;
+  const leading = hinge.start - origin;
+  const gap = hinge.end - hinge.start;
+  const trailing = origin + size - hinge.end;
+  if (leading < minPane || trailing < minPane) return null;
+  return { leading, gap, trailing };
 }

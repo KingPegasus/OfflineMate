@@ -1,0 +1,6 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": ["com.offlinemate.windowposture.WindowPostureModule"]
+  }
+}
