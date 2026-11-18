@@ -17,6 +17,7 @@ const MIGRATE_DEFAULTS = {
   webSearchEnabled: true,
   hasCompletedOnboarding: false,
   persistChatHistory: false,
+  showTechnicalDetails: false,
 };
 
 const SETTINGS_KEYS = [
@@ -26,6 +27,7 @@ const SETTINGS_KEYS = [
   "webSearchEnabled",
   "hasCompletedOnboarding",
   "persistChatHistory",
+  "showTechnicalDetails",
 ] as const;
 
 function normalizeModelIdForTier(tier: ModelTier, value: unknown): string | null {
@@ -77,6 +79,7 @@ export function migrateSettingsState(
   }
   out.tierModelIds = normalizeTierModelIds(out.tierModelIds);
   out.persistChatHistory = Boolean(out.persistChatHistory);
+  out.showTechnicalDetails = Boolean(out.showTechnicalDetails);
   return out;
 }
 
@@ -135,11 +138,14 @@ interface SettingsState {
   webSearchEnabled: boolean;
   hasCompletedOnboarding: boolean;
   persistChatHistory: boolean;
+  /** Reply speed, model ids and tool ids in the UI. Off by default. */
+  showTechnicalDetails: boolean;
   setSelectedTier: (tier: ModelTier) => void;
   setTierModelId: (tier: ModelTier, modelId: string | null) => void;
   setVoiceEnabled: (enabled: boolean) => void;
   setWebSearchEnabled: (enabled: boolean) => void;
   setPersistChatHistory: (enabled: boolean) => void;
+  setShowTechnicalDetails: (enabled: boolean) => void;
   completeOnboarding: () => void;
   resetOnboarding: () => void;
 }
@@ -153,6 +159,7 @@ export const useSettingsStore = create<SettingsState>()(
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
       persistChatHistory: false,
+      showTechnicalDetails: false,
       setSelectedTier: (tier: ModelTier) => set({ selectedTier: tier }),
       setTierModelId: (tier: ModelTier, modelId: string | null) => set((state) => ({
         tierModelIds: {
@@ -163,13 +170,14 @@ export const useSettingsStore = create<SettingsState>()(
       setVoiceEnabled: (voiceEnabled: boolean) => set({ voiceEnabled }),
       setWebSearchEnabled: (webSearchEnabled: boolean) => set({ webSearchEnabled }),
       setPersistChatHistory: (persistChatHistory: boolean) => set({ persistChatHistory }),
+      setShowTechnicalDetails: (showTechnicalDetails: boolean) => set({ showTechnicalDetails }),
       completeOnboarding: () => set({ hasCompletedOnboarding: true }),
       resetOnboarding: () => set({ hasCompletedOnboarding: false }),
     }),
     {
       name: "offlinemate-settings",
       storage: createJSONStorage(() => secureStorage),
-      version: 6,
+      version: 7,
       migrate: migrateSettingsState,
       partialize: (s) => ({
         selectedTier: s.selectedTier,
@@ -178,6 +186,7 @@ export const useSettingsStore = create<SettingsState>()(
         webSearchEnabled: s.webSearchEnabled,
         hasCompletedOnboarding: s.hasCompletedOnboarding,
         persistChatHistory: s.persistChatHistory,
+        showTechnicalDetails: s.showTechnicalDetails,
       }),
     },
   ),

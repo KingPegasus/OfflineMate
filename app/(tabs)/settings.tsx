@@ -8,8 +8,10 @@ import Constants from "expo-constants";
 import { useSettingsStore } from "@/stores/settings-store";
 import {
   getModelsForTier,
+  getActiveModelFileLabel,
   getTierSpec,
   MODEL_TIERS,
+  modelDisplayName,
   modelSupportsVision,
   resolveModelForTier,
 } from "@/ai/model-registry";
@@ -43,11 +45,11 @@ function safeMemoryCount(): number {
 /** What each Settings option does, shown from its info button. Keep in step with docs/legal/privacy-policy.md. */
 const SETTING_INFO = {
   onboarding: {
-    title: "Open Onboarding",
-    body: "Runs the first-time setup again: pick a tier and download its model. Your chats, notes and settings stay.",
+    title: "Set up again",
+    body: "Runs the first-time setup again: see the size recommended for your phone, or choose another, and download it. Your chats, notes and settings stay.",
   },
   tts: {
-    title: "Speak responses (TTS)",
+    title: "Read replies aloud",
     body: "Reads each reply aloud with your phone's built-in voice. Off by default. Depending on your phone and voice settings, the voice provider may process the text online.",
   },
   webSearch: {
@@ -55,7 +57,7 @@ const SETTING_INFO = {
     body: "When on, questions that need current information are looked up online. Web searches go to DuckDuckGo, and the query can be your whole message. Weather questions send only the place name to Open-Meteo. On by default. Turn it off to keep every request on this device.",
   },
   history: {
-    title: "Persist chat history",
+    title: "Keep chat history",
     body: "When on, your chats are saved on this device and are still there after you close the app. When off (the default), chats are cleared when the app closes, and turning it off deletes saved chats. Nothing is uploaded either way.",
   },
   clear: {
@@ -65,6 +67,10 @@ const SETTING_INFO = {
   rate: {
     title: "Rate OfflineMate",
     body: "Opens OfflineMate's Google Play page so you can rate or review it.",
+  },
+  technical: {
+    title: "Show technical details",
+    body: "Shows the reply speed under each answer (in tokens per second), the exact model name and id in Chat and Settings, and tool ids in the Tools tab. Off by default.",
   },
 } as const;
 
@@ -101,6 +107,8 @@ export default function SettingsScreen() {
   const setWebSearchEnabled = useSettingsStore((s) => s.setWebSearchEnabled);
   const persistChatHistory = useSettingsStore((s) => s.persistChatHistory);
   const setPersistChatHistory = useSettingsStore((s) => s.setPersistChatHistory);
+  const showTechnicalDetails = useSettingsStore((s) => s.showTechnicalDetails);
+  const setShowTechnicalDetails = useSettingsStore((s) => s.setShowTechnicalDetails);
   const clearAllConversations = useChatStore((s) => s.clearAllConversations);
   const [memoryCount, setMemoryCount] = useState(0);
   // Re-count when the tab is shown: "remember ..." messages add memories from the Chat tab.
@@ -292,11 +300,12 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.root} edges={isWide ? ["top", "bottom"] : ["top"]}>
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, isWide && styles.contentWide]} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Model Tier</Text>
+        <Text style={styles.title}>Assistant</Text>
         <View style={styles.activeModelCard}>
-          <Text style={styles.activeLabel}>Active model</Text>
+          <Text style={styles.activeLabel}>In use</Text>
           <Text style={styles.activeValue}>
-            {tierSpec.name} - {activeModel.family} {activeModel.size} ({activeModel.id})
+            {tierSpec.label} · {modelDisplayName(activeModel)}
+            {showTechnicalDetails ? ` (${activeModel.id})` : ""}
           </Text>
         </View>
         {isDownloadingSelected && modelPickerTier === null ? (
@@ -307,7 +316,9 @@ export default function SettingsScreen() {
             style={styles.downloadCard}
           />
         ) : null}
-        <Text style={styles.hint}>Tap a tier to choose a model for that tier.</Text>
+        <Text style={styles.hint}>
+          Tap a size to switch to it or download it. Smaller is faster; bigger is smarter but needs a newer phone.
+        </Text>
         <View style={styles.section}>
           {MODEL_TIERS.map((tier) => {
             const tierActiveModelId = tierModelIds[tier.key] ?? null;
@@ -318,18 +329,20 @@ export default function SettingsScreen() {
                 style={[styles.item, tier.key === selectedTier && styles.selected]}
                 onPress={() => handleOpenTierPicker(tier.key)}
               >
-                <Text style={styles.itemTitle}>{tier.name} - {tier.targetRam}</Text>
+                <Text style={styles.itemTitle}>{tier.label}</Text>
+                <Text style={styles.itemSubtitle}>{tier.summary}</Text>
                 <Text style={styles.itemSubtitle}>
-                  {tierActiveModel.family} {tierActiveModel.size}
-                  {tierActiveModel.id === tier.primary.id ? " (default)" : " (custom)"}
+                  {modelDisplayName(tierActiveModel)}
+                  {tierActiveModel.id === tier.primary.id ? " (recommended)" : " (your choice)"}
+                  {showTechnicalDetails ? ` · ${tier.name}, ${tier.targetRam}` : ""}
                 </Text>
               </Pressable>
             );
           })}
         </View>
-        <SettingRow label="Open Onboarding" info={SETTING_INFO.onboarding} onPress={() => router.push("/onboarding")} />
+        <SettingRow label="Set up again" info={SETTING_INFO.onboarding} onPress={() => router.push("/onboarding")} />
         <SettingRow
-          label={`Speak responses (TTS): ${voiceEnabled ? "On" : "Off"}`}
+          label={`Read replies aloud: ${voiceEnabled ? "On" : "Off"}`}
           info={SETTING_INFO.tts}
           onPress={() => setVoiceEnabled(!voiceEnabled)}
         />
@@ -340,19 +353,20 @@ export default function SettingsScreen() {
         />
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Privacy and network boundaries</Text>
+          <Text style={styles.sectionTitle}>Privacy and internet use</Text>
           <Text style={styles.sectionBody}>
-            Core chat, retrieval, and tools run on device after models are downloaded. Network use is mainly for model
-            downloads, and for web search (queries go to DuckDuckGo) and weather (only the place name goes to Open-Meteo).
-            Both are on by default; turn off “Web search and weather” above to keep everything on this device.
+            Chat, notes search, reminders and the other phone actions run on this phone once the download is done. The
+            internet is used for downloads, web search (your question goes to DuckDuckGo) and weather (only the place
+            name goes to Open-Meteo). Both are on by default; turn off “Web search and weather” above to keep everything
+            on this phone.
           </Text>
           <Text style={styles.sectionBody}>
-            Text-to-speech uses device OS voices and may use vendor online services.
+            Reading replies aloud uses your phone’s built-in voice, which may use an online service.
           </Text>
         </View>
 
         <SettingRow
-          label={`Persist chat history on device: ${persistChatHistory ? "On" : "Off"} (default Off)`}
+          label={`Keep chats after closing the app: ${persistChatHistory ? "On" : "Off"}`}
           info={SETTING_INFO.history}
           onPress={handleTogglePersistHistory}
         />
@@ -372,6 +386,22 @@ export default function SettingsScreen() {
             }}
           />
         ) : null}
+        <Text style={styles.advancedTitle}>Advanced</Text>
+        <SettingRow
+          label={`Show technical details: ${showTechnicalDetails ? "On" : "Off"}`}
+          info={SETTING_INFO.technical}
+          onPress={() => setShowTechnicalDetails(!showTechnicalDetails)}
+        />
+        {showTechnicalDetails ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionBody}>
+              Tier: {tierSpec.name} ({tierSpec.targetRam}){"\n"}
+              Model: {modelDisplayName(activeModel)} · {activeModel.id} · {activeModel.quantization}{"\n"}
+              File: {getActiveModelFileLabel(selectedTier, activeModelId)}{"\n"}
+              Chat runs on an on-device LLM; notes are found with local retrieval (RAG).
+            </Text>
+          </View>
+        ) : null}
         <Text style={styles.versionLabel}>App version: {appVersion}</Text>
       </ScrollView>
 
@@ -383,13 +413,16 @@ export default function SettingsScreen() {
       >
         <View style={[styles.modalBackdrop, isWide && styles.modalBackdropWide]}>
           <View style={[styles.modalCard, isWide && styles.modalCardWide]}>
-            <Text style={styles.modalTitle}>{modalTierSpec.name} model options</Text>
+            <Text style={styles.modalTitle}>{modalTierSpec.label}: choose a model</Text>
             <Text style={styles.modalHint}>
-              Pick a model for {modalTierSpec.name}, then tap Download now if it is not downloaded yet.
+              The recommended one suits most people. Pick one, then tap Download now if it isn’t on your phone yet.
+              Models with the image icon can look at photos.
             </Text>
-            <Text style={styles.modalHint}>
-              Last checked: {lastReadinessCheckByTier[modalTier]?.toLocaleTimeString() ?? "Not checked yet"}
-            </Text>
+            {showTechnicalDetails ? (
+              <Text style={styles.modalHint}>
+                Last checked: {lastReadinessCheckByTier[modalTier]?.toLocaleTimeString() ?? "Not checked yet"}
+              </Text>
+            ) : null}
             <Text
               style={[styles.modalAction, (isCheckingReadiness || isDownloadingSelected) && styles.disabledLink]}
               onPress={() => {
@@ -397,7 +430,7 @@ export default function SettingsScreen() {
                 void refreshReadinessForTier(modalTier);
               }}
             >
-              {isCheckingReadiness ? "Refreshing readiness..." : "Refresh readiness"}
+              {isCheckingReadiness ? "Checking downloads…" : "Check downloads again"}
             </Text>
             <View style={styles.modalOptions}>
               {modalModels.map((model) => {
@@ -418,11 +451,15 @@ export default function SettingsScreen() {
                   >
                     <View style={styles.modalOptionTitleRow}>
                       <Text style={styles.modalOptionTitle}>
-                        {model.family} {model.size}{isPrimary ? " (default)" : ""}
+                        {modelDisplayName(model)}
+                        {isPrimary ? " (recommended)" : ""}
                       </Text>
                       {modelSupportsVision(model) ? <VisionBadge /> : null}
                     </View>
-                    <Text style={styles.modalOptionMeta}>{readinessBadge}</Text>
+                    <Text style={styles.modalOptionMeta}>
+                      {readinessBadge}
+                      {showTechnicalDetails ? ` · ${model.id}` : ""}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -539,6 +576,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { color: "#e5e7eb", fontWeight: "700" },
   sectionBody: { color: "#9ca3af", fontSize: 12, lineHeight: 18 },
+  advancedTitle: { marginTop: 24, color: "#e5e7eb", fontSize: 16, fontWeight: "700" },
   versionLabel: { marginTop: 20, color: "#9ca3af", fontSize: 12 },
 });
 

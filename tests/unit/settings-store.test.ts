@@ -52,6 +52,7 @@ describe("settings store", () => {
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
       persistChatHistory: false,
+      showTechnicalDetails: false,
     });
   });
 
@@ -85,6 +86,7 @@ describe("migrateSettingsState", () => {
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
       persistChatHistory: false,
+      showTechnicalDetails: false,
     });
   });
 
@@ -97,6 +99,7 @@ describe("migrateSettingsState", () => {
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
       persistChatHistory: false,
+      showTechnicalDetails: false,
     });
   });
 
@@ -141,7 +144,14 @@ describe("migrateSettingsState", () => {
       webSearchEnabled: false,
       hasCompletedOnboarding: true,
       persistChatHistory: true,
+      showTechnicalDetails: false,
     });
+  });
+
+  it("keeps technical details off when migrating v6 settings, and keeps them on once chosen", () => {
+    const v6 = { selectedTier: "lite", hasCompletedOnboarding: true, persistChatHistory: true };
+    expect(migrateSettingsState(v6, 6).showTechnicalDetails).toBe(false);
+    expect(migrateSettingsState({ ...v6, showTechnicalDetails: true }, 7).showTechnicalDetails).toBe(true);
   });
 
   it("migrates standardModelId from v5 into tierModelIds.standard", () => {

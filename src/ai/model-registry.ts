@@ -48,7 +48,12 @@ export interface ModelSpec {
 
 export interface TierSpec {
   key: ModelTier;
+  /** Technical tier name (website, store listing, Advanced in Settings). */
   name: "Lite" | "Standard" | "Full";
+  /** Plain-language name shown in the app. */
+  label: "Light" | "Balanced" | "Smartest";
+  /** One everyday sentence on the trade-off, for onboarding and Settings. */
+  summary: string;
   targetRam: string;
   estimatedDownload: string;
   primary: ModelSpec;
@@ -252,6 +257,8 @@ export const MODEL_TIERS: TierSpec[] = [
   {
     key: "lite",
     name: "Lite",
+    label: "Light",
+    summary: "Fastest and the smallest download. Works on older phones; answers are simpler.",
     targetRam: "3-4 GB RAM",
     estimatedDownload: "~430 MB-1.3 GB",
     primary: smol135m,
@@ -264,6 +271,8 @@ export const MODEL_TIERS: TierSpec[] = [
   {
     key: "standard",
     name: "Standard",
+    label: "Balanced",
+    summary: "Good answers at a comfortable speed. Suits most phones from the last few years.",
     targetRam: "6-8 GB RAM",
     estimatedDownload: "~2.5 GB",
     primary: gemma4_e2b,
@@ -276,6 +285,8 @@ export const MODEL_TIERS: TierSpec[] = [
   {
     key: "full",
     name: "Full",
+    label: "Smartest",
+    summary: "The best answers and the biggest download. Needs a newer phone with plenty of memory.",
     targetRam: "10-12+ GB RAM",
     estimatedDownload: "~2.6 GB",
     primary: qwen4b,
@@ -330,12 +341,12 @@ export function getVisionModelsForTier(tier: ModelTier): ModelSpec[] {
 export function visionUnsupportedMessage(tier: ModelTier, modelId?: string | null): string | null {
   const spec = resolveModelForTier(tier, modelId);
   if (modelSupportsVision(spec)) return null;
-  const tierName = getTierSpec(tier).name;
+  const tierName = getTierSpec(tier).label;
   const options = getVisionModelsForTier(tier).map((m) => `${m.family} ${m.size}`);
   const pick =
     options.length > 0
       ? `To ask about images, pick ${options.join(" or ")} for ${tierName} in Settings.`
-      : `No ${tierName} model can read images yet; switch to a tier with a vision model in Settings.`;
+      : `No ${tierName} model can read images yet; choose a model with the image icon in Settings.`;
   return `${spec.family} ${spec.size} can only read text. ${pick}`;
 }
 
@@ -353,11 +364,16 @@ function modelFileLabelFromSource(spec: ModelSpec): string {
   return spec.id;
 }
 
-/** Human-readable active model for UI (tier + family + size). */
+/** Human-readable active model for UI (plain tier label + family + size). */
 export function getActiveModelDisplayName(tier: ModelTier, modelId?: string | null): string {
   const tierSpec = getTierSpec(tier);
   const spec = resolveModelForTier(tier, modelId);
-  return `${tierSpec.name} · ${spec.family} ${spec.size}`;
+  return `${tierSpec.label} · ${spec.family} ${spec.size}`;
+}
+
+/** "Gemma 4 E2B": the model's own name, for pickers and the Advanced section. */
+export function modelDisplayName(spec: ModelSpec): string {
+  return `${spec.family} ${spec.size}`;
 }
 
 /** Human-readable primary model for UI (tier + family + size). */

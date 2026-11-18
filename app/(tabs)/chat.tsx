@@ -15,7 +15,13 @@ import { useBreakpoint, useHingeSplit } from "@/hooks/useBreakpoint";
 import { useLLMChat } from "@/hooks/useLLMChat";
 import { useChatStore } from "@/stores/chat-store";
 import { useSettingsStore } from "@/stores/settings-store";
-import { getTierSpec, resolveModelForTier, visionUnsupportedMessage } from "@/ai/model-registry";
+import {
+  getTierSpec,
+  modelDisplayName,
+  modelSupportsVision,
+  resolveModelForTier,
+  visionUnsupportedMessage,
+} from "@/ai/model-registry";
 import { deleteChatImages, pickChatImage } from "@/utils/chat-images";
 import { CHAT_MAX_WIDTH, LIST_PANE_WIDTH } from "@/utils/layout";
 
@@ -58,6 +64,7 @@ export default function ChatScreen() {
   const selectedModelId = useSettingsStore((s) => s.tierModelIds[selectedTier] ?? null);
   const tierSpec = getTierSpec(selectedTier);
   const activeModel = resolveModelForTier(selectedTier, selectedModelId);
+  const showTechnicalDetails = useSettingsStore((s) => s.showTechnicalDetails);
   const [liveThinkingExpandedOverride, setLiveThinkingExpandedOverride] = useState<boolean | null>(
     null,
   );
@@ -136,14 +143,20 @@ export default function ChatScreen() {
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={[styles.messagesContent, column]}
           >
-            <ChatModelBadge modelName={tierSpec.name} modelId={activeModel.id} />
+            <ChatModelBadge
+              tierLabel={tierSpec.label}
+              modelName={modelDisplayName(activeModel)}
+              modelId={activeModel.id}
+              canSeePhotos={modelSupportsVision(activeModel)}
+              showTechnicalDetails={showTechnicalDetails}
+            />
             {error ? (
               <ErrorBanner
                 message={error}
                 action={
                   errorTier
                     ? {
-                        label: `Open ${getTierSpec(errorTier).name} in Settings`,
+                        label: `Open ${getTierSpec(errorTier).label} in Settings`,
                         onPress: () =>
                           // `at` makes every tap a new param value, so Settings reopens the picker each time.
                           router.push({
@@ -161,7 +174,8 @@ export default function ChatScreen() {
                 role={m.role}
                 content={m.content}
                 thinking={m.thinking}
-                tokensPerSecond={m.tokensPerSecond}
+                // Reply speed is a technical detail, off unless chosen in Settings → Advanced.
+                tokensPerSecond={showTechnicalDetails ? m.tokensPerSecond : undefined}
                 imageUri={m.imageUri}
               />
             ))}

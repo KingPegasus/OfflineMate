@@ -15,6 +15,7 @@ import { retrieveContextForQuery } from "@/ai/rag-pipeline";
 import { buildKeywordNotesReply, searchNotesByKeywords } from "@/context/keyword-notes";
 import { buildPrompt } from "@/ai/prompt-builder";
 import { filterArgsForTool, getToolByName, selectToolFromInput, type Tool } from "@/tools/tool-registry";
+import { toolTitle } from "@/tools/tool-display";
 import { WEB_SEARCH_NO_RESULTS_PREFIX } from "@/tools/search-tool";
 import { useChatStore } from "@/stores/chat-store";
 import { useModelStore } from "@/stores/model-store";
@@ -245,7 +246,7 @@ export class ModelSetupError extends Error {
 }
 
 function settingsFixSteps(tier: ModelTier, filesMayBeDamaged = true): string {
-  const tierName = getTierSpec(tier).name;
+  const tierName = getTierSpec(tier).label;
   const action = filesMayBeDamaged
     ? "tap Download now (or Re-download if it already shows Downloaded)"
     : "tap Download now";
@@ -271,15 +272,15 @@ async function assertChatAssetsReady(tier: ModelTier, modelId?: string | null): 
     .map((asset) => asset.id)
     .slice(0, 4)
     .join(", ");
-  const tierName = getTierSpec(tier).name;
+  const tierName = getTierSpec(tier).label;
   console.warn("[OfflineMate] Chat assets missing:", tierName, missing);
   throw new ModelSetupError(tier, `The ${tierName} model is not downloaded yet. ${settingsFixSteps(tier, false)}`);
 }
 
 /** Ask before switching to a smaller tier after primary model init fails. */
 function confirmModelFallback(failedTier: "full" | "standard", fallbackTier: "standard" | "lite"): Promise<boolean> {
-  const failedName = getTierSpec(failedTier).name;
-  const fallbackName = getTierSpec(fallbackTier).name;
+  const failedName = getTierSpec(failedTier).label;
+  const fallbackName = getTierSpec(fallbackTier).label;
   return new Promise((resolve) => {
     Alert.alert(
       "Model could not load",
@@ -438,14 +439,14 @@ export function useLLMChat() {
             await withIdleDeadlineUnlessDownloading(
               llmEngine.initialize(activeTier, llmInitOpts),
               MODEL_INIT_TIMEOUT_MS,
-              "Model initialization timed out. Make sure the model shows Downloaded in Settings, then try again. On slow devices the first load can take up to several minutes.",
+              "The model took too long to start. Make sure it shows Downloaded in Settings, then try again. On slower phones the first start can take a few minutes.",
               () => llmEngine.cancelPendingLoad(),
             );
           } catch (err) {
             initError = err instanceof Error ? err : new Error(String(err));
             console.error("[OfflineMate] LLM init failed for tier:", tier, initError.message, initError);
             const fallback = getFallbackTier(tier);
-            const tierName = getTierSpec(tier).name;
+            const tierName = getTierSpec(tier).label;
             if (!(initError instanceof ModelSetupError) && (await removeTruncatedChatModel(tier, activeModelId))) {
               // Files were present but short (interrupted download): the fix is downloading, not switching tier.
               throw new ModelSetupError(
@@ -465,7 +466,7 @@ export function useLLMChat() {
                   ? initError
                   : new ModelSetupError(
                       tier,
-                      `Could not load the ${tierName} model. ${settingsFixSteps(tier)} You can also pick a smaller tier there.`,
+                      `Could not load the ${tierName} model. ${settingsFixSteps(tier)} You can also pick a smaller size there.`,
                     );
               }
               activeTier = fallback;
@@ -484,7 +485,7 @@ export function useLLMChat() {
                     onDownloadProgress: reportLlmInitDownloadProgress,
                   }),
                   MODEL_INIT_TIMEOUT_MS,
-                  "Fallback model initialization timed out. Make sure the Lite model shows Downloaded in Settings, or retry after a few minutes.",
+                  "The Light model took too long to start. Make sure it shows Downloaded in Settings, or try again in a few minutes.",
                   () => llmEngine.cancelPendingLoad(),
                 );
               } catch (fallbackErr) {
@@ -719,13 +720,13 @@ export function useLLMChat() {
               const tool = getToolByName(toolName);
               if (!tool) {
                 replyWasClean = false;
-                return `Tool ${toolName} is not available.`;
+                return `${toolTitle(toolName)} is not available.`;
               }
               const filtered = filterArgsForTool(tool, { query: cleaned, text: cleaned, ...args });
               console.log("[OfflineMate] Tool execute:", correlationId, toolName);
               let result;
               try {
-                result = await runTool(tool, filtered, `Tool ${tool.name} timed out. Please try a simpler request.`);
+                result = await runTool(tool, filtered, `${toolTitle(tool.name)} took too long. Please try a simpler request.`);
               } catch (err) {
                 const msg = err instanceof Error ? err.message : "Tool execution failed.";
                 console.warn("[OfflineMate] Tool failed:", correlationId, toolName, msg);
@@ -853,7 +854,7 @@ export function useLLMChat() {
                 }
               }),
               90000,
-              "The model is taking too long to respond. Try Lite tier or ensure model assets are downloaded.",
+              "The assistant is taking too long to respond. Try the Light size in Settings, or check that the download finished.",
               () => llmEngine.interrupt(),
             );
             const endedAt = Date.now();

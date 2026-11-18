@@ -1,16 +1,12 @@
 import { StyleSheet, Text, View } from "react-native";
+import { chatModelBadgeText, type ChatModelLabelInput } from "@/utils/chat-model-label";
 
-type Props = {
-  modelName: string;
-  modelId: string;
-};
+type Props = ChatModelLabelInput;
 
-export function ChatModelBadge({ modelName, modelId }: Props) {
+export function ChatModelBadge(props: Props) {
   return (
     <View style={styles.badge}>
-      <Text style={styles.text}>
-        Active model: {modelName} · {modelId}
-      </Text>
+      <Text style={styles.text}>{chatModelBadgeText(props)}</Text>
     </View>
   );
 }

@@ -31,7 +31,7 @@ describe("vision models in the registry", () => {
     const spec = resolveModelForTier("full", "gemma4-e2b-multimodal");
     expect(spec.capabilities).toEqual(["vision", "audio"]);
     expect(spec.audioConfig).toEqual({ samplesPerBlock: 7680, tokensPerBlock: 12 });
-    expect(visionUnsupportedMessage("full", null)).toContain("LFM 2.5 VL 1.6B or Gemma 4 E2B multimodal for Full");
+    expect(visionUnsupportedMessage("full", null)).toContain("LFM 2.5 VL 1.6B or Gemma 4 E2B multimodal for Smartest");
   });
 
   it("keeps text-only tier defaults unchanged", () => {
@@ -45,7 +45,7 @@ describe("vision models in the registry", () => {
     expect(visionUnsupportedMessage("standard", "lfm2.5-vl-1.6b")).toBeNull();
     const message = visionUnsupportedMessage("standard", null);
     expect(message).toContain("Gemma 4 E2B can only read text");
-    expect(message).toContain("LFM 2.5 VL 1.6B for Standard in Settings");
+    expect(message).toContain("LFM 2.5 VL 1.6B for Balanced in Settings");
   });
 
   it("carries the model card sampling overrides", () => {

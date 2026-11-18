@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.14.0] - 2026-11-18
+
+Easier for people who aren't technical: setup recommends one download for your phone with a single button, and the app says what things do in everyday words. Model names, ids and reply speed move behind **Settings → Advanced → Show technical details**.
+
+### Added
+- Onboarding fits on one screen with no scrolling: "Recommended for your phone", the size in plain words with its download ("Balanced · 2.6 GB download"), one sentence on what that means, and one **Download** button. **Choose a different model** opens the three sizes with a legend ("Smaller: faster, and a smaller download. Bigger: smarter, but needs a newer phone." and the image icon for "Can look at photos"), and **See every model for …** opens the full model list. The first setup selects the recommended size; running setup again from Settings keeps your choice. **Skip for now** replaces "Continue to Chat (finish download later)" (`app/onboarding.tsx`, `src/components/ModelDownloader.tsx`).
+- Plain names for the tiers, shown everywhere in the app: **Light** (Lite), **Balanced** (Standard) and **Smartest** (Full), each with a one-line summary instead of a RAM figure (`label`, `summary` in `src/ai/model-registry.ts`). The technical names and RAM figures stay on the website and in Advanced.
+- **Settings → Advanced → Show technical details** (off by default): the reply speed ("(18.3 tok/s)") under answers, the model name and id in Chat's badge, Settings and the model picker, tool ids in the Tools tab, and a card with the tier, model id, quantization and file name (`showTechnicalDetails` in `src/stores/settings-store.ts`, settings version 7).
+- The Tools tab is now **What you can ask**: each tool has a plain name, an icon, what it does and an example to try, such as Reminders, "Remind me at 9 to call the bank". Weather and web search say they need internet, or that they're turned off in Settings. Tool ids like `calendar.getEvents` show only with technical details on (`app/(tabs)/tools.tsx`, `src/tools/tool-display.ts`).
+- Tests: the recommendation rule and its headline (`tests/unit/tier-recommendation.test.ts`); every registered tool has a friendly entry whose example routes to that tool, and the chat badge wording with and without technical details (`tests/unit/plain-language.test.ts`); technical details stay off when migrating v6 settings (`tests/unit/settings-store.test.ts`).
+
+### Changed
+- Chat's badge says "Assistant: Balanced · can look at photos" instead of "Active model: Standard · lfm2.5-vl-1.6b" (`src/components/ChatModelBadge.tsx`, `src/utils/chat-model-label.ts`).
+- Settings, in plain words: "Assistant" and "In use" instead of "Model Tier" and "Active model" (no model id); each size shows its summary and its model marked "(recommended)" or "(your choice)" instead of "(default)" / "(custom)"; **Set up again** (was Open Onboarding), **Read replies aloud** (was Speak responses (TTS)), **Keep chats after closing the app** (was Persist chat history on device … (default Off)); the panel is "Privacy and internet use" and no longer says "retrieval" or "Text-to-speech uses device OS voices". The model picker is "Balanced: choose a model", explains the image icon, and **Check downloads again** replaces "Refresh readiness"; "Last checked" shows only with technical details (`app/(tabs)/settings.tsx`).
+- Chat errors name the plain size ("Open Balanced in Settings", "The Smartest model is not downloaded yet"), and the time-out messages drop "model assets" and "initialization" ("The model took too long to start…"). A slow tool says "Reminders took too long" instead of "Tool reminders.set timed out" (`src/hooks/useLLMChat.ts`). The "can't see images" message names the size: "pick LFM 2.5 VL 1.6B for Balanced in Settings".
+- The recommendation rule moved to a pure function so it can be tested; the thresholds are unchanged (10 GB or a 2024 year class for Smartest, 5 GB or 2021 for Balanced) (`src/utils/tier-recommendation.ts`, `src/utils/device-profiler.ts`).
+- Website Settings guide and privacy policy use the new setting names ("Set up again", "Read replies aloud", "Keep chat history", "Show technical details") and the plain size names next to the tier names (`website/settings.html`, `docs/legal/privacy-policy.md`).
+- App version updated to `0.14.0` in `app.json`. This is a minor release: new onboarding and a new setting.
+
+### Known issues
+- Store screenshots and website images show the old wording and need retaking: phone onboarding, chat, Settings tier list, model picker and privacy panel (`assets/play-store-listing/screenshots/phone/`); the tablet onboarding, chat and model picker (`screenshots/tablet/`); and on the website `onboarding.webp`, `chat.webp`, `tools-chat.webp`, `photo-chat.webp`, `picker-lite.webp`, `settings.webp`, `tablet-settings.webp`, `tablet-chat.webp` and `tablet-photo-chat.webp`, with their alt text (`website/index.html`, `website/settings.html`). The demo and use-case videos also show the old screens.
+- The website, models page and Play listing still call the tiers Lite, Standard and Full. The app shows both names in Advanced and the Settings guide gives both, but the homepage and listing copy weren't rewritten.
+- Behaviour is unchanged: tier keys, saved model choices and routing are the same, and only labels moved. Checked on the Android phone emulator (release build); not checked on iOS or a tablet.
+
 ## [0.13.0] - 2026-11-20
 
 Foldable phones: the app switches between the phone and tablet layouts as you fold and unfold, without losing what you were doing, and keeps content off the fold when the phone is half-open. Also fixes the keyboard closing by itself while typing when the microphone is denied, and the app closing on Chromebooks.

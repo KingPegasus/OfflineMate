@@ -110,8 +110,8 @@ describe("website content", () => {
     const app = fs.readFileSync(path.join(process.cwd(), "app/(tabs)/settings.tsx"), "utf8").replace(/\r\n/g, "\n");
     // Every option with an info button in the app has a section on the page.
     const titles = [...app.matchAll(/title: "([^"]+)",\n\s+body:/g)].map((m) => m[1]);
-    expect(titles.length).toBeGreaterThanOrEqual(6);
-    for (const title of titles) expect(page, title).toContain(title.replace("Persist chat history", "Persist chat history on device"));
+    expect(titles.length).toBeGreaterThanOrEqual(7);
+    for (const title of titles) expect(page, title).toContain(title);
     expect(page).toContain("/screenshots/settings.webp");
     expect(page).toContain("/screenshots/tablet-settings.webp");
     expect(readPage("index.html")).toContain('href="/settings.html"');

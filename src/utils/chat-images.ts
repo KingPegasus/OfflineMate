@@ -79,7 +79,7 @@ export async function deleteChatImages(uris: (string | undefined)[]) {
 
 /**
  * Deletes copies no saved message points to: a photo attached but never sent (the app was closed
- * first), or chats that weren't kept because "Persist chat history" is off. Run only once the saved
+ * first), or chats that weren't kept because "Keep chat history" is off. Run only once the saved
  * chats have loaded, or it would delete photos that are still in a chat.
  */
 export async function pruneUnreferencedChatImages(referencedUris: (string | undefined)[]): Promise<number> {
