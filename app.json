@@ -60,7 +60,8 @@
         }
       ],
       "./plugins/with-cmake-object-path-max",
-      "./plugins/with-native-debug-symbols"
+      "./plugins/with-native-debug-symbols",
+      "./plugins/with-optional-hardware"
     ],
     "experiments": {
       "typedRoutes": true
