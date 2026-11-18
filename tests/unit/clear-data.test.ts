@@ -46,4 +46,18 @@ describe('Settings "Clear chats and memories"', () => {
     expect(after.messages).toEqual([]);
     expect(after.activeConversationId).toBeNull();
   });
+
+  it("deletes photos in chats but not one waiting in the message box", async () => {
+    const FileSystem = await import("expo-file-system/legacy");
+    const deleteAsync = vi.mocked(FileSystem.deleteAsync);
+    deleteAsync.mockClear();
+    const id = useChatStore.getState().createConversation("photo");
+    const sent = `${FileSystem.documentDirectory}chat-images/sent.jpg`;
+    useChatStore
+      .getState()
+      .pushMessage({ id: "m3", role: "user", content: "what is this?", imageUri: sent, createdAt: Date.now() } as never, id);
+    useChatStore.getState().clearAllConversations();
+    await vi.waitFor(() => expect(deleteAsync).toHaveBeenCalledWith(sent, { idempotent: true }));
+    expect(deleteAsync).not.toHaveBeenCalledWith(`${FileSystem.documentDirectory}chat-images`, expect.anything());
+  });
 });

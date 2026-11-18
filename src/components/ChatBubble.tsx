@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { MarkdownText } from "@/components/MarkdownText";
 import { formatTokPerSec, hasMeasuredTokPerSec } from "@/utils/tok-per-sec";
@@ -10,9 +10,11 @@ interface Props {
   thinking?: string[];
   /** Assistant replies: generation speed (null shows "n/a"); undefined hides the line. */
   tokensPerSecond?: number | null;
+  /** User messages: gallery image sent with the prompt. */
+  imageUri?: string;
 }
 
-export function ChatBubble({ role, content, thinking, tokensPerSecond }: Props) {
+export function ChatBubble({ role, content, thinking, tokensPerSecond, imageUri }: Props) {
   const isUser = role === "user";
   const isAssistant = role === "assistant";
   const [isThinkingOpen, setIsThinkingOpen] = useState(false);
@@ -50,6 +52,14 @@ export function ChatBubble({ role, content, thinking, tokensPerSecond }: Props) 
             ) : null}
           </View>
         ) : null}
+        {imageUri ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.image}
+            resizeMode="cover"
+            accessibilityLabel="Attached image"
+          />
+        ) : null}
         <MarkdownText text={content} style={styles.text} boldStyle={styles.textBold} />
         {isAssistant && hasMeasuredTokPerSec(tokensPerSecond) ? (
           <Text style={styles.metric}>{formatTokPerSec(tokensPerSecond)}</Text>
@@ -68,6 +78,7 @@ export function ChatBubble({ role, content, thinking, tokensPerSecond }: Props) 
 
 const styles = StyleSheet.create({
   row: { marginBottom: 8, width: "100%" },
+  image: { width: 200, height: 200, borderRadius: 10, marginBottom: 6, backgroundColor: "#0f172a" },
   userRow: { alignItems: "flex-end" },
   assistantRow: { alignItems: "flex-start" },
   bubble: { maxWidth: "85%", borderRadius: 12, padding: 10 },

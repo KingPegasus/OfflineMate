@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { ChatBubble } from "@/components/ChatBubble";
 import { ChatListPane } from "@/components/ChatListPane";
@@ -15,7 +15,8 @@ import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { useLLMChat } from "@/hooks/useLLMChat";
 import { useChatStore } from "@/stores/chat-store";
 import { useSettingsStore } from "@/stores/settings-store";
-import { getTierSpec, resolveModelForTier } from "@/ai/model-registry";
+import { getTierSpec, resolveModelForTier, visionUnsupportedMessage } from "@/ai/model-registry";
+import { deleteChatImages, pickChatImage } from "@/utils/chat-images";
 import { CHAT_MAX_WIDTH, LIST_PANE_WIDTH } from "@/utils/layout";
 
 export default function ChatScreen() {
@@ -24,6 +25,7 @@ export default function ChatScreen() {
   const { isWide, isTwoPane } = useBreakpoint();
   const column = isWide ? styles.column : null;
   const [prompt, setPrompt] = useState("");
+  const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
   const {
     messages,
     startNewConversation,
@@ -50,7 +52,41 @@ export default function ChatScreen() {
 
   const resetLiveThinkingOverride = () => setLiveThinkingExpandedOverride(null);
 
-  const canSubmit = useMemo(() => prompt.trim().length > 0 && !isLoading, [prompt, isLoading]);
+  const canSubmit = useMemo(
+    () => (prompt.trim().length > 0 || !!pendingImageUri) && !isLoading,
+    [prompt, pendingImageUri, isLoading],
+  );
+
+  const openTierSettings = () =>
+    // `at` makes every tap a new param value, so Settings reopens the picker each time.
+    router.push({
+      pathname: "/settings",
+      params: { tier: selectedTier, at: String(Date.now()) },
+    } as never);
+
+  const handleAttachImage = async () => {
+    const visionError = visionUnsupportedMessage(selectedTier, selectedModelId);
+    if (visionError) {
+      Alert.alert("This model can't see images", visionError, [
+        { text: "Not now", style: "cancel" },
+        { text: "Open Settings", onPress: openTierSettings },
+      ]);
+      return;
+    }
+    const result = await pickChatImage();
+    if (result.status === "picked") {
+      // Replacing an unsent image: its copy is no longer needed.
+      if (pendingImageUri) void deleteChatImages([pendingImageUri]);
+      setPendingImageUri(result.image.uri);
+    } else if (result.status === "error") {
+      Alert.alert("Image not added", result.message);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    if (pendingImageUri) void deleteChatImages([pendingImageUri]);
+    setPendingImageUri(null);
+  };
   const handleNewChat = () => {
     resetLiveThinkingOverride();
     startNewConversation("New chat");
@@ -107,6 +143,7 @@ export default function ChatScreen() {
                 content={m.content}
                 thinking={m.thinking}
                 tokensPerSecond={m.tokensPerSecond}
+                imageUri={m.imageUri}
               />
             ))}
             <LiveThinkingPanel
@@ -127,8 +164,9 @@ export default function ChatScreen() {
               onSend={() => {
                 if (!canSubmit) return;
                 resetLiveThinkingOverride();
-                void sendMessage(prompt.trim());
+                void sendMessage(prompt.trim(), pendingImageUri ? { imageUri: pendingImageUri } : undefined);
                 setPrompt("");
+                setPendingImageUri(null);
               }}
               onStop={() => {
                 resetLiveThinkingOverride();
@@ -136,6 +174,9 @@ export default function ChatScreen() {
               }}
               isLoading={isLoading}
               canSubmit={canSubmit}
+              attachedImageUri={pendingImageUri}
+              onAttachImage={() => void handleAttachImage()}
+              onRemoveImage={handleRemoveImage}
               onVoiceTranscript={(text) => {
                 setPrompt((prev) => (prev ? `${prev} ${text}` : text));
               }}

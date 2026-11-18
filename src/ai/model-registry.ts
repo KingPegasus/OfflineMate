@@ -3,6 +3,8 @@ import {
   LLAMA3_2_1B_SPINQUANT,
   LLAMA3_2_3B_SPINQUANT,
   LFM2_5_350M_QUANTIZED,
+  LFM2_5_VL_1_6B_QUANTIZED,
+  LFM2_5_VL_450M_QUANTIZED,
   QWEN3_1_7B_QUANTIZED,
   QWEN3_4B_QUANTIZED,
   QWEN3_5_2B_QUANTIZED,
@@ -11,6 +13,17 @@ import {
   SMOLLM2_1_360M_QUANTIZED,
   models,
 } from "react-native-executorch/legacy";
+
+/** Extra input types a model accepts besides text. */
+export type ModelCapability = "vision" | "audio";
+
+/** Sampling settings a model card recommends; applied on top of the tier defaults. */
+export interface ModelGenerationOverrides {
+  temperature?: number;
+  topp?: number;
+  minP?: number;
+  repetitionPenalty?: number;
+}
 
 export interface ModelSpec {
   id: string;
@@ -26,6 +39,11 @@ export interface ModelSpec {
     tokenizerSource: string;
     tokenizerConfigSource: string;
   };
+  /** Vision models take an image from the gallery alongside the prompt. */
+  capabilities?: readonly ModelCapability[];
+  /** Required by models exported with an audio encoder (Gemma 4 multimodal), even when only images are used. */
+  audioConfig?: { samplesPerBlock: number; tokensPerBlock: number };
+  generationOverrides?: ModelGenerationOverrides;
 }
 
 export interface TierSpec {
@@ -89,6 +107,33 @@ const lfm25_350m: ModelSpec = {
   downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5",
   estimatedSizeMb: 432,
   runtime: LFM2_5_350M_QUANTIZED,
+};
+
+// Vision-language models: the chat composer can attach a gallery image when one is active.
+const lfm25_vl_450m: ModelSpec = {
+  id: "lfm2.5-vl-450m",
+  provider: "lfm",
+  family: "LFM 2.5 VL",
+  size: "450M",
+  quantization: "8da4w",
+  downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5",
+  estimatedSizeMb: 619,
+  runtime: LFM2_5_VL_450M_QUANTIZED,
+  capabilities: LFM2_5_VL_450M_QUANTIZED.capabilities,
+  generationOverrides: LFM2_5_VL_450M_QUANTIZED.generationConfig,
+};
+
+const lfm25_vl_1_6b: ModelSpec = {
+  id: "lfm2.5-vl-1.6b",
+  provider: "lfm",
+  family: "LFM 2.5 VL",
+  size: "1.6B",
+  quantization: "8da4w",
+  downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5",
+  estimatedSizeMb: 2315,
+  runtime: LFM2_5_VL_1_6B_QUANTIZED,
+  capabilities: LFM2_5_VL_1_6B_QUANTIZED.capabilities,
+  generationOverrides: LFM2_5_VL_1_6B_QUANTIZED.generationConfig,
 };
 
 const qwen17b: ModelSpec = {
@@ -157,6 +202,22 @@ const gemma4_e2b: ModelSpec = {
   runtime: models.llm.gemma4_e2b(),
 };
 
+// Same Gemma 4 E2B, exported with its vision and audio encoders: a separate, larger file than the
+// text-only default, so it is offered on Full where the extra ~1.7 GB of weights fits in RAM.
+const gemma4MultimodalRuntime = models.llm.gemma4_e2b_multimodal();
+const gemma4_e2b_multimodal: ModelSpec = {
+  id: "gemma4-e2b-multimodal",
+  provider: "gemma",
+  family: "Gemma 4",
+  size: "E2B multimodal",
+  quantization: "8da4w",
+  downloadUrl: "https://huggingface.co/software-mansion/react-native-executorch-gemma-4-multimodal",
+  estimatedSizeMb: 4169,
+  runtime: gemma4MultimodalRuntime,
+  capabilities: gemma4MultimodalRuntime.capabilities,
+  audioConfig: gemma4MultimodalRuntime.audioConfig,
+};
+
 const minicpm5_2b: ModelSpec = {
   id: "minicpm5-2b",
   provider: "minicpm",
@@ -194,7 +255,7 @@ export const MODEL_TIERS: TierSpec[] = [
     targetRam: "3-4 GB RAM",
     estimatedDownload: "~430 MB-1.3 GB",
     primary: smol135m,
-    alternates: [smol360m, lfm25_350m],
+    alternates: [smol360m, lfm25_350m, lfm25_vl_450m],
     futureUpgrade: {
       id: "qwen3.5-0.8b",
       note: "Exported, but the 8da4w file is ~1.4 GB; too large for Lite until a smaller export ships.",
@@ -206,7 +267,7 @@ export const MODEL_TIERS: TierSpec[] = [
     targetRam: "6-8 GB RAM",
     estimatedDownload: "~2.5 GB",
     primary: gemma4_e2b,
-    alternates: [qwen17b, qwen35_2b, minicpm5_2b, smol17b, llama1b],
+    alternates: [qwen17b, qwen35_2b, minicpm5_2b, smol17b, llama1b, lfm25_vl_1_6b],
     futureUpgrade: {
       id: "qwen3.5-2b",
       note: "Available as a Standard alternate in Settings for side-by-side testing.",
@@ -218,7 +279,7 @@ export const MODEL_TIERS: TierSpec[] = [
     targetRam: "10-12+ GB RAM",
     estimatedDownload: "~2.6 GB",
     primary: qwen4b,
-    alternates: [lfm25_2_6b, llama3b],
+    alternates: [lfm25_2_6b, llama3b, lfm25_vl_1_6b, gemma4_e2b_multimodal],
     futureUpgrade: {
       id: "qwen3.5-4b",
       note: "Not exported for ExecuTorch as of react-native-executorch 0.11.0.",
@@ -250,6 +311,32 @@ export function resolveModelForTier(tier: ModelTier, modelId?: string | null): M
     return tierSpec.primary;
   }
   return tierSpec.alternates.find((it) => it.id === modelId) ?? tierSpec.primary;
+}
+
+/** True when the model accepts an image with the prompt. */
+export function modelSupportsVision(spec: ModelSpec): boolean {
+  return spec.capabilities?.includes("vision") ?? false;
+}
+
+/** Vision models offered for a tier, for "pick one in Settings" hints. */
+export function getVisionModelsForTier(tier: ModelTier): ModelSpec[] {
+  return getModelsForTier(tier).filter(modelSupportsVision);
+}
+
+/**
+ * Null when the tier's active model can read images; otherwise a message naming the vision models
+ * to pick in Settings for that tier.
+ */
+export function visionUnsupportedMessage(tier: ModelTier, modelId?: string | null): string | null {
+  const spec = resolveModelForTier(tier, modelId);
+  if (modelSupportsVision(spec)) return null;
+  const tierName = getTierSpec(tier).name;
+  const options = getVisionModelsForTier(tier).map((m) => `${m.family} ${m.size}`);
+  const pick =
+    options.length > 0
+      ? `To ask about images, pick ${options.join(" or ")} for ${tierName} in Settings.`
+      : `No ${tierName} model can read images yet; switch to a tier with a vision model in Settings.`;
+  return `${spec.family} ${spec.size} can only read text. ${pick}`;
 }
 
 function modelFileLabelFromSource(spec: ModelSpec): string {

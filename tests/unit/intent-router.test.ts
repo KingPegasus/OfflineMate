@@ -81,6 +81,9 @@ describe("routeIntent", () => {
     expect(routeIntent("Add note to publish the application to the Google Play store.")).toBe("tool");
     expect(routeIntent("Remember this password is wrong")).toBe("tool");
     expect(routeIntent("Play this musical note on the piano")).toBe("direct");
+    expect(routeIntent("Find my note about milk")).toBe("tool");
+    expect(routeIntent("Search my notes for the wifi password")).toBe("tool");
+    expect(routeIntent("Show me the note about rent")).toBe("tool");
     expect(routeIntent("I need to add notebook pages")).toBe("direct");
   });
 
@@ -89,6 +92,10 @@ describe("routeIntent", () => {
     expect(routeIntent("What’s Ali’s number")).toBe("tool");
     expect(routeIntent("Give me Sara's mobile number")).toBe("tool");
     expect(routeIntent("contact number of Ali")).toBe("tool");
+    expect(routeIntent("Find Sara in my contacts")).toBe("tool");
+    expect(routeIntent("Is Ali in my phone contacts?")).toBe("tool");
+    expect(routeIntent("Search my contacts for Ali")).toBe("tool");
+    expect(routeIntent("I lost my contacts at the gym")).toBe("direct");
     expect(routeIntent("What is the number of planets in the solar system?")).toBe("direct");
     expect(routeIntent("Pick a number between 1 and 10")).toBe("direct");
     expect(routeIntent("What's pi's value to 5 digits")).toBe("direct");

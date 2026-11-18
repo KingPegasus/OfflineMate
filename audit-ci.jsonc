@@ -5,5 +5,9 @@
   "report-type": "summary",
   // Build-time tooling advisories with no patched release yet. None of these packages ship in the app bundle.
   // Remove each entry once upstream publishes a fix (audit-ci warns about entries that no longer match).
-  "allowlist": []
+  "allowlist": [
+    // picomatch ReDoS (high, 2026-11): every release up to the latest, 4.0.7, is affected. It's pulled in
+    // by Metro, ESLint, Vitest and Expo config plugins at build time only, never by the app bundle.
+    "GHSA-fc5q-39xc-vjpf"
+  ]
 }

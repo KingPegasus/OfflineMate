@@ -1,4 +1,5 @@
 import * as Contacts from "expo-contacts/legacy";
+import { wantsContactLookupIntent } from "@/ai/intent-router";
 import type { Tool } from "@/tools/tool-registry";
 import { contactSearchNames, extractContactName } from "@/tools/contact-query";
 import { permissionOffMessage } from "@/tools/permission-message";
@@ -23,6 +24,7 @@ export const searchContactsTool: Tool = {
   name: "contacts.search",
   description: "Find a contact's phone number by name",
   keywords: ["contact", "call", "phone", "phone number", "contact number", "mobile number", "'s number"],
+  matches: wantsContactLookupIntent,
   params: { required: ["query"] },
   execute: async (params) => {
     // The planner may pass just the name, or the whole message; both go through the same cleanup.

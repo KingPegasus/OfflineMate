@@ -6,7 +6,7 @@
     <title>OfflineMate: Private Offline AI Assistant for Android</title>
     <meta
       name="description"
-      content="OfflineMate is a free, open-source AI assistant that runs on your phone: Android now, iOS coming soon. Chat, voice, notes and reminders work offline, with no account and no cloud."
+      content="OfflineMate is a free, open-source AI assistant that runs on your phone: Android now, iOS coming soon. Chat, ask about photos, voice, notes and reminders work offline, with no account and no cloud."
     />
     <meta name="author" content="OfflineMate" />
     <meta name="theme-color" content="#020617" />
@@ -23,7 +23,7 @@
     <meta property="og:title" content="OfflineMate: Private Offline AI Assistant for Android" />
     <meta
       property="og:description"
-      content="A free, open-source AI assistant that runs on your phone. Chat, voice, notes and reminders work offline, with no account and no cloud."
+      content="A free, open-source AI assistant that runs on your phone. Chat, ask about photos, voice, notes and reminders work offline, with no account and no cloud."
     />
     <meta property="og:url" content="https://offlinemate.com/" />
     <meta property="og:image" content="https://offlinemate.com/og-image.jpg" />
@@ -76,20 +76,23 @@
             "name": "OfflineMate",
             "applicationCategory": "UtilitiesApplication",
             "operatingSystem": "Android 7.0 or later",
-            "description": "Free, open-source AI assistant that runs language models on your Android phone, with offline chat, voice input, semantic notes search, and device tools.",
+            "description": "Free, open-source AI assistant that runs language and vision models on your Android phone, with offline chat, questions about your photos, voice input, semantic notes search, and device tools.",
             "url": "https://offlinemate.com/",
             "image": "https://offlinemate.com/icon-512.png",
             "screenshot": [
               "https://offlinemate.com/screenshots/chat.webp",
+              "https://offlinemate.com/screenshots/photo-chat.webp",
               "https://offlinemate.com/screenshots/notes.webp",
               "https://offlinemate.com/screenshots/settings.webp",
               "https://offlinemate.com/screenshots/tools.webp",
               "https://offlinemate.com/screenshots/tools-chat.webp",
               "https://offlinemate.com/screenshots/tablet-chat.webp",
+              "https://offlinemate.com/screenshots/tablet-photo-chat.webp",
               "https://offlinemate.com/screenshots/tablet-notes.webp"
             ],
             "featureList": [
               "On-device AI chat",
+              "Ask about a photo with on-device vision models",
               "Lite, Standard and Full model tiers",
               "Semantic search over your notes",
               "Voice input with on-device speech-to-text",
@@ -159,7 +162,7 @@
                 "name": "How much storage does it need?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "The model download is about 430 MB to 1.3 GB for Lite, about 2.5 GB for Standard, and about 2.6 GB for Full."
+                  "text": "The default models download about 430 MB on Lite, 2.5 GB on Standard and 2.6 GB on Full. Alternatives range up to 1.3 GB on Lite, 2.9 GB on Standard and 4.2 GB on Full. OfflineMate checks your free storage before it starts."
                 }
               },
               {
@@ -168,6 +171,22 @@
                 "acceptedAnswer": {
                   "@type": "Answer",
                   "text": "The defaults are SmolLM2 135M on Lite, Gemma 4 E2B on Standard, and Qwen 3 4B on Full. Each tier also offers alternatives, including Llama 3.2, LFM 2.5, MiniCPM5 and Qwen 3.5."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can OfflineMate understand photos?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, with a vision model: LFM 2.5 VL 450M on Lite, LFM 2.5 VL 1.6B on Standard and Full, or Gemma 4 E2B multimodal on Full. Pick a photo from your gallery and ask about it. The image is read on your phone and never uploaded."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does OfflineMate need access to all my photos?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. It opens Android’s photo picker, so you choose one photo at a time and the app only gets that one. It asks for no photo or storage permission. The copy it keeps is shrunk and has its location data removed."
                 }
               },
               {
@@ -259,7 +278,7 @@
 
           <ul class="facts" aria-label="OfflineMate at a glance">
             <li><strong>On device</strong><span>Chat, notes and voice input run on your phone</span></li>
-            <li><strong>12 models</strong><span>SmolLM2, LFM, Gemma, Qwen, Llama and more</span></li>
+            <li><strong>15 models</strong><span>SmolLM2, LFM, Gemma, Qwen, Llama and more, 3 that read photos</span></li>
             <li><strong>3 tiers</strong><span>Lite, Standard and Full, matched to your RAM</span></li>
             <li><strong>No account</strong><span>Free, open source, MIT licensed</span></li>
           </ul>
@@ -286,6 +305,18 @@
                   helps you follow reasoning before the final answer.
                 </p>
                 <p class="feature-example"><em>Example</em> “Explain recursion like I’m new to code” (works offline after the model is downloaded).</p>
+              </article>
+
+              <article class="bento-card">
+                <div class="bento-card-header">
+                  <span class="bento-icon" aria-hidden="true">🖼</span>
+                  <h3 class="bento-card-title">Ask about a photo</h3>
+                </div>
+                <p class="feature-detail">
+                  Pick a picture from your gallery and ask about it. A <strong>vision model</strong> (LFM 2.5 VL or Gemma 4
+                  multimodal) reads it on your phone. No photo permission, and the image never leaves the device.
+                </p>
+                <p class="feature-example"><em>Examples</em> “What does this sign say?”; “What flowers are these?”</p>
               </article>
 
               <article class="bento-card">
@@ -361,6 +392,31 @@
                 <p class="feature-example"><em>Examples</em> “Open chats”; “Delete this conversation”; “Keep chat history on device.”</p>
               </article>
             </div>
+            <div class="feature-showcase feature-showcase--flip">
+              <figure class="feature-showcase-shot">
+                <img
+                  src="/screenshots/photo-chat.webp"
+                  width="480"
+                  height="990"
+                  alt="OfflineMate chat on the Standard tier with LFM 2.5 VL 1.6B, in airplane mode: a photo of a café menu board is attached to the question Which drink is cheapest, and how much is a latte? The reply reads the prices from the photo: espresso at $2.50, and a latte costs $4.20."
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <div class="feature-showcase-text">
+                <h3>Ask about any photo, offline</h3>
+                <p>
+                  Tap the image button, pick a photo, and ask. Android’s photo picker hands over only the photo you choose,
+                  so OfflineMate needs no photo permission, and the copy it keeps is shrunk and stripped of location data.
+                </p>
+                <ul class="feature-showcase-list">
+                  <li><span>“Which drink is cheapest?”</span> reads the prices on a menu</li>
+                  <li><span>“What flowers are these?”</span> describes what’s in it</li>
+                  <li><span>Send with no text</span> for a description</li>
+                  <li><span>Look for the image icon</span> in Settings: LFM 2.5 VL 450M (Lite), LFM 2.5 VL 1.6B, Gemma 4 E2B multimodal (Full)</li>
+                </ul>
+              </div>
+            </div>
             <div class="feature-showcase">
               <figure class="feature-showcase-shot">
                 <img
@@ -400,7 +456,11 @@
               </li>
               <li>
                 <h3>Download the model once</h3>
-                <p>The chat, speech, and search files download to your phone. This is the step that needs a connection.</p>
+                <p>
+                  The chat, speech, and search files download to your phone. This is the step that needs a connection.
+                  OfflineMate checks your free storage, asks before using mobile data, and shows the size, speed and time
+                  left, with a Cancel button.
+                </p>
               </li>
               <li>
                 <h3>Use it anywhere</h3>
@@ -432,6 +492,7 @@
                   <li><span><a href="https://huggingface.co/software-mansion/SmolLM2-ExecuTorch">SmolLM2 135M</a> <span class="tier-default">Default</span></span><span>~534 MB</span></li>
                   <li><span><a href="https://huggingface.co/software-mansion/SmolLM2-ExecuTorch">SmolLM2 360M</a></span><span>~1.3 GB</span></li>
                   <li><span><a href="https://huggingface.co/software-mansion/LFM2.5-ExecuTorch">LFM 2.5 350M</a></span><span>~432 MB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5">LFM 2.5 VL 450M</a></span><span>~619 MB</span></li>
                 </ul>
               </article>
               <article class="tier-card">
@@ -445,6 +506,7 @@
                 <ul class="tier-models">
                   <li><span><a href="https://huggingface.co/software-mansion/gemma-4-E2B-it-text-ExecuTorch">Gemma 4 E2B</a> <span class="tier-default">Default</span></span><span>~2.5 GB</span></li>
                   <li><span><a href="https://huggingface.co/software-mansion/Llama-3.2-ExecuTorch">Llama 3.2 1B</a></span><span>~1.1 GB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5">LFM 2.5 VL 1.6B</a></span><span>~2.3 GB</span></li>
                   <li><span><a href="https://huggingface.co/software-mansion/Qwen3-ExecuTorch">Qwen 3 1.7B</a></span><span>~1.2 GB</span></li>
                   <li><span><a href="https://huggingface.co/software-mansion/SmolLM2-ExecuTorch">SmolLM2 1.7B</a></span><span>~970 MB</span></li>
                   <li><span><a href="https://huggingface.co/software-mansion/Qwen3.5-ExecuTorch">Qwen 3.5 2B</a></span><span>~2.9 GB</span></li>
@@ -462,6 +524,8 @@
                 <ul class="tier-models">
                   <li><span><a href="https://huggingface.co/software-mansion/Qwen3-ExecuTorch">Qwen 3 4B</a> <span class="tier-default">Default</span></span><span>~2.6 GB</span></li>
                   <li><span><a href="https://huggingface.co/software-mansion/LFM2.5-ExecuTorch">LFM 2.5 2.6B</a></span><span>~1.7 GB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/react-native-executorch-lfm-2.5">LFM 2.5 VL 1.6B</a></span><span>~2.3 GB</span></li>
+                  <li><span><a href="https://huggingface.co/software-mansion/react-native-executorch-gemma-4-multimodal">Gemma 4 E2B multimodal</a></span><span>~4.2 GB</span></li>
                   <li><span><a href="https://huggingface.co/software-mansion/Llama-3.2-ExecuTorch">Llama 3.2 3B</a></span><span>~2.4 GB</span></li>
                 </ul>
               </article>
@@ -516,11 +580,23 @@
                   src="/screenshots/chat.webp"
                   width="480"
                   height="990"
-                  alt="OfflineMate chat screen: the Lite model on the phone answers a request for three tips to beat jet lag."
+                  alt="OfflineMate chat screen on the Standard tier: Gemma 4 E2B on the phone answers a request for three tips to beat jet lag. The image button sits next to the message box."
                   loading="lazy"
                   decoding="async"
                 />
                 <figcaption>On-device chat, even in airplane mode</figcaption>
+              </figure>
+              <figure class="shot-card">
+                <img
+                  class="shot"
+                  src="/screenshots/photo-chat.webp"
+                  width="480"
+                  height="990"
+                  alt="OfflineMate reading a photo of a café menu: the on-device vision model says the cheapest drink is espresso at $2.50 and a latte costs $4.20."
+                  loading="lazy"
+                  decoding="async"
+                />
+                <figcaption>Ask about a photo, on the device</figcaption>
               </figure>
               <figure class="shot-card">
                 <img
@@ -592,7 +668,7 @@
                 </p>
               </div>
               <div class="screenshot-grid screenshot-grid--tablets">
-                <figure class="shot-card shot-card--wide">
+                <figure class="shot-card">
                   <img
                     class="shot"
                     src="/screenshots/tablet-chat.webp"
@@ -603,6 +679,18 @@
                     decoding="async"
                   />
                   <figcaption>Chats and the conversation side by side</figcaption>
+                </figure>
+                <figure class="shot-card">
+                  <img
+                    class="shot"
+                    src="/screenshots/tablet-photo-chat.webp"
+                    width="1600"
+                    height="1100"
+                    alt="OfflineMate on a tablet with LFM 2.5 VL 450M on the Lite tier: a café menu photo asked &quot;What drinks are on this menu, and how much is a latte?&quot;, answered with the five drinks and &quot;A latte costs $4.20.&quot;"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <figcaption>Ask about a photo</figcaption>
                 </figure>
                 <figure class="shot-card">
                   <img
@@ -622,7 +710,7 @@
                     src="/screenshots/tablet-picker-lite.webp"
                     width="1600"
                     height="1100"
-                    alt="OfflineMate model picker on a tablet: the Lite model options in a centred dialog."
+                    alt="OfflineMate model picker on a tablet: the Lite model options in a centred dialog, with an image icon on LFM 2.5 VL 450M."
                     loading="lazy"
                     decoding="async"
                   />
@@ -683,7 +771,11 @@
               </details>
               <details>
                 <summary>How much storage does it need?</summary>
-                <p>The model download is about 430 MB to 1.3 GB for Lite, about 2.5 GB for Standard, and about 2.6 GB for Full.</p>
+                <p>
+                  The default models download about 430 MB on Lite, 2.5 GB on Standard and 2.6 GB on Full. Alternatives
+                  range up to 1.3 GB on Lite, 2.9 GB on Standard and 4.2 GB on Full. OfflineMate checks your free storage
+                  before it starts.
+                </p>
               </details>
               <details>
                 <summary>Which AI models does it use?</summary>
@@ -691,6 +783,21 @@
                   The defaults are SmolLM2 135M on Lite, Gemma 4 E2B on Standard, and Qwen 3 4B on Full. Each tier also
                   offers alternatives, including Llama 3.2, LFM 2.5, MiniCPM5 and Qwen 3.5.
                   <a href="/models.html">Compare all models</a>.
+                </p>
+              </details>
+              <details>
+                <summary>Can OfflineMate understand photos?</summary>
+                <p>
+                  Yes, with a vision model: LFM 2.5 VL 450M on Lite, LFM 2.5 VL 1.6B on Standard and Full, or Gemma 4 E2B
+                  multimodal on Full. Pick a photo from your gallery and ask about it. The image is read on your phone and
+                  never uploaded.
+                </p>
+              </details>
+              <details>
+                <summary>Does OfflineMate need access to all my photos?</summary>
+                <p>
+                  No. It opens Android’s photo picker, so you choose one photo at a time and the app only gets that one. It
+                  asks for no photo or storage permission. The copy it keeps is shrunk and has its location data removed.
                 </p>
               </details>
               <details>

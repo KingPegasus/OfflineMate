@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import * as SecureStore from "expo-secure-store";
 import type { ChatConversation, ChatMessage, ModelTier } from "@/types/assistant";
 import { useSettingsStore } from "@/stores/settings-store";
+import { deleteChatImages, pruneUnreferencedChatImages } from "@/utils/chat-images";
 
 const DEFAULT_CONVERSATION_TITLE = "New chat";
 const MAX_TITLE_LENGTH = 60;
@@ -50,7 +51,7 @@ const secureStorage = {
 
 export const useChatStore = create<ChatState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       conversations: [],
       activeConversationId: null,
       messages: [],
@@ -92,6 +93,9 @@ export const useChatStore = create<ChatState>()(
         });
       },
       deleteConversation: (conversationId) => {
+        void deleteChatImages(
+          get().messages.filter((m) => m.conversationId === conversationId).map((m) => m.imageUri),
+        );
         set((state) => {
           const nextConversations = state.conversations.filter((it) => it.id !== conversationId);
           const nextMessages = state.messages.filter((m) => m.conversationId !== conversationId);
@@ -182,6 +186,7 @@ export const useChatStore = create<ChatState>()(
         set((state) => {
           const active = state.activeConversationId;
           if (!active) return {};
+          void deleteChatImages(state.messages.filter((m) => m.conversationId === active).map((m) => m.imageUri));
           return {
             messages: state.messages.filter((m) => m.conversationId !== active),
             conversations: state.conversations.filter((c) => c.id !== active),
@@ -195,7 +200,9 @@ export const useChatStore = create<ChatState>()(
             errorTier: null,
           };
         }),
-      clearAllConversations: () =>
+      clearAllConversations: () => {
+        // Only photos in chats: one attached in the message box but not sent yet must survive.
+        void deleteChatImages(get().messages.map((m) => m.imageUri));
         set({
           conversations: [],
           messages: [],
@@ -206,7 +213,8 @@ export const useChatStore = create<ChatState>()(
           streamingThinkClosed: false,
           error: null,
           errorTier: null,
-        }),
+        });
+      },
       setStreamingResponse: (streamingResponse) => set({ streamingResponse }),
       setStreamingThinking: (streamingThinking) => set({ streamingThinking }),
       setStreamingHasThinkTag: (streamingHasThinkTag) => set({ streamingHasThinkTag }),
@@ -248,6 +256,14 @@ export const useChatStore = create<ChatState>()(
           activeConversationId: conversationId,
           messages: oldMessages.map((m) => ({ ...m, conversationId })),
         };
+      },
+      // Saved chats are loaded now, so any photo copy they don't reference is safe to delete.
+      onRehydrateStorage: () => (state, error) => {
+        // If loading failed we can't tell which photos are still in a chat, so keep them all.
+        if (error) return;
+        void pruneUnreferencedChatImages((state?.messages ?? []).map((m) => m.imageUri)).then((n) => {
+          if (n > 0) console.log("[OfflineMate] Removed unused chat images:", n);
+        });
       },
       partialize: (s) => {
         const settings = useSettingsStore.getState();

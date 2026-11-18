@@ -3,11 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { getDeviceTierRecommendation } from "@/utils/device-profiler";
-import { getModelsForTier, MODEL_TIERS, resolveModelForTier } from "@/ai/model-registry";
+import { getModelsForTier, MODEL_TIERS, modelSupportsVision, resolveModelForTier } from "@/ai/model-registry";
+import { VisionBadge } from "@/components/VisionBadge";
 import { useSettingsStore } from "@/stores/settings-store";
 import { ModelDownloader } from "@/components/ModelDownloader";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { READABLE_MAX_WIDTH } from "@/utils/layout";
+import { formatBytes } from "@/utils/download-format";
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -83,17 +85,19 @@ export default function OnboardingScreen() {
               >
                 {model.family} {model.size}
                 {isPrimary ? " (default)" : ""}
-                <Text style={styles.meta}>{`  ${model.estimatedSizeMb} MB`}</Text>
+                {modelSupportsVision(model) ? (
+                  <>
+                    {"  "}
+                    <VisionBadge size={14} />
+                  </>
+                ) : null}
+                <Text style={styles.meta}>{`  ${formatBytes(model.estimatedSizeMb * 1024 * 1024)}`}</Text>
               </Text>
             );
           })}
         </View>
         <Text style={styles.note}>
-          Download: {activeModel.estimatedSizeMb} MB chat model plus speech and search files. You can switch models later
-          in Settings.
-        </Text>
-        <Text style={styles.note}>
-          Status: {isSelectedTierReady ? "Chat-ready for selected model" : "Downloads still required for selected model"}
+          Models with an image icon can also answer questions about your photos. You can switch models later in Settings.
         </Text>
         <ModelDownloader
           tier={selectedTier}

@@ -1,18 +1,29 @@
 import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { VisionBadge } from "@/components/VisionBadge";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Constants from "expo-constants";
 import { useSettingsStore } from "@/stores/settings-store";
-import { getModelsForTier, getTierSpec, MODEL_TIERS, resolveModelForTier } from "@/ai/model-registry";
 import {
-  downloadTierChatModel,
-  downloadTierVoiceModel,
+  getModelsForTier,
+  getTierSpec,
+  MODEL_TIERS,
+  modelSupportsVision,
+  resolveModelForTier,
+} from "@/ai/model-registry";
+import {
+  downloadTierChatAndVoice,
+  getMissingDownloadBytes,
+  getTierChatAndVoiceAssets,
+  getTierChatAssets,
   getTierChatAssetReadiness,
   getTierVoiceDownloadMb,
-  redownloadTierChatModel,
 } from "@/ai/model-manager";
+import { DownloadProgressCard } from "@/components/DownloadProgressCard";
+import { useModelDownload } from "@/hooks/useModelDownload";
+import { formatBytes } from "@/utils/download-format";
 import { useChatStore } from "@/stores/chat-store";
 import { clearImportantMemories, countImportantMemories } from "@/context/long-term-memory";
 import { getStoreListingUrl, openStoreListingForRating } from "@/stores/review-store";
@@ -110,9 +121,10 @@ export default function SettingsScreen() {
   });
   const [isCheckingReadinessTier, setIsCheckingReadinessTier] = useState<ModelTier | null>(null);
   const [modelPickerTier, setModelPickerTier] = useState<ModelTier | null>(null);
-  const [isDownloadingSelected, setIsDownloadingSelected] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
-  const [downloadLabel, setDownloadLabel] = useState<string>("");
+  const modelDownload = useModelDownload();
+  const isDownloadingSelected = modelDownload.state.active;
+  /** "Gemma 4 E2B", shown on the progress card even after the picker is closed. */
+  const [downloadingTitle, setDownloadingTitle] = useState("");
   const [lastReadinessCheckByTier, setLastReadinessCheckByTier] = useState<Record<ModelTier, Date | null>>({
     lite: null,
     standard: null,
@@ -128,6 +140,18 @@ export default function SettingsScreen() {
   const modalActiveModel = resolveModelForTier(modalTier, modalActiveModelId);
   const modalSelectedReady = modalReadiness[modalActiveModel.id] ?? false;
   const isCheckingReadiness = isCheckingReadinessTier === modalTier;
+  /** What "Download now" will fetch: only the files that are missing, the same figure the progress card uses. */
+  const [modalBytesLeft, setModalBytesLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getMissingDownloadBytes(getTierChatAndVoiceAssets(modalTier, modalActiveModelId)).then((bytes) => {
+      if (!cancelled) setModalBytesLeft(bytes);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [modalTier, modalActiveModelId, modalSelectedReady, isDownloadingSelected]);
 
   const refreshReadinessForTier = useCallback(async (tier: ModelTier) => {
     setIsCheckingReadinessTier(tier);
@@ -190,46 +214,34 @@ export default function SettingsScreen() {
 
   const handleDownloadModalModel = async (redownload = false) => {
     if ((modalSelectedReady && !redownload) || isDownloadingSelected) return;
-    setIsDownloadingSelected(true);
-    setDownloadProgress(0);
-    setDownloadLabel("");
-    try {
-      const onProgress = (progress: number, label?: string) => {
-        setDownloadProgress(progress);
-        setDownloadLabel(label ?? "");
-      };
-      if (redownload) {
-        // Free the model before deleting its files.
-        llmEngine.cancelPendingLoad();
-        llmEngine.unload();
-        // Files are deleted first; show that instead of a stale "Downloaded" badge.
-        setModelReadinessByTier((prev) => ({
-          ...prev,
-          [modalTier]: { ...prev[modalTier], [modalActiveModel.id]: false },
-        }));
-        await redownloadTierChatModel(modalTier, modalActiveModelId ?? null, onProgress);
-      } else {
-        await downloadTierChatModel(modalTier, modalActiveModelId ?? null, onProgress);
-      }
-      // Tiers use different Whisper sizes; fetch this tier's now so the mic works offline later.
-      // Independent of the TTS toggle (voiceEnabled), which only controls spoken replies.
-      let voiceNote = "";
-      try {
-        await downloadTierVoiceModel(modalTier, (progress) => onProgress(progress, "voice model"));
-      } catch (voiceError) {
-        console.warn("[OfflineMate] Settings: voice model download failed", voiceError);
-        voiceNote = " The voice input model did not download; the mic will offer to retry.";
-      }
-      await refreshReadinessForTier(modalTier);
-      Alert.alert(
-        "Model downloaded",
-        `${modalActiveModel.family} ${modalActiveModel.size} is ready for chat.${voiceNote}`,
-      );
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : "Failed to download model files.";
-      Alert.alert("Download failed", msg);
-    } finally {
-      setIsDownloadingSelected(false);
+    const tier = modalTier;
+    const model = modalActiveModel;
+    const modelId = modalActiveModelId ?? null;
+    setDownloadingTitle(`${model.family} ${model.size}`);
+    let voiceFailed = false;
+    const outcome = await modelDownload.start(
+      getTierChatAndVoiceAssets(tier, modelId),
+      async (onProgress) => {
+        if (redownload) {
+          // Free the model before deleting its files.
+          llmEngine.cancelPendingLoad();
+          llmEngine.unload();
+          // Files are deleted first; show that instead of a stale "Downloaded" badge.
+          setModelReadinessByTier((prev) => ({
+            ...prev,
+            [tier]: { ...prev[tier], [model.id]: false },
+          }));
+        }
+        // Tiers use different Whisper sizes; fetch this tier's too so the mic works offline later.
+        ({ voiceFailed } = await downloadTierChatAndVoice(tier, modelId, onProgress, { redownload }));
+      },
+      // A re-download deletes the chat files first, so the storage and mobile-data checks count them.
+      { replacing: redownload ? getTierChatAssets(tier, modelId) : [] },
+    );
+    await refreshReadinessForTier(tier);
+    if (outcome === "done") {
+      const voiceNote = voiceFailed ? " The voice input model didn't download; the mic will offer to retry." : "";
+      Alert.alert("Model downloaded", `${model.family} ${model.size} is ready for chat.${voiceNote}`);
     }
   };
 
@@ -287,6 +299,14 @@ export default function SettingsScreen() {
             {tierSpec.name} - {activeModel.family} {activeModel.size} ({activeModel.id})
           </Text>
         </View>
+        {isDownloadingSelected && modelPickerTier === null ? (
+          <DownloadProgressCard
+            state={modelDownload.state}
+            title={downloadingTitle}
+            onCancel={modelDownload.cancel}
+            style={styles.downloadCard}
+          />
+        ) : null}
         <Text style={styles.hint}>Tap a tier to choose a model for that tier.</Text>
         <View style={styles.section}>
           {MODEL_TIERS.map((tier) => {
@@ -396,9 +416,12 @@ export default function SettingsScreen() {
                     style={[styles.modalOption, isSelected && styles.selected]}
                     onPress={() => handleSelectModelInModal(modalTier, model.id)}
                   >
-                    <Text style={styles.modalOptionTitle}>
-                      {model.family} {model.size}{isPrimary ? " (default)" : ""}
-                    </Text>
+                    <View style={styles.modalOptionTitleRow}>
+                      <Text style={styles.modalOptionTitle}>
+                        {model.family} {model.size}{isPrimary ? " (default)" : ""}
+                      </Text>
+                      {modelSupportsVision(model) ? <VisionBadge /> : null}
+                    </View>
                     <Text style={styles.modalOptionMeta}>{readinessBadge}</Text>
                   </Pressable>
                 );
@@ -421,20 +444,21 @@ export default function SettingsScreen() {
                 Re-download (fixes a damaged download)
               </Text>
             )}
-            {(!modalSelectedReady || isDownloadingSelected) && (
-              <Text
-                style={[styles.modalAction, isDownloadingSelected && styles.disabledLink]}
-                onPress={() => void handleDownloadModalModel()}
-              >
-                {isDownloadingSelected
-                  ? `Downloading... ${Math.round(downloadProgress * 100)}%${
-                      downloadLabel ? ` (${downloadLabel})` : ""
-                    }`
-                  : `Download now (${modalActiveModel.estimatedSizeMb} MB + ${getTierVoiceDownloadMb(modalTier)} MB voice)`}
+            {isDownloadingSelected ? (
+              <DownloadProgressCard
+                state={modelDownload.state}
+                title={downloadingTitle}
+                onCancel={modelDownload.cancel}
+              />
+            ) : !modalSelectedReady ? (
+              <Text style={styles.modalAction} onPress={() => void handleDownloadModalModel()}>
+                {`Download now · ${formatBytes(
+                  modalBytesLeft ?? (modalActiveModel.estimatedSizeMb + getTierVoiceDownloadMb(modalTier)) * 1024 * 1024,
+                )} (includes voice input)`}
               </Text>
-            )}
+            ) : null}
             <Text style={styles.modalClose} onPress={() => setModelPickerTier(null)}>
-              Done
+              {isDownloadingSelected ? "Hide (keeps downloading)" : "Done"}
             </Text>
           </View>
         </View>
@@ -444,6 +468,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  downloadCard: { marginTop: 12, marginBottom: 4 },
   root: { flex: 1, backgroundColor: "#0b1020" },
   scroll: { flex: 1 },
   content: { padding: 16, paddingBottom: 36 },
@@ -498,7 +523,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#1f2937",
   },
-  modalOptionTitle: { color: "#e5e7eb", fontWeight: "700" },
+  modalOptionTitle: { color: "#e5e7eb", fontWeight: "700", flexShrink: 1 },
+  modalOptionTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   modalOptionMeta: { color: "#9ca3af", marginTop: 4, fontSize: 12 },
   modalAction: { color: "#93c5fd", fontWeight: "600", marginTop: 6 },
   modalClose: { color: "#cbd5e1", fontWeight: "700", textAlign: "right", marginTop: 8 },

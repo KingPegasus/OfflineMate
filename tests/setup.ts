@@ -28,6 +28,12 @@ vi.mock("react-native-executorch/legacy", () => {
     }
   }
   class MockLLMModule {
+    static async fromModelName() {
+      return new MockLLMModule();
+    }
+    static async fromCustomModel() {
+      return new MockLLMModule();
+    }
     async load() {
       return undefined;
     }
@@ -54,6 +60,38 @@ vi.mock("react-native-executorch/legacy", () => {
     LLAMA3_2_1B_SPINQUANT: modelStub,
     LLAMA3_2_3B_SPINQUANT: modelStub,
     LFM2_5_350M_QUANTIZED: modelStub,
-    models: { llm: { gemma4_e2b: () => modelStub } },
+    LFM2_5_VL_450M_QUANTIZED: { ...modelStub, capabilities: ["vision"], generationConfig: { temperature: 0.1 } },
+    LFM2_5_VL_1_6B_QUANTIZED: { ...modelStub, capabilities: ["vision"], generationConfig: { temperature: 0.1 } },
+    models: {
+      llm: {
+        gemma4_e2b: () => modelStub,
+        gemma4_e2b_multimodal: () => ({
+          ...modelStub,
+          capabilities: ["vision", "audio"],
+          audioConfig: { samplesPerBlock: 7680, tokensPerBlock: 12 },
+        }),
+      },
+    },
   };
 });
+
+// Gallery images (src/utils/chat-images.ts): native pickers and file I/O are stubbed in Node.
+vi.mock("expo-image-picker", () => ({
+  launchImageLibraryAsync: vi.fn(async () => ({ canceled: true, assets: null })),
+}));
+vi.mock("expo-image-manipulator", () => ({
+  SaveFormat: { JPEG: "jpeg", PNG: "png" },
+  manipulateAsync: vi.fn(async () => ({ uri: "file:///cache/out.jpg", width: 1024, height: 768 })),
+}));
+vi.mock("expo-file-system/legacy", () => ({
+  documentDirectory: "file:///docs/",
+  getInfoAsync: vi.fn(async () => ({ exists: true })),
+  makeDirectoryAsync: vi.fn(async () => undefined),
+  moveAsync: vi.fn(async () => undefined),
+  deleteAsync: vi.fn(async () => undefined),
+  readDirectoryAsync: vi.fn(async () => [] as string[]),
+}));
+vi.mock("expo-network", () => ({
+  NetworkStateType: { CELLULAR: "CELLULAR", WIFI: "WIFI", NONE: "NONE", UNKNOWN: "UNKNOWN" },
+  getNetworkStateAsync: vi.fn(async () => ({ type: "WIFI", isConnected: true, isInternetReachable: true })),
+}));

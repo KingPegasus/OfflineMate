@@ -21,6 +21,10 @@ Source and build scripts for the demo video, website images and Play Store graph
 | `out/` | The videos and captions. `out/store/` and `out/web/` are render intermediates (git-ignored) that `web_assets.py` and the copy step put into `website/` and `assets/play-store-listing/`. |
 | `video/shots/tablet-*.png`, `video/shots/tablet7-*.png` | Tablet screenshots used by the 10-inch and 7-inch store stills: 2560×1600 on the Pixel Tablet emulator, and 1920×1200 on the same emulator set to a 7-inch size (`adb shell wm size 1920x1200` and `wm density 320`; undo with `wm size reset` and `wm density reset`). |
 | `video/shots/settings.png`, `tablet-settings.png`, `tablet7-settings.png` | Settings with the info buttons (0.11.0): phone at the top of the screen, tablets scrolled so every option shows. Airplane mode on (it hides Android's satellite icon), status bar demo mode. |
+| `video/shots/photo-chat.png` | Photo question on Standard (LFM 2.5 VL 1.6B), airplane mode on, battery-only demo status bar (0.12.0). The photo is a café menu board drawn with Pillow (`raw/cafe-menu.jpg`, 1200×900: "Corner Cafe", five hot drinks with prices), pushed to the emulator with `adb push … /sdcard/Pictures/` and a media scan, then picked in the photo picker. Question: "Which drink is cheapest, and how much is a latte?" |
+| `video/shots/picker-lite.png`, `onboarding.png` | Retaken for 0.12.0: the Lite picker shows the image icon on LFM 2.5 VL 450M; setup shows sizes in GB. Airplane mode on (hides the satellite icon). |
+| `video/shots/chat.png`, `tools-chat.png`, `tablet-chat.png`, `tablet7-chat.png` | Retaken for 0.12.0 so the composer shows the image button. Phone chat: Standard, Gemma 4 E2B. Tools chat: Lite, SmolLM2 135M, density 360 (move the "Dentist appointment" event to tomorrow 3–4 PM first). Tablets: Lite, LFM 2.5 350M. Airplane mode on, demo status bar. |
+| `video/shots/tablet-photo-chat.png`, `tablet7-photo-chat.png` | Photo question on the tablet, Lite with LFM 2.5 VL 450M (0.12.0): "What drinks are on this menu, and how much is a latte?" The phone's "Which drink is cheapest…" got a wrong answer from the 450M model. The 7-inch shot is scrolled so the answer shows. |
 | `raw/` | Recordings and intermediates (git-ignored). |
 
 ## Outputs
@@ -54,6 +58,7 @@ python tools/vo.py <kokoro-models-dir> video/vo     # kokoro-v1.0.onnx + voices-
 tools/build-screen.sh                               # needs raw/c1.mp4, c2.mp4, c3.mp4
 python tools/audio.py video/vo raw/soundtrack.wav
 tools/build-video.sh
+rm -rf out/store   # stale renders with old file names would otherwise be copied below
 cd tools && node stills.mjs stills-jobs.json && cd ..
 cp out/store/feature-graphic-1024x500.png ../assets/play-store-listing/
 cp out/store/phone/*.png ../assets/play-store-listing/screenshots/phone/

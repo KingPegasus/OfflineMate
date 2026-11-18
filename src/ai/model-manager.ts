@@ -1,4 +1,5 @@
 import * as FileSystem from "expo-file-system/legacy";
+import * as Network from "expo-network";
 import { resolveModelForTier } from "@/ai/model-registry";
 import type { ModelTier } from "@/types/assistant";
 import { ALL_MINILM_L6_V2 } from "react-native-executorch/legacy";
@@ -26,6 +27,37 @@ export interface AssetToDownload {
   id: string;
   url: string;
   destination: string;
+  /** Plain-language name for progress text ("Chat model", "Voice model"). */
+  label: string;
+  /** Size used for progress and space checks until the server reports the real one. */
+  estimatedBytes: number;
+}
+
+const MB = 1024 * 1024;
+
+/** What a download screen shows: overall fraction plus bytes across every file still to fetch. */
+export interface DownloadProgressDetail {
+  bytesWritten: number;
+  bytesTotal: number;
+}
+
+export type DownloadProgressCallback = (progress: number, label?: string, detail?: DownloadProgressDetail) => void;
+
+export class DownloadCancelledError extends Error {
+  constructor() {
+    super("Download cancelled");
+    this.name = "DownloadCancelledError";
+  }
+}
+
+function assetLabelAndEstimate(id: string, modelSizeMb: number, tier: ModelTier): { label: string; estimatedBytes: number } {
+  if (id.endsWith("-tokenizer-config")) return { label: "Tokenizer", estimatedBytes: 0.01 * MB };
+  if (id === "embedding-tokenizer") return { label: "Notes search", estimatedBytes: 0.7 * MB };
+  if (id.endsWith("-tokenizer")) return { label: "Tokenizer", estimatedBytes: 5 * MB };
+  if (id === "embedding-model") return { label: "Notes search", estimatedBytes: 91 * MB };
+  if (id === "whisper-model") return { label: "Voice model", estimatedBytes: getTierVoiceDownloadMb(tier) * MB };
+  if (id === "whisper-vad-model") return { label: "Voice model", estimatedBytes: 0.9 * MB };
+  return { label: "Chat model", estimatedBytes: modelSizeMb * MB };
 }
 
 function sanitizeFilename(raw: string) {
@@ -72,6 +104,7 @@ export function getTierAssets(tier: ModelTier, modelId?: string | null): AssetTo
   return urls.map((it) => ({
     id: it.id,
     url: it.url,
+    ...assetLabelAndEstimate(it.id, primary.estimatedSizeMb, tier),
     destination: `${MODELS_DIR}/${
       it.id === "whisper-model"
         ? sttFile
@@ -251,39 +284,59 @@ function isTransientDownloadFailure(err: unknown): boolean {
 
 const PART_SUFFIX = ".part";
 
+type BytesListener = (bytesWritten: number, bytesTotal: number) => void;
+
 interface InFlightDownload {
   promise: Promise<string>;
-  listeners: Set<(progress: number) => void>;
+  listeners: Set<BytesListener>;
+  task?: FileSystem.DownloadResumable;
+  cancelled: boolean;
 }
 
 // One download per destination at a time; Settings, onboarding and voice can request the same file.
 // Every caller waiting on it receives progress, not only the one that started it.
 const inFlightDownloads = new Map<string, InFlightDownload>();
 
-function downloadAsset(asset: AssetToDownload, onProgress?: (progress: number) => void): Promise<string> {
+function downloadAsset(asset: AssetToDownload, onBytes?: BytesListener): Promise<string> {
   const existing = inFlightDownloads.get(asset.destination);
   if (existing) {
-    if (onProgress) existing.listeners.add(onProgress);
+    if (onBytes) existing.listeners.add(onBytes);
     return existing.promise;
   }
-  const listeners = new Set<(progress: number) => void>();
-  if (onProgress) listeners.add(onProgress);
-  const promise = downloadAssetOnce(asset, (progress) => {
-    listeners.forEach((listener) => listener(progress));
-  }).finally(() => {
+  const entry: InFlightDownload = { promise: Promise.resolve(""), listeners: new Set(), cancelled: false };
+  if (onBytes) entry.listeners.add(onBytes);
+  entry.promise = downloadAssetOnce(asset, entry).finally(() => {
     inFlightDownloads.delete(asset.destination);
   });
-  inFlightDownloads.set(asset.destination, { promise, listeners });
-  return promise;
+  inFlightDownloads.set(asset.destination, entry);
+  return entry.promise;
 }
 
-async function downloadAssetOnce(
-  asset: AssetToDownload,
-  onProgress: (progress: number) => void,
-): Promise<string> {
+/** True while any model, tokenizer or voice file is downloading. */
+export function hasActiveDownloads() {
+  return inFlightDownloads.size > 0;
+}
+
+/**
+ * Stops running downloads (the user tapped Cancel). Pass the destinations of the files that screen
+ * started, so a voice or setup download elsewhere keeps going; with no list, every download stops.
+ * Partial files are deleted; the caller's download promise rejects with DownloadCancelledError.
+ */
+export async function cancelActiveDownloads(destinations?: readonly string[]) {
+  const wanted = destinations ? new Set(destinations) : null;
+  const entries = [...inFlightDownloads.entries()]
+    .filter(([destination]) => !wanted || wanted.has(destination))
+    .map(([, entry]) => entry);
+  for (const entry of entries) entry.cancelled = true;
+  await Promise.all(entries.map((entry) => entry.task?.cancelAsync().catch(() => undefined)));
+}
+
+async function downloadAssetOnce(asset: AssetToDownload, entry: InFlightDownload): Promise<string> {
+  const emit: BytesListener = (written, total) => entry.listeners.forEach((listener) => listener(written, total));
   const info = await FileSystem.getInfoAsync(asset.destination);
   if (info.exists) {
-    onProgress(1);
+    const size = "size" in info && typeof info.size === "number" ? info.size : asset.estimatedBytes;
+    emit(size, size);
     return asset.destination;
   }
 
@@ -295,12 +348,16 @@ async function downloadAssetOnce(
   let lastErr: unknown;
   for (let attempt = 1; attempt <= DOWNLOAD_ASSET_RETRIES; attempt++) {
     try {
+      if (entry.cancelled) throw new DownloadCancelledError();
       await FileSystem.deleteAsync(partPath, { idempotent: true });
       const task = FileSystem.createDownloadResumable(asset.url, partPath, {}, (event) => {
-        if (event.totalBytesExpectedToWrite === 0) return;
-        onProgress(event.totalBytesWritten / event.totalBytesExpectedToWrite);
+        if (event.totalBytesExpectedToWrite <= 0) return;
+        emit(event.totalBytesWritten, event.totalBytesExpectedToWrite);
       });
+      entry.task = task;
       const result = await task.downloadAsync();
+      // A cancelled task resolves with no result instead of throwing.
+      if (entry.cancelled) throw new DownloadCancelledError();
       if (!result || result.status < 200 || result.status >= 300) {
         throw new DownloadHttpError(asset.id, result?.status ?? null);
       }
@@ -308,7 +365,8 @@ async function downloadAssetOnce(
       return asset.destination;
     } catch (e) {
       await FileSystem.deleteAsync(partPath, { idempotent: true }).catch(() => undefined);
-      lastErr = e;
+      lastErr = entry.cancelled ? new DownloadCancelledError() : e;
+      if (entry.cancelled) break;
       const retry = attempt < DOWNLOAD_ASSET_RETRIES && isTransientDownloadFailure(e);
       console.warn(
         `[OfflineMate] Onboarding: asset download failed (attempt ${attempt}/${DOWNLOAD_ASSET_RETRIES})`,
@@ -385,7 +443,7 @@ export async function removeTruncatedChatModel(tier: ModelTier, modelId?: string
 /** Full onboarding download for a tier: chat model (the tier's selected one), embeddings and speech. */
 export async function downloadTierPrimaryModel(
   tier: ModelTier,
-  onProgress?: (progress: number, label?: string) => void,
+  onProgress?: DownloadProgressCallback,
   modelId?: string | null,
 ) {
   await ensureModelsDirectory();
@@ -396,41 +454,134 @@ export async function downloadTierPrimaryModel(
     assetCount: assets.length,
     assetIds: assets.map((a) => a.id),
   });
-  const results: Record<string, string> = {};
-  const total = assets.length;
-  let completed = 0;
+  return downloadAssetList(assets, onProgress);
+}
 
-  for (const asset of assets) {
-    // Weighted aggregate progress across all assets.
-    await downloadAsset(asset, (assetProgress) => {
-      onProgress?.((completed + assetProgress) / total, asset.id);
-    });
-    completed += 1;
-    onProgress?.(completed / total, asset.id);
-    results[asset.id] = asset.destination;
+async function missingAssetsOf(assets: AssetToDownload[]) {
+  const checks = await Promise.all(assets.map(async (a) => ({ a, info: await FileSystem.getInfoAsync(a.destination) })));
+  return checks.filter((c) => !c.info.exists).map((c) => c.a);
+}
+
+/**
+ * Bytes still to download for these files (estimates). Files already on the device count as 0,
+ * except those in `replacing`, which a re-download deletes and fetches again.
+ */
+export async function getMissingDownloadBytes(
+  assets: AssetToDownload[],
+  replacing: readonly AssetToDownload[] = [],
+): Promise<number> {
+  const replaced = new Set(replacing.map((a) => a.destination));
+  const missing = await missingAssetsOf(assets.filter((a) => !replaced.has(a.destination)));
+  return [...missing, ...replacing].reduce((n, a) => n + a.estimatedBytes, 0);
+}
+
+export interface DownloadPreflight {
+  bytesNeeded: number;
+  freeBytes: number | null;
+  /** Download plus 10% and 200 MB headroom, so the phone isn't left completely full. */
+  enoughSpace: boolean;
+  onMobileData: boolean;
+  offline: boolean;
+}
+
+export function hasEnoughSpace(bytesNeeded: number, freeBytes: number | null) {
+  if (freeBytes === null) return true;
+  return freeBytes >= bytesNeeded * 1.1 + 200 * MB;
+}
+
+/** Checked before a download starts: free storage, and whether the phone is offline or on mobile data. */
+export async function checkDownloadPreflight(
+  assets: AssetToDownload[],
+  replacing: readonly AssetToDownload[] = [],
+): Promise<DownloadPreflight> {
+  const bytesNeeded = await getMissingDownloadBytes(assets, replacing);
+  let freeBytes: number | null = null;
+  try {
+    freeBytes = await FileSystem.getFreeDiskStorageAsync();
+  } catch {
+    freeBytes = null;
   }
+  let onMobileData = false;
+  let offline = false;
+  try {
+    const state = await Network.getNetworkStateAsync();
+    onMobileData = state.type === Network.NetworkStateType.CELLULAR;
+    offline = state.isConnected === false;
+  } catch {
+    // Unknown network: don't block the download.
+  }
+  return { bytesNeeded, freeBytes, enoughSpace: hasEnoughSpace(bytesNeeded, freeBytes), onMobileData, offline };
+}
 
+/**
+ * Downloads files one after another. Progress is weighted by bytes (a 2 GB model and a 3 KB config
+ * no longer count the same), using each file's real size once the server reports it.
+ */
+async function downloadAssetList(
+  assets: AssetToDownload[],
+  onProgress?: DownloadProgressCallback,
+  /** Files whose failure is recorded in `optionalFailures` instead of failing the whole download. */
+  optionalIds: ReadonlySet<string> = new Set(),
+  optionalFailures: unknown[] = [],
+) {
+  const results: Record<string, string> = {};
+  const toFetch = await missingAssetsOf(assets);
+  for (const asset of assets) if (!toFetch.includes(asset)) results[asset.id] = asset.destination;
+  if (toFetch.length === 0) {
+    onProgress?.(1, undefined, { bytesWritten: 0, bytesTotal: 0 });
+    return results;
+  }
+  const totals = toFetch.map((a) => a.estimatedBytes);
+  let doneBytes = 0;
+  const report = (index: number, written: number) => {
+    const bytesTotal = Math.max(1, totals.reduce((n, t) => n + t, 0));
+    const bytesWritten = Math.min(bytesTotal, doneBytes + written);
+    onProgress?.(bytesWritten / bytesTotal, toFetch[index]?.label, { bytesWritten, bytesTotal });
+  };
+  for (let i = 0; i < toFetch.length; i++) {
+    const asset = toFetch[i]!;
+    report(i, 0);
+    try {
+      await downloadAsset(asset, (written, total) => {
+        if (total > 0) totals[i] = total;
+        report(i, written);
+      });
+      results[asset.id] = asset.destination;
+    } catch (err) {
+      if (!optionalIds.has(asset.id) || err instanceof DownloadCancelledError) throw err;
+      optionalFailures.push(err);
+    }
+    doneBytes += totals[i]!;
+    report(i, 0);
+  }
   return results;
 }
 
-async function downloadAssetList(
-  assets: AssetToDownload[],
-  onProgress?: (progress: number, label?: string) => void,
-) {
-  const results: Record<string, string> = {};
-  const total = Math.max(assets.length, 1);
-  let completed = 0;
+/** Chat files plus the tier's voice model, for the space check before Settings downloads a model. */
+export function getTierChatAndVoiceAssets(tier: ModelTier, modelId?: string | null): AssetToDownload[] {
+  return [...getTierChatAssets(tier, modelId), ...getTierVoiceAssets(tier)];
+}
 
-  for (const asset of assets) {
-    await downloadAsset(asset, (assetProgress) => {
-      onProgress?.((completed + assetProgress) / total, asset.id);
-    });
-    completed += 1;
-    onProgress?.(completed / total, asset.id);
-    results[asset.id] = asset.destination;
+/**
+ * Settings' "Download now": chat files and the tier's voice model as one download with one progress
+ * bar. Voice is optional (the mic offers to retry later), so its failure is returned, not thrown.
+ */
+export async function downloadTierChatAndVoice(
+  tier: ModelTier,
+  modelId: string | null | undefined,
+  onProgress?: DownloadProgressCallback,
+  options?: { redownload?: boolean },
+): Promise<{ voiceFailed: boolean }> {
+  await ensureModelsDirectory();
+  const chatAssets = getTierChatAssets(tier, modelId);
+  if (options?.redownload) {
+    await Promise.all(chatAssets.map((asset) => FileSystem.deleteAsync(asset.destination, { idempotent: true })));
   }
-
-  return results;
+  const voiceAssets = getTierVoiceAssets(tier);
+  const failures: unknown[] = [];
+  await downloadAssetList([...chatAssets, ...voiceAssets], onProgress, new Set(voiceAssets.map((a) => a.id)), failures);
+  if (failures.length > 0) console.warn("[OfflineMate] Settings: voice model download failed", failures[0]);
+  return { voiceFailed: failures.length > 0 };
 }
 
 /**
@@ -440,7 +591,7 @@ async function downloadAssetList(
 export async function downloadTierChatModel(
   tier: ModelTier,
   modelId?: string | null,
-  onProgress?: (progress: number, label?: string) => void,
+  onProgress?: DownloadProgressCallback,
 ) {
   await ensureModelsDirectory();
   const assets = getTierChatAssets(tier, modelId);
@@ -460,7 +611,7 @@ export async function downloadTierChatModel(
  */
 export async function downloadTierVoiceModel(
   tier: ModelTier,
-  onProgress?: (progress: number, label?: string) => void,
+  onProgress?: DownloadProgressCallback,
 ) {
   await ensureModelsDirectory();
   const assets = getTierVoiceAssets(tier);
@@ -475,7 +626,7 @@ export async function downloadTierVoiceModel(
 export async function redownloadTierChatModel(
   tier: ModelTier,
   modelId?: string | null,
-  onProgress?: (progress: number, label?: string) => void,
+  onProgress?: DownloadProgressCallback,
 ) {
   const assets = getTierChatAssets(tier, modelId);
   await Promise.all(assets.map((asset) => FileSystem.deleteAsync(asset.destination, { idempotent: true })));
