@@ -106,7 +106,8 @@ describe("website content", () => {
 
   it("the settings page explains every option in the app's Settings tab", () => {
     const page = readPage("settings.html");
-    const app = fs.readFileSync(path.join(process.cwd(), "app/(tabs)/settings.tsx"), "utf8");
+    // Normalise line endings: a Windows checkout with core.autocrlf has CRLF files.
+    const app = fs.readFileSync(path.join(process.cwd(), "app/(tabs)/settings.tsx"), "utf8").replace(/\r\n/g, "\n");
     // Every option with an info button in the app has a section on the page.
     const titles = [...app.matchAll(/title: "([^"]+)",\n\s+body:/g)].map((m) => m[1]);
     expect(titles.length).toBeGreaterThanOrEqual(6);

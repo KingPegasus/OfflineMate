@@ -66,6 +66,7 @@ Requires Android 7.0 or later. Model downloads range from about 430 MB (Lite) to
 New in 0.12.0:
 • Ask about a photo: pick an image from your gallery and ask what's in it. Runs on your phone with LFM 2.5 VL or Gemma 4 multimodal (look for the image icon in Settings). No photo permission needed.
 • Better downloads: size, speed and time left, a Cancel button, a free-space check and a warning before using mobile data.
+• "Find Sara in my contacts" and "Find my note about…" now search as expected.
 • Unused photo copies are cleaned up automatically.
 <!-- /listing:whatsnew -->
 
