@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { getDefaultHeaderHeight } from "expo-router/react-navigation";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
@@ -10,6 +11,10 @@ export const unstable_settings = {
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const frame = useWindowDimensions();
+  // The screen header's full height (status bar + bar), as React Navigation computes it, so the rail's
+  // white top lines up with the header beside it instead of stopping at the status bar.
+  const headerHeight = getDefaultHeaderHeight(frame, false, insets.top);
   // Tablets and wide windows get a navigation rail on the left; phones keep the bottom bar.
   const { isWide } = useBreakpoint();
   const tabIcon = (name: React.ComponentProps<typeof Ionicons>["name"], focused: boolean) =>
@@ -30,11 +35,13 @@ export default function TabsLayout() {
               tabBarPosition: "left" as const,
               tabBarVariant: "material" as const,
               tabBarLabelPosition: "below-icon" as const,
-              tabBarStyle: { borderRightColor: "#1f2937", width: 96 },
-              // The status bar uses dark icons (white headers), so keep the rail's top inset white too.
+              // Items start below the white band so none sits half on white, half on the dark rail.
+              tabBarStyle: { borderRightColor: "#1f2937", width: 96, paddingTop: headerHeight + 8 },
+              // The status bar uses dark icons over the white header, so the rail's top is white for the
+              // header's full height: one even band across the top.
               tabBarBackground: () => (
                 <View style={StyleSheet.absoluteFill}>
-                  <View style={{ height: insets.top, backgroundColor: "#ffffff" }} />
+                  <View style={{ height: headerHeight, backgroundColor: "#ffffff" }} />
                   <View style={{ flex: 1, backgroundColor: "#0b1020" }} />
                 </View>
               ),
