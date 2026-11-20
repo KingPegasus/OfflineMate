@@ -46,6 +46,10 @@ describe("calendar.createEvent from a plan", () => {
     expect(titleFromCommand("Book a meeting with the bank on Friday at 10am")).toBe("meeting with the bank");
     expect(titleFromCommand("Put my interview in the calendar tomorrow at 9:30")).toBe("interview");
     expect(titleFromCommand("What's on my calendar tomorrow?")).toBeNull();
+    // Found testing 0.14.0: the weekday stayed in the title ("Dentist appointment Friday").
+    expect(titleFromCommand("Add dentist appointment Friday at 3pm")).toBe("dentist appointment");
+    expect(extractEventTitle("Add dentist appointment Friday at 3pm")).toBe("Dentist appointment");
+    expect(titleFromCommand("Add Friday standup at 9am")).toBe("Friday standup");
   });
 
   it("keeps write steps that carry their own text (two different reminders)", () => {

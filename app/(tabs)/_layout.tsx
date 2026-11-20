@@ -5,10 +5,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 
 /**
- * Header bar height beside the rail (tablets, unfolded foldables). Shorter than the default (64 dp on
- * Android, 50 pt on iPad), which left an empty white strip above the title on a wide screen.
+ * Header bar height below the status bar, on phones and tablets. The default (64 dp on Android, 44 pt
+ * on iPhone, 50 pt on iPad) left an empty white strip between the status bar and the title.
  */
-const WIDE_HEADER_BAR = 48;
+const HEADER_BAR = 40;
 
 export const unstable_settings = {
   initialRouteName: "chat",
@@ -18,7 +18,7 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   // The header's full height (status bar + bar). The rail's white top uses it too, so the two line up
   // as one band instead of the rail turning dark right below the status bar.
-  const headerHeight = insets.top + WIDE_HEADER_BAR;
+  const headerHeight = insets.top + HEADER_BAR;
   // Tablets and wide windows get a navigation rail on the left; phones keep the bottom bar.
   const { isWide } = useBreakpoint();
   const tabIcon = (name: React.ComponentProps<typeof Ionicons>["name"], focused: boolean) =>
@@ -29,7 +29,7 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: true,
         tabBarHideOnKeyboard: !isWide,
-        headerStyle: { backgroundColor: "#ffffff", ...(isWide ? { height: headerHeight } : {}) },
+        headerStyle: { backgroundColor: "#ffffff", height: headerHeight },
         headerTintColor: "#111827",
         headerTitleStyle: { fontWeight: "700" },
         tabBarActiveTintColor: "#60a5fa",

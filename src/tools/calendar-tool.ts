@@ -76,7 +76,12 @@ export const getCalendarEventsTool: Tool = {
     }
     const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
     if (calendars.length === 0) {
-      return { ok: true, message: "No calendars found.", payload: { events: [] } };
+      return {
+        ok: true,
+        message:
+          "There's no calendar on this phone yet. Add a Google account (or another calendar account) in your phone's settings, and its events will show here.",
+        payload: { events: [] },
+      };
     }
     const query = (params.query || params.text || "today").trim();
     const range = parseDateRange(query);
@@ -118,8 +123,9 @@ export function titleFromCommand(text: string): string | null {
   const title = m?.[1]?.replace(CALENDAR_SUFFIX, "").trim();
   return title || null;
 }
+// Stops at the first word of the date or time, weekdays included ("dentist appointment Friday at 3pm").
 const COMMAND_TITLE =
-  /^(?:please\s+)?(?:add|create|schedule|book|put|set up|make)\s+(?:a\s+|an\s+|my\s+)?(.+?)\s+(?:tomorrow|today|tonight|at|on|next|this)\b/i;
+  /^(?:please\s+)?(?:add|create|schedule|book|put|set up|make)\s+(?:a\s+|an\s+|my\s+)?(.+?)\s+(?:tomorrow|today|tonight|at|on|next|this|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i;
 const CALENDAR_SUFFIX = /\s+(?:to|on|in)\s+(?:my\s+|the\s+)?calendar$/i;
 
 /** Extract event title from query (e.g. "Meeting with John tomorrow at 2pm" -> "Meeting with John"). */
@@ -131,7 +137,7 @@ export function extractEventTitle(query: string, startStr?: string): string {
     /\b(?:schedule|create|add|set up)\s+(?:a\s+)?(?:meeting|event)\s+(?:called?\s+)?(.+?)(?:\s+(?:tomorrow|today|at|on|next))/i,
     /\b(?:meeting|event)\s+(?:with\s+)?(.+?)(?:\s+(?:tomorrow|today|at|on|next))/i,
     // "Add dentist appointment tomorrow at 3pm" -> "Dentist appointment"
-    /^(?:please\s+)?(?:add|create|schedule|book|put|set up|make)\s+(?:a\s+|an\s+|my\s+)?(.+?)\s+(?:tomorrow|today|tonight|at|on|next|this)\b/i,
+    /^(?:please\s+)?(?:add|create|schedule|book|put|set up|make)\s+(?:a\s+|an\s+|my\s+)?(.+?)\s+(?:tomorrow|today|tonight|at|on|next|this|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,
     /^(.+?)\s+(?:tomorrow|today|at|on|next\s+(?:monday|week))/i,
   ];
   for (const p of patterns) {
@@ -164,11 +170,19 @@ export const createCalendarTool: Tool = {
     }
     const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
     if (calendars.length === 0) {
-      return { ok: false, message: "No calendars available to add events." };
+      return {
+        ok: false,
+        message:
+          "There's no calendar on this phone to add this to. Add a Google account (or another calendar account) in your phone's settings, then ask again.",
+      };
     }
     const calendar = getWritableCalendar(calendars);
     if (!calendar) {
-      return { ok: false, message: "No writable calendar found." };
+      return {
+        ok: false,
+        message:
+          "Your phone's calendars can't take new events. Add a Google account (or another calendar account) in your phone's settings, then ask again.",
+      };
     }
     const sourceText = (params.text || params.query || "").trim();
     // The user's own words ("Add dinner with Ali tomorrow…") beat the planner's title, which can be partial ("The bank").
