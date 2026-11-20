@@ -565,7 +565,8 @@ export default function SettingsScreen() {
             >
               {isCheckingReadiness ? "Checking downloads…" : "Check downloads again"}
             </Text>
-            <View style={styles.modalOptions}>
+            {/* Only the list scrolls, so the buttons stay inside the sheet however many models a size has. */}
+            <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalOptions}>
               {modalModels.map((model) => {
                 const isPrimary = model.id === modalTierSpec.primary.id;
                 const isSelected = model.id === modalActiveModel.id;
@@ -599,7 +600,6 @@ export default function SettingsScreen() {
                   </Pressable>
                 );
               })}
-            </View>
             {modalSelectedReady && !isDownloadingSelected && (
               <Text
                 style={styles.modalAction}
@@ -617,12 +617,18 @@ export default function SettingsScreen() {
                 Re-download (fixes a damaged download)
               </Text>
             )}
+            </ScrollView>
             {isDownloadingSelected ? (
               <DownloadProgressCard
                 state={modelDownload.state}
                 title={downloadingTitle}
                 onCancel={modelDownload.cancel}
               />
+            ) : null}
+            {!isDownloadingSelected && !pickIsInUse && !modalSelectedReady ? (
+              <Text style={styles.modalHint}>
+                Your current assistant stays in use until the download finishes. Includes voice typing.
+              </Text>
             ) : null}
             <View style={styles.modalButtons}>
               <Pressable style={styles.modalSecondary} onPress={closePicker} accessibilityRole="button">
@@ -651,11 +657,6 @@ export default function SettingsScreen() {
                 </Pressable>
               )}
             </View>
-            {!isDownloadingSelected && !pickIsInUse && !modalSelectedReady ? (
-              <Text style={styles.modalHint}>
-                Your current assistant stays in use until the download finishes. Includes voice typing.
-              </Text>
-            ) : null}
           </View>
         </View>
       </Modal>
@@ -748,7 +749,8 @@ const styles = StyleSheet.create({
   },
   modalTitle: { color: "#e5e7eb", fontSize: 18, fontWeight: "700" },
   modalHint: { color: "#9ca3af", fontSize: 12, lineHeight: 18 },
-  modalOptions: { gap: 8, marginTop: 4 },
+  modalScroll: { flexShrink: 1 },
+  modalOptions: { gap: 8, marginTop: 4, paddingBottom: 4 },
   modalOption: {
     backgroundColor: "#111827",
     borderRadius: 10,
