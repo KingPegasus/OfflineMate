@@ -82,7 +82,8 @@ export const setReminderTool: Tool = {
     // "in 20 minutes" needs "to go off", not "for": "Reminder set for in 20 minutes" read wrong.
     const when = describeReminderTime(seconds);
     const lead = when.startsWith("in ") ? `Reminder set to go off ${when}` : `Reminder set for ${when}`;
-    return { ok: true, message: `${lead}: ${text}.` };
+    // "Remind me … to stretch." keeps the user's full stop in the text; don't add a second one.
+    return { ok: true, message: `${lead}: ${text}${/[.!?]$/.test(text) ? "" : "."}` };
   },
 };
 

@@ -30,6 +30,18 @@ describe("notes.create", () => {
     expect(title.toLowerCase()).toContain("pick up");
   });
 
+  // Found in the 0.13.0 smoke test: the whole sentence became the note's title.
+  it.each([
+    ["Save a note called Groceries: milk, eggs and bread.", "Groceries", "milk, eggs and bread."],
+    ["Make a note called packing list", "packing list", "packing list"],
+    ["create a new note titled Ideas: a bike rack for the balcony", "Ideas", "a bike rack for the balcony"],
+  ])("names the note from %s", async (text, title, content) => {
+    await createNoteTool.execute({ query: text, text });
+    const insert = runSync.mock.calls.find((c) => String(c[0]).includes("INSERT INTO notes"));
+    expect(insert![1][1]).toBe(title);
+    expect(insert![1][2]).toBe(content);
+  });
+
   it("uses explicit title and content when provided", async () => {
     await createNoteTool.execute({
       title: "Groceries",

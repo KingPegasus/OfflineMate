@@ -28,6 +28,7 @@ import {
 } from "@/ai/model-manager";
 import { speak } from "@/voice/tts-engine";
 import { isMemoryPressureHigh } from "@/utils/performance";
+import { withForegroundTimeout } from "@/utils/foreground-timeout";
 import { saveImportantMemory } from "@/context/long-term-memory";
 import { executePlanSteps, planStepsFromPrompt } from "@/ai/agent-planner";
 import { cleanModelOutput, looksLikeToolEcho } from "@/ai/output-guard";
@@ -406,7 +407,8 @@ export function useLLMChat() {
       /** Every tool call goes through here, so a failed or timed-out tool always marks the reply as not clean. */
       const runTool = async (tool: Tool, args: Record<string, string>, timeoutMessage: string): Promise<ToolResult> => {
         try {
-          const result = await withTimeout(tool.execute(args), 15000, timeoutMessage);
+          // Foreground time only: a permission dialog the tool opens doesn't count against it.
+          const result = await withForegroundTimeout(tool.execute(args), 15000, timeoutMessage);
           if (!result.ok) replyWasClean = false;
           return result;
         } catch (err) {

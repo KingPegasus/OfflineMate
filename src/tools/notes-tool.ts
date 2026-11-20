@@ -12,10 +12,28 @@ const NOTE_INTENT_PREFIXES = [
   /^take\s+a\s+note\s+to\s+/i,
   /^save\s+a\s+note\s+to\s+/i,
   /^save\s+a\s+note\s*:\s*/i,
+  /^(make|create|write)\s+a\s+note\s*:\s*/i,
+  /^(make|create|write)\s+a\s+note\s+to\s+/i,
   /^add\s+a\s+note\s+/i,
   /^remember\s+this\s*:\s*/i,
   /^write\s+this\s+down\s*:\s*/i,
 ];
+
+/**
+ * "Save a note called Groceries: milk, eggs and bread" → title "Groceries", content "milk, eggs
+ * and bread". Without a colon, the name is both ("Make a note called packing list").
+ */
+const NAMED_NOTE = /^(?:please\s+)?(?:add|save|take|make|create|write)\s+(?:a\s+)?(?:new\s+)?note\s+(?:called|titled|named)\s+(.+)$/i;
+
+export function parseNamedNote(raw: string): { title: string; content: string } | null {
+  const rest = raw.trim().match(NAMED_NOTE)?.[1]?.trim();
+  if (!rest) return null;
+  const colon = rest.indexOf(":");
+  const title = (colon > 0 ? rest.slice(0, colon) : rest).trim().replace(/[.!]+$/, "");
+  const content = (colon > 0 ? rest.slice(colon + 1) : rest).trim();
+  if (!title) return null;
+  return { title, content: content || title };
+}
 
 function stripNoteIntentPrefixes(raw: string): string {
   let t = raw.trim();
@@ -34,20 +52,33 @@ function firstLineOrTruncate(text: string, max: number): string {
 export const createNoteTool: Tool = {
   name: "notes.create",
   description: "Create a note in local SQLite",
-  keywords: ["add a note", "note", "write down", "remember this"],
+  // Longer phrases outscore other tools' words in the same sentence ("save a note called …").
+  keywords: [
+    "add a note",
+    "save a note",
+    "take a note",
+    "make a note",
+    "create a note",
+    "write a note",
+    "new note",
+    "note",
+    "write down",
+    "remember this",
+  ],
   params: { optional: ["title", "content"] },
   execute: async (params) => {
     const rawPrompt = (params.text ?? params.query ?? "").trim();
     const explicitTitle = (params.title ?? "").trim();
     const explicitContent = (params.content ?? "").trim();
 
-    let content = explicitContent;
+    const named = !explicitTitle && !explicitContent ? parseNamedNote(rawPrompt) : null;
+    let content = explicitContent || named?.content || "";
     if (!content && rawPrompt) {
       const stripped = stripNoteIntentPrefixes(rawPrompt);
       content = stripped || rawPrompt;
     }
 
-    let title = explicitTitle;
+    let title = explicitTitle || named?.title || "";
     if (!title) {
       title = content ? firstLineOrTruncate(content, 72) : "Untitled note";
     }

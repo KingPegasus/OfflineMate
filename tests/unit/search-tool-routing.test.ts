@@ -25,6 +25,27 @@ describe("searching notes and contacts in everyday words", () => {
     expect(selectToolFromInput(text)?.name).toBe(tool);
   });
 
+  // Found in the 0.13.0 smoke test: "called" matched the contacts tool's "call" keyword.
+  it.each([
+    "Save a note called Groceries: milk, eggs and bread.",
+    "Make a note called packing list",
+    "Create a note titled ideas",
+  ])("%s → notes.create", (text) => {
+    expect(selectToolFromInput(text)?.name).toBe("notes.create");
+  });
+
+  it("still finds a contact to call", () => {
+    expect(selectToolFromInput("Call Ali")?.name).toBe("contacts.search");
+  });
+
+  // A first attempt at the fix above ("call " as a keyword) outscored reminders here.
+  it.each(["Remind me in 15 minutes to call the bank.", "remind me to call mom at 5"])(
+    "%s → reminders.set",
+    (text) => {
+      expect(selectToolFromInput(text)?.name).toBe("reminders.set");
+    },
+  );
+
   it("still saves notes", () => {
     expect(selectToolFromInput("Take a note: buy oat milk and eggs")?.name).toBe("notes.create");
     expect(selectToolFromInput("Add a note to find my keys")?.name).toBe("notes.create");
