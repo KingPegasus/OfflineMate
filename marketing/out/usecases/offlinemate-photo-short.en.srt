@@ -1,0 +1,48 @@
+1
+00:00:04,900 --> 00:00:06,940
+Explain this diagram simply
+
+2
+00:00:06,940 --> 00:00:09,844
+This diagram illustrates the water cycle, showing how water moves between the Earth's surface and atmosphere…
+
+3
+00:00:10,994 --> 00:00:13,894
+How much protein and sugar is in this?
+
+4
+00:00:13,894 --> 00:00:16,406
+The nutrition label shows that this bar contains 20 grams of protein and 6 grams of sugar.
+
+5
+00:00:17,556 --> 00:00:20,026
+When and where is this event?
+
+6
+00:00:20,026 --> 00:00:22,500
+…scheduled for Friday, March 14th at 7 PM. It will take place at Main Quad, North Campus.
+
+7
+00:00:23,650 --> 00:00:25,530
+Translate this sign
+
+8
+00:00:25,530 --> 00:00:28,125
+The sign indicates directions for "出口" (exit), "トイレ" (toilet), and "駅" (station).
+
+9
+00:00:29,275 --> 00:00:32,645
+What does this mean and how do I fix it?
+
+10
+00:00:32,645 --> 00:00:35,156
+…you should ensure the device is turned on, charged, and in pairing mode.
+
+11
+00:00:36,306 --> 00:00:38,686
+What can I cook with this?
+
+12
+00:00:38,686 --> 00:00:41,250
+You can make a sandwich with the bread and cheese.
+

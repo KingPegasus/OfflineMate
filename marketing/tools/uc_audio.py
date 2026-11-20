@@ -54,11 +54,123 @@ def place(buf, sig, at):
     j = min(len(buf), i + len(sig)); buf[i:j] += sig[:j - i]
 
 
+def beat_bed(tl, N, rng):
+    """Fast dance bed for music-only shorts (music.style "beat"): 128 bpm, four-on-the-floor kick, offbeat bass,
+    claps, sixteenth hats, side-chained chords and a lead hook. Before music.drop it's a filtered build with a
+    snare roll; the full beat drops there. Crashes land on every timeline flash. Returns dry (L, R)."""
+    music = tl["music"]; bpm = music.get("bpm", 128); beat = 60 / bpm; bar = beat * 4
+    drop = music.get("drop", 0.0); stop = tl.get("end", N / SR) + music.get("tail", 2.5)
+    t = np.arange(N) / SR
+    L = np.zeros(N); R = np.zeros(N); kick_t = []
+    prog = [[45, 57, 60, 64], [41, 53, 57, 60], [48, 55, 60, 64], [43, 55, 59, 62]]  # Am F C G
+    def chord_at(x): return prog[int(max(0, x - drop) // bar) % 4] if x >= drop else prog[0]
+    def saw(f, n, voices=3, det=.006):
+        ph = np.arange(n) / SR; out = np.zeros(n)
+        for d in np.linspace(-det, det, voices):
+            out += 2 * ((f * (1 + d) * ph + rng.random()) % 1) - 1
+        return out / voices
+    # Side-chain: everything but drums ducks after each kick.
+    pump = np.ones(N)
+    x = drop
+    while x < stop:
+        kick_t.append(x); x += beat
+    for k in kick_t:
+        i = int(k * SR); n = min(N - i, int(beat * SR))
+        if n > 0: pump[i:i + n] = 1 - .75 * np.exp(-np.arange(n) / SR * 9)
+    # Chords: supersaw stabs on the offbeat after the drop, a swelling pad in the build.
+    pads = np.zeros(N); x = 0.0
+    while x < stop:
+        ch = chord_at(x)
+        if x < drop:
+            n = int(bar * SR)
+            sig = sum(saw(hz(m + 12), n, 5, .01) for m in ch[1:]) * .05
+            place(pads, sig * np.linspace(.3, 1, n), x); x += bar
+        else:
+            for s in (beat / 2, beat * 1.5, beat * 2.5, beat * 3.25):
+                n = int(beat * .45 * SR)
+                sig = sum(saw(hz(m + 12), n, 5, .01) for m in ch[1:]) * .06 * env(n, .005, .12)
+                place(pads, sig, x + s)
+            x += bar
+    pads = lp(pads, 5200)
+    # Build: open the filter towards the drop.
+    if drop > 0:
+        di = int(drop * SR); sweep = np.ones(N); sweep[:di] = np.linspace(.15, 1, di) ** 2
+        lo = lp(pads, 900); pads = lo * (1 - sweep) + pads * sweep
+    # Bass: offbeat eighths after the drop, octave bounce.
+    bass = np.zeros(N); x = drop
+    while x < stop:
+        root = chord_at(x)[0] - 12
+        for j in range(4):
+            n = int(beat * .42 * SR)
+            f = hz(root + (12 if j == 3 else 0))
+            ph = np.arange(n) / SR
+            sig = (saw(f, n, 2, .003) * .6 + np.sin(2 * np.pi * f * ph)) * env(n, .004, .08) * .22
+            place(bass, sig, x + j * beat + beat / 2)
+        x += bar
+    bass = lp(bass, 1100)
+    # Lead hook: a syncopated A-minor pentatonic riff, every other bar after the drop.
+    lead = np.zeros(N); riff = [(0, 69), (.75, 72), (1.5, 76), (2, 74), (2.75, 72), (3.5, 76)]
+    x = drop; b = 0
+    while x < stop - bar / 2:
+        if b % 2 == 0:
+            for off, m in riff:
+                n = int(beat * .5 * SR); ph = np.arange(n) / SR
+                tone = (np.sign(np.sin(2 * np.pi * hz(m + 12) * ph)) * .3 + np.sin(2 * np.pi * hz(m + 12) * ph)) * np.exp(-ph * 7) * .05
+                place(lead, tone, x + off * beat)
+        x += bar; b += 1
+    lead = lp(lead, 6000)
+    dl = int(beat * .75 * SR)
+    lead_l = lead + np.concatenate([np.zeros(dl), lead[:-dl]]) * .35
+    lead_r = lead * .8 + np.concatenate([np.zeros(dl * 2), lead[:-dl * 2]]) * .3
+    # Drums.
+    drums = np.zeros(N)
+    def noise(n): return rng.standard_normal(n)
+    for k in kick_t:
+        n = int(.35 * SR); ph = np.arange(n) / SR
+        place(drums, np.sin(2 * np.pi * (45 + 120 * np.exp(-ph * 40)) * ph) * np.exp(-ph * 8) * .62, k)
+    x = drop; b = 0
+    while x < stop:
+        if b % 2 == 1:  # clap + snare on 2 and 4
+            n = int(.22 * SR); ph = np.arange(n) / SR
+            clap = hp(noise(n), 1000) * np.exp(-ph * 22) * .2
+            snare = (hp(noise(n), 400) * .15 + np.sin(2 * np.pi * 190 * ph) * .12) * np.exp(-ph * 26)
+            place(drums, clap + snare, x)
+        for s in range(4):  # sixteenth hats, open hat on the offbeat
+            if s == 2:
+                n = int(.16 * SR); place(drums, hp(noise(n), 6500) * np.exp(-np.arange(n) / SR * 22) * .09, x + s * beat / 4)
+            else:
+                n = int(.04 * SR); place(drums, hp(noise(n), 8000) * np.exp(-np.arange(n) / SR * 110) * (.05 if s % 2 else .035), x + s * beat / 4)
+        x += beat; b += 1
+    # Snare roll into the drop: quarters, eighths, sixteenths, thirty-seconds over the last two bars.
+    if drop > 0:
+        start = max(0.0, drop - 2 * bar); x = start
+        while x < drop - 1e-3:
+            p = (x - start) / max(1e-3, drop - start)
+            step = beat if p < .25 else beat / 2 if p < .5 else beat / 4 if p < .8 else beat / 8
+            n = int(.12 * SR); ph = np.arange(n) / SR
+            place(drums, (hp(noise(n), 500) * .16 + np.sin(2 * np.pi * 210 * ph) * .1) * np.exp(-ph * 30) * (.4 + .8 * p), x)
+            x += step
+    # Crash on every flash.
+    for f in tl.get("flashes", []):
+        n = int(1.6 * SR); ph = np.arange(n) / SR
+        place(drums, hp(noise(n), 4500) * np.exp(-ph * 2.8) * .11, f)
+    # Stop the beat at the end card except a held chord.
+    if stop < N / SR:
+        si = int(stop * SR); fo = int(.4 * SR)
+        for arr in (pads, bass, lead_l, lead_r, drums):
+            arr[si:si + fo] *= np.linspace(1, 0, min(fo, N - si)); arr[si + fo:] = 0
+    Lm = (pads * .9 + bass + lead_l) * pump + drums
+    Rm = (pads * 1.1 + bass + lead_r) * pump + drums
+    return Lm, Rm
+
+
 def cmd_mix(tl_path, out_wav, out_srt):
     tl = json.loads(pathlib.Path(tl_path).read_text(encoding="utf-8"))
     DUR = float(tl["duration"]); N = int(SR * DUR); t = np.arange(N) / SR
     rng = np.random.default_rng(7)
     music = tl.get("music", {}); flashy = music.get("style") == "flashy"
+    if music.get("style") == "beat":
+        return mix_beat(tl, out_wav, out_srt, rng)
     bpm = music.get("bpm", 124 if flashy else 100); beat = 60 / bpm
     end_card = tl.get("end", DUR)
     cuts = sorted({s["t"][0] for s in tl["scenes"] if s["t"][0] > 0.1} | ({tl["title"]["t"][1]} if tl.get("title") else set()))
@@ -170,6 +282,44 @@ def cmd_mix(tl_path, out_wav, out_srt):
 
     def ts(s):
         ms = int(round(s * 1000)); return f"{ms // 3600000:02}:{ms // 60000 % 60:02}:{ms // 1000 % 60:02},{ms % 1000:03}"
+    with open(out_srt, "w", encoding="utf-8", newline="\n") as f:
+        for i, (a, b, text) in enumerate(cues, 1):
+            f.write(f"{i}\n{ts(a)} --> {ts(b)}\n{text}\n\n")
+    print("wrote", out_wav, out_srt, f"{DUR}s")
+
+
+def mix_beat(tl, out_wav, out_srt, rng):
+    """Music-only mix: the beat bed, whooshes into each scene, ticks when a prompt is sent and answered, a hit on
+    the end card. Writes an SRT of the on-screen prompts and answers (there's no voiceover)."""
+    DUR = float(tl["duration"]); N = int(SR * DUR); t = np.arange(N) / SR
+    L, R = beat_bed(tl, N, rng)
+    fx = np.zeros(N)
+    for s in tl["scenes"]:
+        if s["t"][0] > .1:
+            n = int(.5 * SR); x = hp(lp(rng.standard_normal(n), 6000), 500)
+            place(fx, x * np.sin(np.pi * np.linspace(0, 1, n)) ** 3 * .12, s["t"][0] - .35)
+        for at, m in ((s.get("sentAt"), 96), (s.get("answerAt"), 91)):
+            if at is not None:
+                n = int(.2 * SR); ph = np.arange(n) / SR
+                place(fx, np.sin(2 * np.pi * hz(m) * ph) * np.exp(-ph * 28) * .07, at)
+    end = tl.get("end")
+    if end is not None and end < DUR:
+        n = int(2.2 * SR); ph = np.arange(n) / SR
+        boom = np.sin(2 * np.pi * (38 + 90 * np.exp(-ph * 9)) * ph) * np.exp(-ph * 2.4) * .5
+        shimmer = sum(np.sin(2 * np.pi * hz(m) * ph) for m in (81, 84, 88, 93)) * np.exp(-ph * 1.3) * .04
+        place(fx, boom + shimmer, end + .05)
+    fade = np.clip(t / .05, 0, 1) * np.clip((DUR - t) / 1.0, 0, 1)
+    out = np.stack([(L + fx) * fade, (R + fx) * fade], 1)
+    out = np.tanh(out * 1.8) / np.tanh(1.8)
+    out *= .95 / np.abs(out).max()
+    sf.write(out_wav, out.astype(np.float32), SR, subtype='PCM_24')
+
+    def ts(s):
+        ms = int(round(s * 1000)); return f"{ms // 3600000:02}:{ms // 60000 % 60:02}:{ms // 1000 % 60:02},{ms % 1000:03}"
+    cues = []
+    for s in tl["scenes"]:
+        if s.get("prompt"): cues.append((s["promptAt"], s.get("answerAt") or s["t"][1], s["prompt"]))
+        if s.get("answer"): cues.append((s["answerAt"], s["t"][1], s["answer"]))
     with open(out_srt, "w", encoding="utf-8", newline="\n") as f:
         for i, (a, b, text) in enumerate(cues, 1):
             f.write(f"{i}\n{ts(a)} --> {ts(b)}\n{text}\n\n")
