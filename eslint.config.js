@@ -4,7 +4,8 @@ const expoConfig = require("eslint-config-expo/flat");
 module.exports = defineConfig([
   ...expoConfig,
   {
-    ignores: ["dist/*", "coverage/*"],
+    // .claude/worktrees holds other branches checked out by Claude Code sessions.
+    ignores: ["dist/*", "coverage/*", ".claude/**"],
   },
 ]);
 
