@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.13.1] - 2026-11-20
+
+Tablets and unfolded foldables: the top-left corner next to the navigation rail is one even white band again.
+
+### Fixed
+- With the navigation rail (iPad, Android tablets, unfolded foldables), the rail painted white only behind the status bar (about 24 pt on iPad) while the screen header beside it is white for the status bar plus the header (about 68 pt), so the top-left corner showed a short white notch over the dark rail. The rail's white top is now as tall as the header, using React Navigation's own header height (`getDefaultHeaderHeight` from `expo-router/react-navigation`), and the rail's buttons start just below it, so the Chat button no longer sits half on white. The status-bar icons stay dark on white. Phones (bottom tab bar) are unchanged (`app/(tabs)/_layout.tsx`).
+- App version updated to `0.13.1` in `app.json`.
+
+### Known issues
+- Checked on the Android tablet emulator (Pixel Tablet, landscape) and the iPad Pro 11-inch simulator (portrait and landscape) with release builds. The unfolded Pixel Fold uses the same rail code but wasn't re-checked.
+- A wider window on an iPhone in landscape gets the rail too; its header height comes from the same function (32 pt bar), but it wasn't checked on a device.
+
 ## [0.13.0] - 2026-11-20
 
 Foldable phones: the app switches between the phone and tablet layouts as you fold and unfold, without losing what you were doing, and keeps content off the fold when the phone is half-open. Also fixes the keyboard closing by itself while typing when the microphone is denied, and the app closing on Chromebooks.
