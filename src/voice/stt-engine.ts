@@ -60,6 +60,7 @@ type MicAccess = "granted" | "just-granted" | "denied";
  * that into a loop on phones where the mic was denied (see useVoice).
  */
 async function ensureMicrophonePermission(): Promise<MicAccess> {
+  if (Platform.OS === "ios") return ensureIosMicrophonePermission();
   if (Platform.OS !== "android") return "granted";
   try {
     if (await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO)) return "granted";
@@ -67,6 +68,25 @@ async function ensureMicrophonePermission(): Promise<MicAccess> {
     console.warn("[OfflineMate] STT: permission check failed", e);
   }
   return (await requestMicrophonePermission()) ? "just-granted" : "denied";
+}
+
+/**
+ * iOS: the audio stream never asks for the mic itself, so a denied mic recorded silence ("No speech
+ * detected") and an undecided one asked at an arbitrary point. Ask here instead, like Android.
+ */
+async function ensureIosMicrophonePermission(): Promise<MicAccess> {
+  try {
+    const { getIosMicStatus, requestIosMic } = await import("@/native/ios-mic-permission");
+    const status = getIosMicStatus();
+    if (status === null || status === "granted") return "granted";
+    if (status === "denied") return "denied";
+    const granted = await requestIosMic();
+    console.log("[OfflineMate] STT: iOS microphone permission granted:", granted);
+    return granted === false ? "denied" : "just-granted";
+  } catch (e) {
+    console.warn("[OfflineMate] STT: iOS microphone permission failed", e);
+    return "granted";
+  }
 }
 
 async function requestMicrophonePermission(): Promise<boolean> {
