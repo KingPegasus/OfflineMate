@@ -178,21 +178,31 @@ export default function OnboardingScreen() {
           </View>
         </Modal>
 
-        <Pressable
-          style={[styles.continue, !isSelectedTierReady && styles.continueLater]}
-          accessibilityRole="button"
-          onPress={() => {
-            completeOnboarding();
-            router.replace("/chat");
-          }}
-        >
-          <Text style={[styles.continueText, !isSelectedTierReady && styles.continueLaterText]}>
-            {isSelectedTierReady ? "Start chatting" : "Skip for now"}
+        {isDownloading ? (
+          // Chat and voice need these files, so don't offer Chat until they're here (Cancel is on the
+          // progress card). Leaving mid-download used to open Chat with nothing ready.
+          <Text style={styles.waitNote}>
+            You can start chatting as soon as the download finishes. Keep OfflineMate open until then.
           </Text>
-        </Pressable>
-        {!isSelectedTierReady ? (
-          <Text style={styles.note}>If you skip, chat will remind you to finish the download.</Text>
-        ) : null}
+        ) : (
+          <>
+            <Pressable
+              style={[styles.continue, !isSelectedTierReady && styles.continueLater]}
+              accessibilityRole="button"
+              onPress={() => {
+                completeOnboarding();
+                router.replace("/chat");
+              }}
+            >
+              <Text style={[styles.continueText, !isSelectedTierReady && styles.continueLaterText]}>
+                {isSelectedTierReady ? "Start chatting" : "Skip for now"}
+              </Text>
+            </Pressable>
+            {!isSelectedTierReady ? (
+              <Text style={styles.note}>If you skip, chat will remind you to finish the download.</Text>
+            ) : null}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -254,6 +264,7 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   meta: { color: "#6b7280", fontSize: 12 },
   note: { color: "#6b7280", fontSize: 12 },
+  waitNote: { color: "#cbd5e1", textAlign: "center", lineHeight: 20, marginTop: 4 },
   continue: { backgroundColor: "#2563eb", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 4 },
   continueText: { color: "#e5e7eb", fontWeight: "700" },
   continueLater: { backgroundColor: "transparent", borderWidth: 1, borderColor: "#374151" },

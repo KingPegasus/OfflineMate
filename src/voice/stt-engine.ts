@@ -2,6 +2,7 @@ import { Platform, PermissionsAndroid, NativeModules } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import { initWhisper, releaseAllWhisper, type TranscribeOptions } from "whisper.rn";
 import { normalizeSttResult } from "@/voice/stt-transcript-utils";
+import type { ListeningSession } from "@/voice/stt-session";
 
 export type STTSize = "tiny" | "base";
 
@@ -165,9 +166,7 @@ function concatChunks(chunks: Uint8Array[], totalBytes: number): Uint8Array {
  * on the full buffer at stop(). Whisper is far more accurate on a complete utterance than on the
  * short VAD-cut slices produced by realtime streaming, which is critical for short voice commands.
  */
-export async function startListeningSession(
-  modelSize: STTSize,
-): Promise<{ start: () => Promise<void>; stop: () => Promise<string>; release: () => Promise<void> }> {
+export async function startListeningSession(modelSize: STTSize): Promise<ListeningSession> {
   const resolved = await resolveModelPath(modelSize);
   console.log(
     "[OfflineMate] STT: startListeningSession, requested model:",
@@ -176,7 +175,8 @@ export async function startListeningSession(
     resolved?.modelSize ?? "none",
   );
   if (!resolved) {
-    return { start: async () => {}, stop: async () => STT_MODEL_MISSING, release: async () => {} };
+    // Marked so a press re-checks: the model may be downloaded after this was pre-warmed.
+    return { start: async () => {}, stop: async () => STT_MODEL_MISSING, release: async () => {}, modelMissing: true };
   }
   const filePath = resolved.filePath;
 
