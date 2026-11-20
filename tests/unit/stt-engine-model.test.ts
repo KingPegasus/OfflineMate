@@ -1,7 +1,7 @@
 import { beforeEach, vi } from "vitest";
 
 const existing = new Set<string>();
-const initWhisper = vi.fn();
+const initWhisper = vi.fn(async () => ({ release: vi.fn(async () => {}) }));
 
 vi.mock("expo-file-system/legacy", () => ({
   documentDirectory: "file:///data/app/files/",
@@ -14,19 +14,32 @@ vi.mock("react-native", () => ({
   PermissionsAndroid: {
     PERMISSIONS: { RECORD_AUDIO: "android.permission.RECORD_AUDIO" },
     RESULTS: { GRANTED: "granted" },
-    // Deny so the session stops right after model resolution (no native whisper/audio needed).
+    // Deny so start() records nothing and stop() reports it (no native audio needed).
+    check: vi.fn(async () => false),
     request: vi.fn(async () => "denied"),
   },
 }));
 
 vi.mock("whisper.rn", () => ({ initWhisper, releaseAllWhisper: vi.fn() }));
+vi.mock("whisper.rn/realtime-transcription/adapters/AudioPcmStreamAdapter", () => ({
+  AudioPcmStreamAdapter: class {
+    onData() {}
+    onError() {}
+    isRecording() {
+      return false;
+    }
+    async release() {}
+  },
+}));
 
 const TINY = "file:///data/app/files/models/whisper-tiny.en.bin";
 const BASE = "file:///data/app/files/models/whisper-base.en.bin";
 
 async function stopResult(size: "tiny" | "base") {
   const { startListeningSession } = await import("@/voice/stt-engine");
-  return (await startListeningSession(size)).stop();
+  const session = await startListeningSession(size);
+  await session.start();
+  return session.stop();
 }
 
 describe("STT model resolution", () => {

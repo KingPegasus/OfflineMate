@@ -42,6 +42,33 @@ async function resolveModelPath(preferred: STTSize): Promise<{ modelSize: STTSiz
   return null;
 }
 
+/** stop() result when the microphone is not allowed; VoiceButton explains where to allow it. */
+export const MIC_PERMISSION_REQUIRED =
+  "Microphone permission is required for voice input. Please allow it in Settings.";
+/** stop() result right after the user allowed the microphone; that press didn't record. */
+export const MIC_JUST_ALLOWED = "Microphone allowed. Hold the mic button again to speak.";
+
+export function isMicJustAllowed(result: string | null | undefined) {
+  return result === MIC_JUST_ALLOWED;
+}
+
+type MicAccess = "granted" | "just-granted" | "denied";
+
+/**
+ * Asks for the microphone only when it isn't allowed yet, and only from a mic press. Asking
+ * opens the system permission screen, which pauses the app; a request on every pre-warm turned
+ * that into a loop on phones where the mic was denied (see useVoice).
+ */
+async function ensureMicrophonePermission(): Promise<MicAccess> {
+  if (Platform.OS !== "android") return "granted";
+  try {
+    if (await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO)) return "granted";
+  } catch (e) {
+    console.warn("[OfflineMate] STT: permission check failed", e);
+  }
+  return (await requestMicrophonePermission()) ? "just-granted" : "denied";
+}
+
 async function requestMicrophonePermission(): Promise<boolean> {
   if (Platform.OS !== "android") return true;
   try {
@@ -111,7 +138,8 @@ function concatChunks(chunks: Uint8Array[], totalBytes: number): Uint8Array {
 
 /**
  * Create a listening session. Loading the model (initWhisper) is the slow part, so pre-warm by
- * calling this early; start() then just opens the microphone stream.
+ * calling this early; start() then just opens the microphone stream. Pre-warming never asks for
+ * the microphone: start() does, on the user's press.
  *
  * Capture strategy: we record the ENTIRE utterance as raw PCM and run a single whisper transcription
  * on the full buffer at stop(). Whisper is far more accurate on a complete utterance than on the
@@ -132,16 +160,6 @@ export async function startListeningSession(
   }
   const filePath = resolved.filePath;
 
-  const hasPermission = await requestMicrophonePermission();
-  if (!hasPermission) {
-    return {
-      start: async () => {},
-      stop: async () =>
-        "Microphone permission is required for voice input. Please allow it in Settings.",
-      release: async () => {},
-    };
-  }
-
   const useGpu = Platform.OS !== "android";
   const context = await initWhisper({ filePath, isBundleAsset: false, useGpu });
 
@@ -155,6 +173,9 @@ export async function startListeningSession(
   let totalBytes = 0;
   let capturing = false;
   let startAt = 0;
+  let micAccess: MicAccess | null = null;
+  let stopRequested = false;
+  let starting: Promise<void> | null = null;
 
   audioStream.onData((raw: unknown) => {
     if (!capturing) return;
@@ -191,30 +212,47 @@ export async function startListeningSession(
     totalBytes = 0;
   }
 
+  async function startCapture(): Promise<void> {
+    chunks = [];
+    totalBytes = 0;
+    stopRequested = false;
+    micAccess = await ensureMicrophonePermission();
+    // The permission dialog ends the press, so record only when the mic was already allowed.
+    if (micAccess !== "granted" || stopRequested) return;
+    try {
+      await audioStream.initialize({
+        sampleRate: SAMPLE_RATE,
+        channels: CHANNELS,
+        bitsPerSample: BITS_PER_SAMPLE,
+        audioSource: ANDROID_AUDIO_SOURCE_VOICE_RECOGNITION,
+        bufferSize: 16 * 1024,
+      });
+      capturing = true;
+      startAt = Date.now();
+      await audioStream.start();
+    } catch (error) {
+      capturing = false;
+      console.warn("[OfflineMate] STT: audio start failed", error);
+      await doRelease();
+      throw error;
+    }
+  }
+
   return {
-    start: async (): Promise<void> => {
-      chunks = [];
-      totalBytes = 0;
-      try {
-        await audioStream.initialize({
-          sampleRate: SAMPLE_RATE,
-          channels: CHANNELS,
-          bitsPerSample: BITS_PER_SAMPLE,
-          audioSource: ANDROID_AUDIO_SOURCE_VOICE_RECOGNITION,
-          bufferSize: 16 * 1024,
-        });
-        capturing = true;
-        startAt = Date.now();
-        await audioStream.start();
-      } catch (error) {
-        capturing = false;
-        console.warn("[OfflineMate] STT: audio start failed", error);
-        await doRelease();
-        throw error;
-      }
+    start: (): Promise<void> => {
+      starting = startCapture();
+      return starting;
     },
     stop: async (): Promise<string> => {
+      stopRequested = true;
+      // Released while the permission dialog was open: wait for the answer before reporting.
+      await starting?.catch(() => {});
       capturing = false;
+      if (micAccess === "denied" || micAccess === "just-granted") {
+        // Nothing was recorded. useVoice drops this session and pre-warms a new one.
+        await doRelease();
+        return micAccess === "denied" ? MIC_PERMISSION_REQUIRED : MIC_JUST_ALLOWED;
+      }
       try {
         if (audioStream.isRecording()) {
           await audioStream.stop();

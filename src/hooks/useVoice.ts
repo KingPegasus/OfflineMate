@@ -15,6 +15,9 @@ export function useVoice() {
   const sttModel = useMemo(() => (selectedTier === "lite" ? "tiny" : "base"), [selectedTier]);
   const sessionRef = useRef<Promise<SessionHandle> | null>(null);
   const stopInFlightRef = useRef<Promise<string> | null>(null);
+  // True while the mic is actually recording. Unlike sessionRef (also set while a session is only
+  // pre-warmed, or while a press waits for the permission answer), this says the mic is in use.
+  const recordingRef = useRef(false);
 
   // Pre-warm session when hook mounts so mic starts as soon as user presses (no model-load delay).
   useEffect(() => {
@@ -35,9 +38,14 @@ export function useVoice() {
     const sessionPromise = sessionRef.current;
     sessionPromise
       .then((handle) => handle.start())
-      .then(() => setIsRecording(true))
+      .then(() => {
+        // A release that came first (e.g. the permission dialog ended the press) wins.
+        if (!stopInFlightRef.current) recordingRef.current = true;
+        setIsRecording(true);
+      })
       .catch((e) => {
         console.warn("[OfflineMate] Voice: start error", e);
+        recordingRef.current = false;
         sessionRef.current = null;
       });
   }, [sttModel]);
@@ -46,6 +54,7 @@ export function useVoice() {
     if (stopInFlightRef.current) return stopInFlightRef.current;
 
     const stopPromise = (async (): Promise<string> => {
+      recordingRef.current = false;
       const sessionPromise = sessionRef.current;
       sessionRef.current = null;
       if (!sessionPromise) {
@@ -62,6 +71,7 @@ export function useVoice() {
         console.warn("[OfflineMate] Voice: stopListening error", e);
         return "STT failed.";
       } finally {
+        recordingRef.current = false;
         setIsRecording(false);
         // Pre-warm next session only if user hasn't already started a new one.
         if (sessionRef.current === null) {
@@ -80,7 +90,10 @@ export function useVoice() {
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
-      if (state !== "active" && sessionRef.current) {
+      // Only stop a recording in progress. A pre-warmed session is left alone: stopping it
+      // pre-warms a new one, and the permission screen (opened from a mic press) also counts as
+      // leaving the app, which used to restart the session in a loop while the mic was denied.
+      if (state !== "active" && recordingRef.current) {
         console.log("[OfflineMate] Voice: app backgrounded, stopping active STT session");
         void stopListening();
       }

@@ -2,7 +2,7 @@ import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useVoice } from "@/hooks/useVoice";
 import { getTierVoiceDownloadMb } from "@/ai/model-manager";
-import { isSttModelMissing } from "@/voice/stt-engine";
+import { isMicJustAllowed, isSttModelMissing } from "@/voice/stt-engine";
 
 /** Transcripts that mean "no usable input" — do not send to chat. */
 function isNoInput(transcript: string): boolean {
@@ -62,6 +62,11 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
       if (isSttModelMissing(transcript)) {
         console.log("[OfflineMate] Voice: STT model missing, offering download");
         offerModelDownload();
+        return;
+      }
+      if (isMicJustAllowed(transcript)) {
+        // The permission dialog ended that press before anything was recorded.
+        Alert.alert("Microphone on", "Hold the mic button and speak, then release when done.");
         return;
       }
       if (transcript && !isNoInput(transcript)) {
