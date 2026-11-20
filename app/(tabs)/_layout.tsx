@@ -1,9 +1,14 @@
 import { Tabs } from "expo-router";
-import { getDefaultHeaderHeight } from "expo-router/react-navigation";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
+
+/**
+ * Header bar height beside the rail (tablets, unfolded foldables). Shorter than the default (64 dp on
+ * Android, 50 pt on iPad), which left an empty white strip above the title on a wide screen.
+ */
+const WIDE_HEADER_BAR = 48;
 
 export const unstable_settings = {
   initialRouteName: "chat",
@@ -11,10 +16,9 @@ export const unstable_settings = {
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const frame = useWindowDimensions();
-  // The screen header's full height (status bar + bar), as React Navigation computes it, so the rail's
-  // white top lines up with the header beside it instead of stopping at the status bar.
-  const headerHeight = getDefaultHeaderHeight(frame, false, insets.top);
+  // The header's full height (status bar + bar). The rail's white top uses it too, so the two line up
+  // as one band instead of the rail turning dark right below the status bar.
+  const headerHeight = insets.top + WIDE_HEADER_BAR;
   // Tablets and wide windows get a navigation rail on the left; phones keep the bottom bar.
   const { isWide } = useBreakpoint();
   const tabIcon = (name: React.ComponentProps<typeof Ionicons>["name"], focused: boolean) =>
@@ -25,7 +29,7 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: true,
         tabBarHideOnKeyboard: !isWide,
-        headerStyle: { backgroundColor: "#ffffff" },
+        headerStyle: { backgroundColor: "#ffffff", ...(isWide ? { height: headerHeight } : {}) },
         headerTintColor: "#111827",
         headerTitleStyle: { fontWeight: "700" },
         tabBarActiveTintColor: "#60a5fa",
@@ -36,13 +40,21 @@ export default function TabsLayout() {
               tabBarVariant: "material" as const,
               tabBarLabelPosition: "below-icon" as const,
               // Items start below the white band so none sits half on white, half on the dark rail.
-              tabBarStyle: { borderRightColor: "#1f2937", width: 96, paddingTop: headerHeight + 8 },
+              // The right border is drawn by the dark part below, so it doesn't cut through the white band.
+              tabBarStyle: { borderRightWidth: 0, width: 96, paddingTop: headerHeight + 8 },
               // The status bar uses dark icons over the white header, so the rail's top is white for the
               // header's full height: one even band across the top.
               tabBarBackground: () => (
                 <View style={StyleSheet.absoluteFill}>
                   <View style={{ height: headerHeight, backgroundColor: "#ffffff" }} />
-                  <View style={{ flex: 1, backgroundColor: "#0b1020" }} />
+                  <View
+                    style={{
+                      flex: 1,
+                      backgroundColor: "#0b1020",
+                      borderRightWidth: StyleSheet.hairlineWidth,
+                      borderRightColor: "#1f2937",
+                    }}
+                  />
                 </View>
               ),
             }
