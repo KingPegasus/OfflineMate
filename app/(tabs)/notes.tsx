@@ -26,7 +26,7 @@ export default function NotesScreen() {
   const confirmDelete = (note: NoteRow) => {
     Alert.alert(
       "Delete note",
-      "Remove this note from your device? It will also be removed from semantic search.",
+      "Remove this note from your device? Chat won't find it anymore either.",
       [
         { text: "Cancel", style: "cancel" },
         {

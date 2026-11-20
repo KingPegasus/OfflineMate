@@ -34,6 +34,20 @@ describe("searching notes and contacts in everyday words", () => {
     expect(selectToolFromInput(text)?.name).toBe("notes.create");
   });
 
+  // Found in the iOS smoke test: these went to plain chat, which said it can't create notes.
+  it.each(["Create a note: pick up dry cleaning on Friday", "Make a note: call the plumber", "Write a note: gate code 4512"])(
+    "%s → tool, notes.create",
+    (text) => {
+      expect(routeIntent(text)).toBe("tool");
+      expect(selectToolFromInput(text)?.name).toBe("notes.create");
+    },
+  );
+
+  it.each(["Show my notes", "List my notes", "Show me all my notes"])("%s → notes.search", (text) => {
+    expect(routeIntent(text)).toBe("tool");
+    expect(selectToolFromInput(text)?.name).toBe("notes.search");
+  });
+
   it("still finds a contact to call", () => {
     expect(selectToolFromInput("Call Ali")?.name).toBe("contacts.search");
   });

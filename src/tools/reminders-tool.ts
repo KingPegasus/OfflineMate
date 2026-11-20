@@ -8,6 +8,7 @@ import {
   resolveReminderSeconds,
   resolveReminderText,
 } from "@/tools/reminder-parser";
+import { waitingForUser } from "@/utils/user-wait";
 
 const REMINDER_CHANNEL_ID = "offlinemate-reminders-v2";
 const REMINDER_CHANNEL_LEGACY = "offlinemate-reminders";
@@ -58,7 +59,7 @@ export const setReminderTool: Tool = {
     }
 
     await ensureReminderChannel();
-    const perm = await Notifications.requestPermissionsAsync();
+    const perm = await waitingForUser(Notifications.requestPermissionsAsync());
     console.log("[OfflineMate] Notification permission:", perm.status, perm.granted);
     if (!perm.granted) {
       return {

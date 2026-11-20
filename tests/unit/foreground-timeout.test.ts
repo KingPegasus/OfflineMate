@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppStateStatus } from "react-native";
 import { withForegroundTimeout } from "@/utils/foreground-timeout";
+import { waitingForUser } from "@/utils/user-wait";
 
 vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: vi.fn() } }));
 
@@ -61,6 +62,32 @@ describe("withForegroundTimeout", () => {
     await vi.advanceTimersByTimeAsync(30000);
     app.set("active");
     await vi.advanceTimersByTimeAsync(5000);
+    await check;
+  });
+
+  // Found in the iOS smoke test: an iOS 27 permission alert leaves AppState "active".
+  it("pauses while a tool waits on a permission prompt, even with the app still active", async () => {
+    const app = fakeAppState();
+    let answer: (v: boolean) => void = () => {};
+    const tool = (async () => {
+      const allowed = await waitingForUser(new Promise<boolean>((r) => (answer = r)));
+      return allowed ? "reminder set" : "denied";
+    })();
+    const result = withForegroundTimeout(tool, 15000, "timed out", app);
+    await vi.advanceTimersByTimeAsync(60000); // the alert sits there for a minute
+    answer(true);
+    await expect(result).resolves.toBe("reminder set");
+  });
+
+  it("starts counting again once the prompt is answered", async () => {
+    const app = fakeAppState();
+    const tool = (async () => {
+      await waitingForUser(Promise.resolve(true));
+      return never();
+    })();
+    const result = withForegroundTimeout(tool, 15000, "timed out", app);
+    const check = expect(result).rejects.toThrow("timed out");
+    await vi.advanceTimersByTimeAsync(15000);
     await check;
   });
 

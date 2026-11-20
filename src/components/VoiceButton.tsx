@@ -92,6 +92,8 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           activeOpacity={1}
+          accessibilityRole="button"
+          accessibilityLabel={isRecording ? "Listening. Release to stop" : "Voice input. Hold to speak"}
         >
           <View style={styles.content}>
             {isDownloading ? (

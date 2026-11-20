@@ -107,7 +107,21 @@ export const searchNotesTool: Tool = {
       return { ok: true, message: "Found 0 notes.", payload: { rows: [] } };
     }
     // Keywords, not the whole line: "find my note about the dentist" looked for that exact sentence.
-    const { notes } = searchNotesByKeywords(raw);
+    const { terms, notes } = searchNotesByKeywords(raw);
+    if (terms.length === 0) {
+      // "Show my notes" / "list my notes": nothing to search for, so list the latest ones.
+      const latest = getDb().getAllSync<{ id: string; title: string }>(
+        "SELECT id, title FROM notes ORDER BY created_at DESC LIMIT 5",
+      );
+      if (latest.length === 0) return { ok: true, message: "You don't have any notes yet.", payload: { rows: [] } };
+      const heading = latest.length === 1 ? "Your latest note:" : `Your latest ${latest.length} notes:`;
+      return {
+        ok: true,
+        // The titles come from the payload: the chat reply lists `rows` under the message.
+        message: heading,
+        payload: { rows: latest },
+      };
+    }
     const rows = notes.map(({ id, title }) => ({ id, title }));
     return { ok: true, message: `Found ${rows.length} ${rows.length === 1 ? "note" : "notes"}.`, payload: { rows } };
   },
