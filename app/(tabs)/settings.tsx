@@ -205,10 +205,18 @@ export default function SettingsScreen() {
   const modalTier = modelPickerTier ?? selectedTier;
   const modalTierSpec = getTierSpec(modalTier);
   const modalModels = getModelsForTier(modalTier);
-  const modalActiveModelId = tierModelIds[modalTier] ?? null;
   const modalReadiness = modelReadinessByTier[modalTier];
-  const modalActiveModel = resolveModelForTier(modalTier, modalActiveModelId);
+  /**
+   * The model picked in the sheet. Nothing changes until it's confirmed: "Use …" when it's on the
+   * phone, or after "Download now" finishes. Cancel keeps the assistant as it was.
+   */
+  const [pickedModelId, setPickedModelId] = useState<string | null>(null);
+  const modalActiveModel = resolveModelForTier(modalTier, pickedModelId ?? tierModelIds[modalTier]);
+  /** Stored form of the pick: the tier default is saved as null. */
+  const modalActiveModelId = modalActiveModel.id === modalTierSpec.primary.id ? null : modalActiveModel.id;
   const modalSelectedReady = modalReadiness[modalActiveModel.id] ?? false;
+  /** True when the pick is what's already in use, so there's nothing to confirm. */
+  const pickIsInUse = modalTier === selectedTier && modalActiveModel.id === activeModel.id;
   const isCheckingReadiness = isCheckingReadinessTier === modalTier;
   /** What "Download now" will fetch: only the files that are missing, the same figure the progress card uses. */
   const [modalBytesLeft, setModalBytesLeft] = useState<number | null>(null);
@@ -253,9 +261,24 @@ export default function SettingsScreen() {
 
   const handleOpenTierPicker = (tier: ModelTier) => {
     if (isDownloadingSelected) return;
-    setTier(tier);
+    // Only opens the sheet: switching waits for "Use …" or a finished download.
+    setPickedModelId(resolveModelForTier(tier, tierModelIds[tier]).id);
     setModelPickerTier(tier);
     void refreshReadinessForTier(tier);
+  };
+
+  const closePicker = () => {
+    setModelPickerTier(null);
+    setPickedModelId(null);
+  };
+
+  /** Makes this tier and model the one chat uses. */
+  const commitModelChoice = (tier: ModelTier, modelId: string | null) => {
+    const changed = tier !== selectedTier || (tierModelIds[tier] ?? null) !== modelId;
+    if (!changed) return;
+    llmEngine.cancelPendingLoad();
+    setTierModelId(tier, modelId);
+    setTier(tier);
   };
 
   // Chat's model error links here with ?tier=<key>: open that tier's picker so the user can download.
@@ -272,14 +295,9 @@ export default function SettingsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per incoming link
   }, [tierParam, tierParamAt]);
 
-  const handleSelectModelInModal = (tier: ModelTier, modelId: string) => {
+  const handleSelectModelInModal = (modelId: string) => {
     if (isDownloadingSelected) return;
-    const spec = getTierSpec(tier);
-    const currentId = tierModelIds[tier] ?? null;
-    const nextId = modelId === spec.primary.id ? null : modelId;
-    if (nextId === currentId || (nextId === null && currentId === null)) return;
-    llmEngine.cancelPendingLoad();
-    setTierModelId(tier, nextId);
+    setPickedModelId(modelId);
   };
 
   const handleDownloadModalModel = async (redownload = false) => {
@@ -310,9 +328,30 @@ export default function SettingsScreen() {
     );
     await refreshReadinessForTier(tier);
     if (outcome === "done") {
+      // Switch only now that it's on the phone; a cancelled or failed download changes nothing.
+      commitModelChoice(tier, modelId);
+      closePicker();
       const voiceNote = voiceFailed ? " Voice typing didn't download; tap the mic to try again." : "";
-      Alert.alert("Ready to chat", `${model.family} ${model.size} is downloaded and works without internet.${voiceNote}`);
+      Alert.alert(
+        "Ready to chat",
+        `${getTierSpec(tier).label} (${model.family} ${model.size}) is downloaded and now in use. It works without internet.${voiceNote}`,
+      );
     }
+  };
+
+  /** Asks before a download starts: what it is, how big, and that nothing changes until it's done. */
+  const confirmDownload = () => {
+    const size = formatBytes(
+      modalBytesLeft ?? (modalActiveModel.estimatedSizeMb + getTierVoiceDownloadMb(modalTier)) * 1024 * 1024,
+    );
+    Alert.alert(
+      `Download ${modalTierSpec.label}?`,
+      `${modelDisplayName(modalActiveModel)} is about ${size}, including voice typing. Your current assistant stays in use until the download finishes. Wi-Fi works best.`,
+      [
+        { text: "Not now", style: "cancel" },
+        { text: "Download", onPress: () => void handleDownloadModalModel() },
+      ],
+    );
   };
 
   const handleClearChatsAndMemories = () => {
@@ -504,14 +543,13 @@ export default function SettingsScreen() {
         transparent
         visible={modelPickerTier !== null}
         animationType="slide"
-        onRequestClose={() => setModelPickerTier(null)}
+        onRequestClose={closePicker}
       >
         <View style={[styles.modalBackdrop, isWide && styles.modalBackdropWide]}>
           <View style={[styles.modalCard, isWide && styles.modalCardWide]}>
             <Text style={styles.modalTitle}>{modalTierSpec.label}: choose a model</Text>
             <Text style={styles.modalHint}>
-              The recommended one suits most people. Pick one, then tap Download now if it isn’t on your phone yet.
-              Models with the image icon can look at photos.
+              The recommended one suits most people. Models with the image icon can look at photos.
             </Text>
             {showTechnicalDetails ? (
               <Text style={styles.modalHint}>
@@ -530,8 +568,8 @@ export default function SettingsScreen() {
             <View style={styles.modalOptions}>
               {modalModels.map((model) => {
                 const isPrimary = model.id === modalTierSpec.primary.id;
-                const isSelected =
-                  (modalActiveModelId === null && isPrimary) || modalActiveModelId === model.id;
+                const isSelected = model.id === modalActiveModel.id;
+                const inUse = modalTier === selectedTier && model.id === activeModel.id;
                 const ready = modalReadiness[model.id];
                 const readinessBadge = isCheckingReadiness && ready === undefined
                   ? "Checking..."
@@ -542,7 +580,9 @@ export default function SettingsScreen() {
                   <Pressable
                     key={model.id}
                     style={[styles.modalOption, isSelected && styles.selected]}
-                    onPress={() => handleSelectModelInModal(modalTier, model.id)}
+                    onPress={() => handleSelectModelInModal(model.id)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: isSelected }}
                   >
                     <View style={styles.modalOptionTitleRow}>
                       <Text style={styles.modalOptionTitle}>
@@ -553,6 +593,7 @@ export default function SettingsScreen() {
                     </View>
                     <Text style={styles.modalOptionMeta}>
                       {readinessBadge}
+                      {inUse ? " · In use" : ""}
                       {showTechnicalDetails ? ` · ${model.id}` : ""}
                     </Text>
                   </Pressable>
@@ -582,16 +623,39 @@ export default function SettingsScreen() {
                 title={downloadingTitle}
                 onCancel={modelDownload.cancel}
               />
-            ) : !modalSelectedReady ? (
-              <Text style={styles.modalAction} onPress={() => void handleDownloadModalModel()}>
-                {`Download now · ${formatBytes(
-                  modalBytesLeft ?? (modalActiveModel.estimatedSizeMb + getTierVoiceDownloadMb(modalTier)) * 1024 * 1024,
-                )} (includes voice input)`}
+            ) : null}
+            <View style={styles.modalButtons}>
+              <Pressable style={styles.modalSecondary} onPress={closePicker} accessibilityRole="button">
+                <Text style={styles.modalSecondaryText}>
+                  {isDownloadingSelected ? "Hide (keeps downloading)" : pickIsInUse && modalSelectedReady ? "Close" : "Cancel"}
+                </Text>
+              </Pressable>
+              {isDownloadingSelected || (pickIsInUse && modalSelectedReady) ? null : modalSelectedReady ? (
+                <Pressable
+                  style={styles.modalPrimary}
+                  onPress={() => {
+                    commitModelChoice(modalTier, modalActiveModelId);
+                    closePicker();
+                  }}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.modalPrimaryText}>Use {modalTierSpec.label}</Text>
+                </Pressable>
+              ) : (
+                <Pressable style={styles.modalPrimary} onPress={confirmDownload} accessibilityRole="button">
+                  <Text style={styles.modalPrimaryText}>
+                    {`Download now · ${formatBytes(
+                      modalBytesLeft ?? (modalActiveModel.estimatedSizeMb + getTierVoiceDownloadMb(modalTier)) * 1024 * 1024,
+                    )}`}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+            {!isDownloadingSelected && !pickIsInUse && !modalSelectedReady ? (
+              <Text style={styles.modalHint}>
+                Your current assistant stays in use until the download finishes. Includes voice typing.
               </Text>
             ) : null}
-            <Text style={styles.modalClose} onPress={() => setModelPickerTier(null)}>
-              {isDownloadingSelected ? "Hide (keeps downloading)" : "Done"}
-            </Text>
           </View>
         </View>
       </Modal>
@@ -696,7 +760,18 @@ const styles = StyleSheet.create({
   modalOptionTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   modalOptionMeta: { color: "#9ca3af", marginTop: 4, fontSize: 12 },
   modalAction: { color: "#93c5fd", fontWeight: "600", marginTop: 6 },
-  modalClose: { color: "#cbd5e1", fontWeight: "700", textAlign: "right", marginTop: 8 },
+  modalButtons: { flexDirection: "row", gap: 10, marginTop: 10 },
+  modalSecondary: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#374151",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  modalSecondaryText: { color: "#cbd5e1", fontWeight: "700" },
+  modalPrimary: { flex: 1.4, backgroundColor: "#2563eb", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  modalPrimaryText: { color: "#f9fafb", fontWeight: "700" },
   sectionCard: {
     marginTop: 16,
     backgroundColor: "#111827",
