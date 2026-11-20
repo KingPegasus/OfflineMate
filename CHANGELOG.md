@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [0.14.0] - 2026-11-18
+## [0.14.0] - 2026-11-20
 
 Easier for people who aren't technical: every size now defaults to a model that can look at photos, setup recommends one download for your phone with a single button and needs no scrolling, the Tools tab becomes **Help**, Settings shows what's set up before what you can change, download problems offer **Try again** in plain words, and the app says what things do in everyday words. Model names, ids and reply speed move behind **Settings → Advanced → Show technical details**.
 
@@ -17,7 +17,7 @@ Easier for people who aren't technical: every size now defaults to a model that 
 - Tests: every size defaults to a photo model and still offers the old default; settings migration keeps people set up before 0.14.0 on their downloaded model while new installs get the photo defaults (`tests/unit/vision-images.test.ts`, `tests/unit/settings-store.test.ts`, `tests/unit/model-registry.test.ts`); download error wording never shows the raw error or network jargon (`tests/unit/download-format.test.ts`); the Help topics are short and jargon-free; the recommendation rule and its headline (`tests/unit/tier-recommendation.test.ts`); every registered tool has a friendly entry whose example routes to that tool, and the chat badge wording with and without technical details (`tests/unit/plain-language.test.ts`); technical details stay off when migrating v6 settings (`tests/unit/settings-store.test.ts`).
 
 ### Fixed
-- Chat, Settings and the Tools tab added the status-bar height again below the header, leaving an empty band at the top (Chat and Settings) or bottom (Tools). They now pad only for the side rail on wide screens (`app/(tabs)/chat.tsx`, `app/(tabs)/settings.tsx`, `app/(tabs)/tools.tsx`).
+- Chat, the chat list, Notes, Settings and the Tools tab added the status-bar height again below the header, leaving an empty band at the top (or, on Tools, the bottom). They now pad only for the side rail on wide screens (`app/(tabs)/chat.tsx`, `chats.tsx`, `notes.tsx`, `settings.tsx`, `tools.tsx`).
 
 ### Changed
 - Chat's badge says "Assistant: Balanced · can look at photos" instead of "Active model: Standard · lfm2.5-vl-1.6b" (`src/components/ChatModelBadge.tsx`, `src/utils/chat-model-label.ts`).
