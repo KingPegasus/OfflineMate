@@ -98,6 +98,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.offlinemate.app",
+      "supportsTablet": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "OfflineMate uses microphone access for voice assistant features.",
         "NSAlarmKitUsageDescription": "OfflineMate sets alarms you ask for, so they ring even in silent mode or Focus."
