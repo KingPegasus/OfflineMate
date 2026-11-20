@@ -29,7 +29,7 @@ export default function ChatsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={isWide ? ["top", "bottom"] : ["top"]}>
+    <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
       <View style={[styles.column, isWide && styles.columnWide]}>
         <View style={styles.header}>
           <Text style={styles.title}>Chats</Text>

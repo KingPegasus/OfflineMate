@@ -88,7 +88,7 @@ export default function NotesScreen() {
 
   if (isTwoPane) {
     return (
-      <SafeAreaView style={styles.root}>
+      <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
         <View
           style={[styles.panes, bookSplit && { gap: PANE_GAP + bookSplit.gap }]}
           ref={bookRef}
@@ -140,7 +140,8 @@ export default function NotesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.root}>
+    // The header already covers the status bar; padding the top again left an empty band.
+    <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
       <View style={[styles.column, isWide && styles.columnWide]}>
         {composer}
         <ScrollView style={styles.list}>

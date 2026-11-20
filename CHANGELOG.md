@@ -4,15 +4,19 @@ All notable changes to this project are documented in this file.
 
 ## [0.13.1] - 2026-11-20
 
-Tablets and unfolded foldables: the top-left corner next to the navigation rail is one even white band again.
+Tablets and unfolded foldables: the top of the screen next to the navigation rail is one even white band, and the empty space above the title and above the content is gone.
 
 ### Fixed
-- With the navigation rail (iPad, Android tablets, unfolded foldables), the rail painted white only behind the status bar (about 24 pt on iPad) while the screen header beside it is white for the status bar plus the header (about 68 pt), so the top-left corner showed a short white notch over the dark rail. The rail's white top is now as tall as the header, using React Navigation's own header height (`getDefaultHeaderHeight` from `expo-router/react-navigation`), and the rail's buttons start just below it, so the Chat button no longer sits half on white. The status-bar icons stay dark on white. Phones (bottom tab bar) are unchanged (`app/(tabs)/_layout.tsx`).
+- With the navigation rail (iPad, Android tablets, unfolded foldables), the rail painted white only behind the status bar (about 24 pt on iPad) while the screen header beside it is white for the status bar plus the header, so the top-left corner showed a short white notch over the dark rail. The rail's white top is now exactly as tall as the header, and the rail's buttons start just below it, so the Chat button no longer sits half on white. The rail's right border starts below the white band instead of cutting through it. The status-bar icons stay dark on white (`app/(tabs)/_layout.tsx`).
+- The header beside the rail is 48 dp tall instead of the default 64 dp on Android (50 pt on iPad), which left an empty white strip between the status bar and the title (`WIDE_HEADER_BAR` in `app/(tabs)/_layout.tsx`).
+- Chat, the chat list, Notes, Settings and Tools added the status-bar height again below the header, leaving an empty dark band above the content (on phones too). They now pad only the bottom, and only with the rail (`app/(tabs)/chat.tsx`, `chats.tsx`, `notes.tsx`, `settings.tsx`, `tools.tsx`). PR #20 makes the same change on its branch.
+
+### Changed
 - App version updated to `0.13.1` in `app.json`.
 
 ### Known issues
-- Checked on the Android tablet emulator (Pixel Tablet, landscape) and the iPad Pro 11-inch simulator (portrait and landscape) with release builds. The unfolded Pixel Fold uses the same rail code but wasn't re-checked.
-- A wider window on an iPhone in landscape gets the rail too; its header height comes from the same function (32 pt bar), but it wasn't checked on a device.
+- Checked with release builds on the Android tablet emulator (Pixel Tablet, landscape) and the iPad Pro 11-inch simulator (portrait and landscape). The unfolded Pixel Fold and phones use the same code but weren't re-checked; phones keep their default header height.
+- Store and website tablet screenshots show the old top band; they weren't retaken.
 
 ## [0.13.0] - 2026-11-20
 

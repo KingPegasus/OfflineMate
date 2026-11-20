@@ -108,7 +108,8 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={isWide ? ["top", "bottom"] : ["top"]}>
+    // The header already covers the status bar; padding the top again left an empty band above the chat.
+    <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
       <LlmInitDownloadModal />
       <View style={styles.panes} ref={bookRef} onLayout={onBookLayout}>
         {isTwoPane ? (

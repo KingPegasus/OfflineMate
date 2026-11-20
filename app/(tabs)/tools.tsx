@@ -9,7 +9,7 @@ export default function ToolsScreen() {
   const { isWide } = useBreakpoint();
 
   return (
-    <SafeAreaView style={styles.root}>
+    <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
       <View style={[styles.column, isWide && styles.columnWide]}>
         <Text style={styles.title}>Tool Registry</Text>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>

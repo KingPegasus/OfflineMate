@@ -290,7 +290,8 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={isWide ? ["top", "bottom"] : ["top"]}>
+    // The header already covers the status bar; padding the top again left an empty band.
+    <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, isWide && styles.contentWide]} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Model Tier</Text>
         <View style={styles.activeModelCard}>
