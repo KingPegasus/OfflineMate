@@ -3,7 +3,7 @@
     "name": "OfflineMate",
     "slug": "offlinemate",
     "scheme": "offlinemate",
-    "version": "0.12.0",
+    "version": "0.13.0",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -61,7 +61,8 @@
       ],
       "./plugins/with-cmake-object-path-max",
       "./plugins/with-native-debug-symbols",
-      "./plugins/with-optional-hardware"
+      "./plugins/with-optional-hardware",
+      "./plugins/with-foldable-activity"
     ],
     "experiments": {
       "typedRoutes": true
@@ -97,6 +98,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.offlinemate.app",
+      "supportsTablet": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "OfflineMate uses microphone access for voice assistant features.",
         "NSAlarmKitUsageDescription": "OfflineMate sets alarms you ask for, so they ring even in silent mode or Focus."

@@ -3,6 +3,7 @@ import type { Tool } from "@/tools/tool-registry";
 import { parseAlarmTime, extractAlarmMessage, nextAlarmDate } from "@/tools/alarm-parser";
 import { describeReminderTime } from "@/tools/reminder-parser";
 import { isIosAlarmKitAvailable, requestIosAlarmAuthorization, scheduleIosAlarm } from "@/native/ios-alarms";
+import { waitingForUser } from "@/utils/user-wait";
 
 /** Expo wraps native errors as "Calling the 'x' function has failed\n→ Caused by: <reason>"; keep the reason. */
 function nativeErrorReason(e: unknown, fallback: string): string {
@@ -70,7 +71,7 @@ export const setAlarmTool: Tool = {
       // Ask first: shows the system prompt the first time, then returns the saved choice.
       let authorization: Awaited<ReturnType<typeof requestIosAlarmAuthorization>>;
       try {
-        authorization = await requestIosAlarmAuthorization();
+        authorization = await waitingForUser(requestIosAlarmAuthorization());
       } catch (e) {
         // Not a "permission off" case: the toggle may already be on, so don't send the user to Settings.
         console.warn("[OfflineMate] Alarm permission check failed:", e);

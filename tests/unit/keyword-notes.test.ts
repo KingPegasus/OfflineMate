@@ -84,4 +84,27 @@ describe("notes.search", () => {
       ],
     });
   });
+
+  // Found in the iOS smoke test: "Show my notes" has no search words and found nothing.
+  it("lists the latest notes when there's nothing to search for", async () => {
+    db.getAllSync.mockImplementation((sql: string) =>
+      sql.includes("LIMIT 5") ? db.rows.map(({ id, title }) => ({ id, title })) : [],
+    );
+    const result = await searchNotesTool.execute({ query: "Show my notes" });
+    // The chat reply lists the payload titles under this heading (src/ai/tool-reply.ts).
+    expect(result.message).toBe("Your latest 3 notes:");
+    expect(result.payload).toEqual({
+      rows: [
+        { id: "3", title: "pick up bread" },
+        { id: "2", title: "dentist appointment is Friday at 3pm" },
+        { id: "1", title: "Trip" },
+      ],
+    });
+  });
+
+  it("says so when there are no notes at all", async () => {
+    db.getAllSync.mockReturnValue([]);
+    const result = await searchNotesTool.execute({ query: "list my notes" });
+    expect(result.message).toBe("You don't have any notes yet.");
+  });
 });

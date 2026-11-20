@@ -1,0 +1,20 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.offlinemate'
+version = '1.0.0'
+
+android {
+  namespace "com.offlinemate.windowposture"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+  }
+}
+
+dependencies {
+  // Jetpack WindowManager: reports fold/hinge position and posture (flat, half-opened).
+  implementation "androidx.window:window:1.5.1"
+}

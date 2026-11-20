@@ -3,6 +3,7 @@ import { wantsContactLookupIntent } from "@/ai/intent-router";
 import type { Tool } from "@/tools/tool-registry";
 import { contactSearchNames, extractContactName } from "@/tools/contact-query";
 import { permissionOffMessage } from "@/tools/permission-message";
+import { waitingForUser } from "@/utils/user-wait";
 
 const MAX_CONTACTS = 5;
 
@@ -36,7 +37,7 @@ export const searchContactsTool: Tool = {
         errorCode: "PARSE_FAILURE",
       };
     }
-    const perm = await Contacts.requestPermissionsAsync();
+    const perm = await waitingForUser(Contacts.requestPermissionsAsync());
     if (!perm.granted) {
       return {
         ok: false,

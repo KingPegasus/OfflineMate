@@ -4,11 +4,12 @@ import { wantsCalendarAddIntent } from "@/ai/intent-router";
 import type { Tool } from "@/tools/tool-registry";
 import { parseDateRange, parseEventStart, eventEndFromStart } from "@/tools/date-parser";
 import { permissionOffMessage } from "@/tools/permission-message";
+import { waitingForUser } from "@/utils/user-wait";
 
 async function ensureCalendarPermissions() {
   const current = await Calendar.getCalendarPermissionsAsync();
   if (current.granted) return true;
-  const requested = await Calendar.requestCalendarPermissionsAsync();
+  const requested = await waitingForUser(Calendar.requestCalendarPermissionsAsync());
   return requested.granted;
 }
 

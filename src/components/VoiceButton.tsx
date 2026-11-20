@@ -2,7 +2,7 @@ import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useVoice } from "@/hooks/useVoice";
 import { getTierVoiceDownloadMb } from "@/ai/model-manager";
-import { isSttModelMissing } from "@/voice/stt-engine";
+import { isMicJustAllowed, isSttModelMissing } from "@/voice/stt-engine";
 
 /** Transcripts that mean "no usable input" — do not send to chat. */
 function isNoInput(transcript: string): boolean {
@@ -64,6 +64,11 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
         offerModelDownload();
         return;
       }
+      if (isMicJustAllowed(transcript)) {
+        // The permission dialog ended that press before anything was recorded.
+        Alert.alert("Microphone on", "Hold the mic button and speak, then release when done.");
+        return;
+      }
       if (transcript && !isNoInput(transcript)) {
         console.log("[OfflineMate] Voice: transcript passed to chat:", transcript.slice(0, 60));
         onTranscript?.(transcript);
@@ -87,6 +92,8 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           activeOpacity={1}
+          accessibilityRole="button"
+          accessibilityLabel={isRecording ? "Listening. Release to stop" : "Voice input. Hold to speak"}
         >
           <View style={styles.content}>
             {isDownloading ? (

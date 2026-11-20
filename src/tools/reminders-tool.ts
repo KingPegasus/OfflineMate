@@ -8,6 +8,7 @@ import {
   resolveReminderSeconds,
   resolveReminderText,
 } from "@/tools/reminder-parser";
+import { waitingForUser } from "@/utils/user-wait";
 
 const REMINDER_CHANNEL_ID = "offlinemate-reminders-v2";
 const REMINDER_CHANNEL_LEGACY = "offlinemate-reminders";
@@ -58,7 +59,7 @@ export const setReminderTool: Tool = {
     }
 
     await ensureReminderChannel();
-    const perm = await Notifications.requestPermissionsAsync();
+    const perm = await waitingForUser(Notifications.requestPermissionsAsync());
     console.log("[OfflineMate] Notification permission:", perm.status, perm.granted);
     if (!perm.granted) {
       return {
@@ -82,7 +83,8 @@ export const setReminderTool: Tool = {
     // "in 20 minutes" needs "to go off", not "for": "Reminder set for in 20 minutes" read wrong.
     const when = describeReminderTime(seconds);
     const lead = when.startsWith("in ") ? `Reminder set to go off ${when}` : `Reminder set for ${when}`;
-    return { ok: true, message: `${lead}: ${text}.` };
+    // "Remind me … to stretch." keeps the user's full stop in the text; don't add a second one.
+    return { ok: true, message: `${lead}: ${text}${/[.!?]$/.test(text) ? "" : "."}` };
   },
 };
 

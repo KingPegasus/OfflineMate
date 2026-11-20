@@ -61,6 +61,11 @@ const TOOL_KEYWORDS = [
   "take a note",
   "take note ",
   "save a note",
+  // Same phrases notes.create knows; without them here, "Create a note: …" went to plain chat.
+  "create a note",
+  "make a note",
+  "write a note",
+  "new note",
   "write this down",
   "remember this",
   "find note",
@@ -150,7 +155,7 @@ export function wantsPhoneCallIntent(normalizedLower: string): boolean {
 
 /** "find my note about milk", "search my notes for the wifi password", "show me the note about rent". */
 export function wantsNoteSearchIntent(normalizedLower: string): boolean {
-  return /\b(find|search|show|open|get|look\s+for)\s+(me\s+)?(my|the)\s+notes?\b/.test(normalizedLower);
+  return /\b(find|search|show|list|open|get|look\s+for)\s+(me\s+)?(my|the|all\s+my)\s+notes?\b/.test(normalizedLower);
 }
 
 /**

@@ -11,7 +11,7 @@ import { ErrorBanner } from "@/components/ErrorBanner";
 import { LlmInitDownloadModal } from "@/components/LlmInitDownloadModal";
 import { LiveThinkingPanel } from "@/components/LiveThinkingPanel";
 import { StreamingText } from "@/components/StreamingText";
-import { useBreakpoint } from "@/hooks/useBreakpoint";
+import { useBreakpoint, useHingeSplit } from "@/hooks/useBreakpoint";
 import { useLLMChat } from "@/hooks/useLLMChat";
 import { useChatStore } from "@/stores/chat-store";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -19,11 +19,26 @@ import { getTierSpec, resolveModelForTier, visionUnsupportedMessage } from "@/ai
 import { deleteChatImages, pickChatImage } from "@/utils/chat-images";
 import { CHAT_MAX_WIDTH, LIST_PANE_WIDTH } from "@/utils/layout";
 
+/** In tabletop posture the bottom half only needs room for the composer. */
+const TABLETOP_MIN_PANE = 120;
+
 export default function ChatScreen() {
   const router = useRouter();
   // Wide: cap and centre the message column. Two-pane: chat list on the left, conversation on the right.
-  const { isWide, isTwoPane } = useBreakpoint();
+  const { isWide, isTwoPane, hinge } = useBreakpoint();
   const column = isWide ? styles.column : null;
+  // Half-opened foldables: book posture puts the chat list and conversation on either side of
+  // the fold; tabletop keeps messages on the top half and the composer on the bottom half.
+  const {
+    ref: bookRef,
+    onLayout: onBookLayout,
+    split: bookSplit,
+  } = useHingeSplit(isTwoPane && hinge?.posture === "book" ? hinge : null);
+  const {
+    ref: tabletopRef,
+    onLayout: onTabletopLayout,
+    split: tabletopSplit,
+  } = useHingeSplit(hinge?.posture === "tabletop" ? hinge : null, TABLETOP_MIN_PANE);
   const [prompt, setPrompt] = useState("");
   const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
   const {
@@ -95,13 +110,17 @@ export default function ChatScreen() {
   return (
     <SafeAreaView style={styles.root} edges={isWide ? ["top", "bottom"] : ["top"]}>
       <LlmInitDownloadModal />
-      <View style={styles.panes}>
+      <View style={styles.panes} ref={bookRef} onLayout={onBookLayout}>
         {isTwoPane ? (
-          <View style={styles.listPane}>
+          <View style={[styles.listPane, bookSplit && { width: bookSplit.leading }]}>
             <ChatListPane onNewChat={handleNewChat} />
           </View>
         ) : null}
-        <View style={styles.conversationPane}>
+        <View
+          style={[styles.conversationPane, bookSplit && { marginLeft: bookSplit.gap }]}
+          ref={tabletopRef}
+          onLayout={onTabletopLayout}
+        >
           {isTwoPane ? null : (
             <View style={[styles.conversationBar, column]}>
               <Pressable style={styles.primaryBtn} onPress={handleNewChat}>
@@ -156,7 +175,16 @@ export default function ChatScreen() {
             />
             {streamingResponse ? <StreamingText text={streamingResponse} /> : null}
           </ScrollView>
-          <KeyboardStickyView offset={{ closed: 0, opened: 0 }} style={isWide ? styles.composerBar : null}>
+          <KeyboardStickyView
+            offset={{ closed: 0, opened: 0 }}
+            style={[
+              isWide ? styles.composerBar : null,
+              tabletopSplit && {
+                height: tabletopSplit.gap + tabletopSplit.trailing,
+                paddingTop: tabletopSplit.gap,
+              },
+            ]}
+          >
             <ChatComposer
               style={isWide ? styles.composerColumn : undefined}
               value={prompt}

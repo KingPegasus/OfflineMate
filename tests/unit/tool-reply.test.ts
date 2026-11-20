@@ -72,3 +72,11 @@ describe("deterministic tool replies (Lite)", () => {
     expect(buildDeterministicToolReply('reminders.set:\nPayload: {"id":"x"}')).toBeNull();
   });
 });
+
+describe("listing notes", () => {
+  it("shows each title once under the heading", () => {
+    const toolResult =
+      'notes.search: Your latest 2 notes:\nPayload: {"rows":[{"id":"2","title":"Packing"},{"id":"1","title":"Groceries"}]}\nPlan: Execute notes.search';
+    expect(buildDeterministicToolReply(toolResult)).toBe("Your latest 2 notes:\n- Packing\n- Groceries");
+  });
+});

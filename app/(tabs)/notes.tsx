@@ -2,15 +2,23 @@ import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createNote, deleteNote, listNotes, type NoteRow } from "@/db/notes-repository";
-import { useBreakpoint } from "@/hooks/useBreakpoint";
+import { useBreakpoint, useHingeSplit } from "@/hooks/useBreakpoint";
 import { LIST_PANE_WIDTH, READABLE_MAX_WIDTH } from "@/utils/layout";
+
+const PANE_GAP = 16;
 
 export default function NotesScreen() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [, setRefreshKey] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const { isWide, isTwoPane } = useBreakpoint();
+  const { isWide, isTwoPane, hinge } = useBreakpoint();
+  // Book posture on a half-opened foldable: list on one side of the fold, the note on the other.
+  const {
+    ref: bookRef,
+    onLayout: onBookLayout,
+    split: bookSplit,
+  } = useHingeSplit(isTwoPane && hinge?.posture === "book" ? hinge : null);
   const notes = listNotes(20);
   // Two-pane: show the tapped note, or the newest one until the user picks another.
   const selectedNote = notes.find((n) => n.id === selectedId) ?? notes[0] ?? null;
@@ -18,7 +26,7 @@ export default function NotesScreen() {
   const confirmDelete = (note: NoteRow) => {
     Alert.alert(
       "Delete note",
-      "Remove this note from your device? It will also be removed from semantic search.",
+      "Remove this note from your device? Chat won't find it anymore either.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -81,8 +89,12 @@ export default function NotesScreen() {
   if (isTwoPane) {
     return (
       <SafeAreaView style={styles.root}>
-        <View style={styles.panes}>
-          <View style={styles.listPane}>
+        <View
+          style={[styles.panes, bookSplit && { gap: PANE_GAP + bookSplit.gap }]}
+          ref={bookRef}
+          onLayout={onBookLayout}
+        >
+          <View style={[styles.listPane, bookSplit && { width: bookSplit.leading - PANE_GAP / 2 }]}>
             {composer}
             <ScrollView style={styles.list}>
               {notes.map((note) => {
@@ -177,7 +189,7 @@ const styles = StyleSheet.create({
   noteTitle: { color: "#e5e7eb", fontWeight: "700", flex: 1 },
   deleteLabel: { color: "#f87171", fontWeight: "600", fontSize: 15 },
   body: { color: "#9ca3af" },
-  panes: { flex: 1, flexDirection: "row", gap: 16 },
+  panes: { flex: 1, flexDirection: "row", gap: PANE_GAP },
   listPane: { width: LIST_PANE_WIDTH + 40 },
   detailPane: { flex: 1, minWidth: 0, backgroundColor: "#111827", borderRadius: 14 },
   detailContent: { padding: 24, maxWidth: READABLE_MAX_WIDTH },
