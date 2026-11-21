@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { useChatStore } from "@/stores/chat-store";
@@ -32,7 +33,17 @@ export default function ChatsScreen() {
     <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
       <View style={[styles.column, isWide && styles.columnWide]}>
         <View style={styles.header}>
-          <Text style={styles.title}>Chats</Text>
+          {/* The header above already says "Chats"; this row gets you back to the conversation. */}
+          <Pressable
+            style={styles.backBtn}
+            onPress={() => router.navigate("/chat" as never)}
+            accessibilityRole="button"
+            accessibilityLabel="Back to chat"
+            hitSlop={8}
+          >
+            <Ionicons name="chevron-back" size={20} color="#93c5fd" />
+            <Text style={styles.backBtnText}>Back to chat</Text>
+          </Pressable>
           <Pressable
             style={styles.newBtn}
             onPress={() => {
@@ -115,7 +126,19 @@ const styles = StyleSheet.create({
   column: { flex: 1 },
   columnWide: { width: "100%", maxWidth: READABLE_MAX_WIDTH, alignSelf: "center" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  title: { color: "#e5e7eb", fontSize: 24, fontWeight: "800" },
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1,
+    borderColor: "#1f2937",
+    backgroundColor: "#111827",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingLeft: 8,
+    paddingRight: 14,
+  },
+  backBtnText: { color: "#93c5fd", fontWeight: "700", fontSize: 16 },
   newBtn: {
     backgroundColor: "#1d4ed8",
     borderRadius: 8,

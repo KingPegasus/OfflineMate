@@ -54,7 +54,8 @@ export default function NotesScreen() {
 
   const composer = (
     <View style={styles.card}>
-      <Text style={styles.title}>Notes</Text>
+      {/* The header already says "Notes"; this card is the form for a new one. */}
+      <Text style={styles.title}>Add a note</Text>
       <TextInput
         value={title}
         onChangeText={setTitle}
@@ -65,7 +66,7 @@ export default function NotesScreen() {
       <TextInput
         value={content}
         onChangeText={setContent}
-        placeholder="Write note..."
+        placeholder="Write your note…"
         placeholderTextColor="#6b7280"
         style={[styles.input, styles.multiline]}
         multiline
@@ -81,7 +82,7 @@ export default function NotesScreen() {
           setRefreshKey((k) => k + 1);
         }}
       >
-        Save Note
+        Save note
       </Text>
     </View>
   );
