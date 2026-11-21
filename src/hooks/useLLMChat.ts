@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef } from "react";
 import { Alert } from "react-native";
-import { llmEngine } from "@/ai/llm-engine";
+import { llmEngine, turnSendsImage } from "@/ai/llm-engine";
 import {
   getActiveModelDisplayName,
   getActiveModelFileLabel,
@@ -46,6 +46,9 @@ import type { ChatMessage, ModelTier, ToolResult } from "@/types/assistant";
 
 /** Cold load from storage + runtime init can take several minutes on mid-range phones; partial downloads also stall until complete. */
 const MODEL_INIT_TIMEOUT_MS = 300_000;
+/** How long a reply may take. A photo question first has to read the image, which on a phone can take a minute or more. */
+const REPLY_TIMEOUT_MS = 90_000;
+const IMAGE_REPLY_TIMEOUT_MS = 240_000;
 /** If the model file reports progress but bytes stop moving for this long, treat as stalled. */
 const LLM_DOWNLOAD_STALL_MS = 15 * 60 * 1000;
 /** How often we re-check idle deadline vs download state during LLM init. */
@@ -853,8 +856,10 @@ export function useLLMChat() {
                   setStreamingResponse(parsed.response.trimStart());
                 }
               }),
-              90000,
-              "The assistant is taking too long to respond. Try the Light size in Settings, or check that the download finished.",
+              turnSendsImage(messagesForGenerate) ? IMAGE_REPLY_TIMEOUT_MS : REPLY_TIMEOUT_MS,
+              turnSendsImage(messagesForGenerate)
+                ? "Answering about this photo is taking too long. Try asking again, or choose a smaller size in Settings."
+                : "The assistant is taking too long to respond. Try the Light size in Settings, or check that the download finished.",
               () => llmEngine.interrupt(),
             );
             const endedAt = Date.now();

@@ -1,7 +1,7 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { manipulateAsync } from "expo-image-manipulator";
-import { toRuntimeMessages } from "@/ai/llm-engine";
+import { toRuntimeMessages, turnSendsImage } from "@/ai/llm-engine";
 import {
   getModelsForTier,
   getVisionModelsForTier,
@@ -124,5 +124,35 @@ describe("chat images", () => {
     expect(removed).toBe(1);
     expect(FileSystem.deleteAsync).toHaveBeenCalledTimes(1);
     expect(FileSystem.deleteAsync).toHaveBeenCalledWith("file:///docs/chat-images/unsent.jpg", { idempotent: true });
+  });
+});
+
+// Photo questions get a longer reply timeout (4 minutes instead of 90 s): reading the image comes first.
+describe("turnSendsImage", () => {
+  const user = (content: string, imageUri?: string) => ({
+    id: content,
+    role: "user" as const,
+    content,
+    createdAt: 0,
+    ...(imageUri ? { imageUri } : {}),
+  });
+  const reply = (content: string) => ({ id: content, role: "assistant" as const, content, createdAt: 0 });
+
+  it("is true for the photo's own question and the follow-up right after", () => {
+    expect(turnSendsImage([user("What is this?", "file:///menu.jpg")])).toBe(true);
+    expect(turnSendsImage([user("What is this?", "file:///menu.jpg"), reply("A menu."), user("And the latte?")])).toBe(true);
+  });
+
+  it("is false once the photo is no longer sent, and for text-only chats", () => {
+    expect(
+      turnSendsImage([
+        user("What is this?", "file:///menu.jpg"),
+        reply("A menu."),
+        user("And the latte?"),
+        reply("$4.20"),
+        user("Thanks"),
+      ]),
+    ).toBe(false);
+    expect(turnSendsImage([user("Hello")])).toBe(false);
   });
 });

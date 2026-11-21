@@ -67,13 +67,21 @@ export const IMAGE_FOLLOW_UP_TURNS = 1;
  * The native runner only sees an image when the message carries `mediaPath`. Only the newest image
  * is sent, and only on its own turn and the next IMAGE_FOLLOW_UP_TURNS questions.
  */
+/** Index of the message whose photo goes to the model this turn, or -1 when no photo is sent. */
+function imageMessageIndex(messages: ChatMessage[]): number {
+  let index = -1;
+  const userIndexes = messages.flatMap((m, i) => (m.role === "user" ? [i] : []));
+  for (const i of userIndexes.slice(-(IMAGE_FOLLOW_UP_TURNS + 1))) if (messages[i]!.imageUri) index = i;
+  return index;
+}
+
+/** True when this turn sends a photo to the model (its own question, or the follow-up right after). */
+export function turnSendsImage(messages: ChatMessage[]): boolean {
+  return imageMessageIndex(messages) !== -1;
+}
+
 export function toRuntimeMessages(messages: ChatMessage[], includeImages: boolean): Message[] {
-  let lastImageIndex = -1;
-  if (includeImages) {
-    const userIndexes = messages.flatMap((m, i) => (m.role === "user" ? [i] : []));
-    const recent = userIndexes.slice(-(IMAGE_FOLLOW_UP_TURNS + 1));
-    for (const i of recent) if (messages[i]!.imageUri) lastImageIndex = i;
-  }
+  const lastImageIndex = includeImages ? imageMessageIndex(messages) : -1;
   return messages.map((m, i) =>
     i === lastImageIndex
       ? { role: m.role, content: m.content, mediaPath: m.imageUri }
