@@ -3,22 +3,27 @@ import { getTierSpec, MODEL_TIERS } from "@/ai/model-registry";
 import { describePhoneRam, describeRecommendation, recommendTierForDevice, soldRamGb } from "@/utils/tier-recommendation";
 
 describe("recommendTierForDevice", () => {
-  it("suggests Light for phones with little memory and no recent year class", () => {
-    expect(recommendTierForDevice(2.8, 2017)).toBe("lite");
-    expect(recommendTierForDevice(3.7, null)).toBe("lite");
-    expect(recommendTierForDevice(4.9, undefined)).toBe("lite");
+  it("suggests Light for 3 and 4 GB phones", () => {
+    expect(recommendTierForDevice(2.8)).toBe("lite");
+    expect(recommendTierForDevice(3.7)).toBe("lite");
+    expect(recommendTierForDevice(4.9)).toBe("lite");
   });
 
-  it("suggests Balanced from about 6 GB phones (reported as ~5.5 GB) or a 2021+ year class", () => {
-    expect(recommendTierForDevice(5, null)).toBe("standard");
-    expect(recommendTierForDevice(7.5, 2019)).toBe("standard");
-    expect(recommendTierForDevice(3.8, 2021)).toBe("standard");
+  it("suggests Balanced for 6 and 8 GB phones (reported as about 5.5 and 7.6 GB)", () => {
+    expect(recommendTierForDevice(5)).toBe("standard");
+    expect(recommendTierForDevice(7.6)).toBe("standard");
   });
 
-  it("suggests Smartest for 12 GB phones (reported as ~11 GB) or a 2024+ year class", () => {
-    expect(recommendTierForDevice(10, null)).toBe("full");
-    expect(recommendTierForDevice(11.2, 2022)).toBe("full");
-    expect(recommendTierForDevice(7.5, 2024)).toBe("full");
+  it("suggests Smartest from 12 GB phones (reported as about 11 GB)", () => {
+    expect(recommendTierForDevice(10)).toBe("full");
+    expect(recommendTierForDevice(11.2)).toBe("full");
+  });
+
+  it("decides on RAM alone, so a new phone with little RAM isn't offered a model that won't fit", () => {
+    // Until 0.14.0 a 2021+ year class meant Balanced even on a 4 GB phone, and 2024+ meant Smartest on 8 GB.
+    expect(recommendTierForDevice.length).toBe(1);
+    expect(recommendTierForDevice(3.8)).toBe("lite");
+    expect(recommendTierForDevice(7.5)).toBe("standard");
   });
 });
 

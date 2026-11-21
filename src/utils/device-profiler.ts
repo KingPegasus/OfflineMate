@@ -1,4 +1,3 @@
-import * as Device from "expo-device";
 import DeviceInfo from "react-native-device-info";
 import type { ModelTier } from "@/types/assistant";
 import { recommendTierForDevice } from "@/utils/tier-recommendation";
@@ -10,5 +9,5 @@ export async function getDeviceRamGb(): Promise<number> {
 
 export async function getDeviceTierRecommendation(): Promise<ModelTier> {
   const ram = await getDeviceRamGb();
-  return recommendTierForDevice(ram, Device.deviceYearClass);
+  return recommendTierForDevice(ram);
 }

@@ -1,13 +1,17 @@
 import type { ModelTier } from "@/types/assistant";
 
 /**
- * Which size to suggest for a phone, from its memory (GB) and Expo's device year class.
- * Pure so it can be unit-tested; device-profiler reads the real values.
+ * Which size to suggest for a phone, from the RAM it reports (GB). Pure so it can be unit-tested;
+ * device-profiler reads the real value.
+ *
+ * RAM alone decides, because the model has to fit beside Android and other apps (about 2–3.5 GB on a
+ * typical phone): Balanced peaks around 2.5–3 GB with a photo, so it needs a 6 GB phone (reports about
+ * 5.5 GB). Until 0.14.0 a 2021+ device year class also counted, which suggested Balanced to 4 GB phones
+ * where it doesn't fit; on Android that year class is partly derived from RAM anyway.
  */
-export function recommendTierForDevice(ramGb: number, yearClass: number | null | undefined): ModelTier {
-  const year = yearClass ?? 0;
-  if (ramGb >= 10 || year >= 2024) return "full";
-  if (ramGb >= 5 || year >= 2021) return "standard";
+export function recommendTierForDevice(ramGb: number): ModelTier {
+  if (ramGb >= 10) return "full";
+  if (ramGb >= 5) return "standard";
   return "lite";
 }
 
