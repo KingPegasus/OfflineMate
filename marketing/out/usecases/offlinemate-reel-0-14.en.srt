@@ -1,0 +1,40 @@
+1
+00:00:00,650 --> 00:00:01,885
+Which drink is cheapest?
+
+2
+00:00:01,885 --> 00:00:04,688
+The cheapest drink is the espresso, priced at $2.50.
+
+3
+00:00:05,337 --> 00:00:06,418
+Translate this sign
+
+4
+00:00:06,418 --> 00:00:09,375
+The sign indicates directions for "出口" (exit), "トイレ" (toilet), and "駅" (station).
+
+5
+00:00:10,025 --> 00:00:11,275
+What can I cook with this?
+
+6
+00:00:11,275 --> 00:00:13,594
+You can make a sandwich with the bread and cheese.
+
+7
+00:00:13,644 --> 00:00:15,214
+Remind me in 20 minutes to stretch
+
+8
+00:00:15,214 --> 00:00:16,406
+Reminder set to go off in 20 minutes: stretch.
+
+9
+00:00:16,456 --> 00:00:18,276
+What did I save about the dentist?
+
+10
+00:00:18,276 --> 00:00:19,688
+Here's what your note says: Dentist appointment is Friday at 3pm. Bring the insurance card.
+
