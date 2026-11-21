@@ -67,3 +67,21 @@ export function describeDownload(bytesWritten: number, bytesTotal: number, bytes
   }
   return parts.join(" · ");
 }
+
+/**
+ * What to tell someone whose download stopped, in everyday words. Never shows the raw error
+ * ("timeout", "ENOTFOUND"), network jargon or system settings to change; the dialog offers Try again.
+ */
+export function downloadFailureMessage(rawError: string): { title: string; message: string } {
+  const m = rawError.toLowerCase();
+  if (m.includes("space") || m.includes("enospc") || m.includes("storage")) {
+    return {
+      title: "Your phone is full",
+      message: "There isn't enough room to finish the download. Delete some photos, videos or apps you don't need, then try again.",
+    };
+  }
+  return {
+    title: "Download didn't finish",
+    message: "The connection dropped. Check that you're connected to the internet, then try again. Wi-Fi works best.",
+  };
+}

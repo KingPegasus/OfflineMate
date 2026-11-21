@@ -13,10 +13,20 @@ function nativeErrorReason(e: unknown, fallback: string): string {
 }
 
 const RECURRING_NOTE =
-  " (Recurring not yet supported—set as one-time; use \"Remind me every weekday at 9\" for repeating.)";
+  " It rings once: repeating alarms aren't available yet. For a repeating nudge, try \"Remind me every weekday at 9\".";
 
 function reminderFallback(hour: number, minutes: number, message: string): string {
   return ` Try "Remind me at ${hour}:${minutes.toString().padStart(2, "0")} to ${message}" instead.`;
+}
+
+/** "2:00 AM" (or "02:00" where the phone uses a 24-hour clock), like the phone's own clock. */
+export function formatClockTime(hour: number, minutes: number): string {
+  return new Date(2000, 0, 1, hour, minutes).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+/** ": go running" for a named alarm; just a full stop for the default "Alarm" label. */
+function alarmLabelSuffix(message: string): string {
+  return message && message.trim().toLowerCase() !== "alarm" ? `: ${message}.` : ".";
 }
 
 export const setAlarmTool: Tool = {
@@ -102,7 +112,7 @@ export const setAlarmTool: Tool = {
         await scheduleIosAlarm(when, message);
         const phrase = describeReminderTime((when.getTime() - now.getTime()) / 1000, now);
         const lead = phrase.startsWith("in ") ? `Alarm set to ring ${phrase}` : `Alarm set for ${phrase}`;
-        return { ok: true, message: `${lead}: ${message}${recurringNote}` };
+        return { ok: true, message: `${lead}${alarmLabelSuffix(message)}${recurringNote}` };
       } catch (e) {
         const errMsg = nativeErrorReason(e, "Failed to set alarm");
         return {
@@ -127,10 +137,9 @@ export const setAlarmTool: Tool = {
         // skipUi: false — show Clock UI for reliability; some devices reject skipUi.
         skipUi: false,
       });
-      const timeStr = `${hour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
       return {
         ok: true,
-        message: `Alarm set for ${timeStr}: ${message}${recurringNote}`,
+        message: `Alarm set for ${formatClockTime(hour, minutes)}${alarmLabelSuffix(message)}${recurringNote}`,
       };
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : "Failed to set alarm.";

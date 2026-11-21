@@ -49,6 +49,13 @@
   body.square .head { font-size: 96px; }
   body.square .bubble { font-size: 28px; }
   body.square .brand { left: 60px; bottom: 60px; font-size: 36px; }
+  /* Optional photo cards around the phone: cards = "img:x:y:w:rot;..." (px, deg). */
+  .card { position: absolute; padding: 12px 12px 44px; background: #fff; border-radius: 10px; z-index: 1;
+    box-shadow: 0 30px 70px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.2); }
+  .card img { display: block; width: 100%; border-radius: 4px; }
+  .card::after { content: "?"; position: absolute; right: -26px; top: -26px; width: 72px; height: 72px; border-radius: 50%;
+    display: grid; place-items: center; font: 900 48px/1 Outfit, sans-serif; color: #fff;
+    background: linear-gradient(135deg, #ff4fa3, #c026d3); box-shadow: 0 10px 30px rgba(255,79,163,.5); }
 </style>
 </head>
 <body>
@@ -67,6 +74,14 @@ q('.head').innerHTML = P.get('head') || '';
 P.get('bubble') ? q('.bubble').textContent = `“${P.get('bubble')}”` : q('.bubble').remove();
 P.get('badge') ? q('.badge span').textContent = P.get('badge') : q('.badge').remove();
 if (!P.get('kicker')) q('.kicker').remove();
+if (P.get('phoneTop')) q('.phone').style.top = P.get('phoneTop') + 'px';
+for (const c of (P.get('cards') || '').split(';').filter(Boolean)) {
+  const [src, x, y, w, rot] = c.split(':');
+  const d = document.createElement('div'); d.className = 'card';
+  Object.assign(d.style, { left: x + 'px', top: y + 'px', width: w + 'px', transform: `rotate(${rot}deg)` });
+  d.innerHTML = `<img src="${src}" alt="" />`;
+  document.body.insertBefore(d, q('.brand'));
+}
 window.READY = document.fonts.ready.then(() => Promise.all([...document.images].map(i => i.complete ? 1 : new Promise(r => i.onload = r))));
 </script>
 </body>

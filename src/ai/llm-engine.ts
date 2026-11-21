@@ -67,13 +67,21 @@ export const IMAGE_FOLLOW_UP_TURNS = 1;
  * The native runner only sees an image when the message carries `mediaPath`. Only the newest image
  * is sent, and only on its own turn and the next IMAGE_FOLLOW_UP_TURNS questions.
  */
+/** Index of the message whose photo goes to the model this turn, or -1 when no photo is sent. */
+function imageMessageIndex(messages: ChatMessage[]): number {
+  let index = -1;
+  const userIndexes = messages.flatMap((m, i) => (m.role === "user" ? [i] : []));
+  for (const i of userIndexes.slice(-(IMAGE_FOLLOW_UP_TURNS + 1))) if (messages[i]!.imageUri) index = i;
+  return index;
+}
+
+/** True when this turn sends a photo to the model (its own question, or the follow-up right after). */
+export function turnSendsImage(messages: ChatMessage[]): boolean {
+  return imageMessageIndex(messages) !== -1;
+}
+
 export function toRuntimeMessages(messages: ChatMessage[], includeImages: boolean): Message[] {
-  let lastImageIndex = -1;
-  if (includeImages) {
-    const userIndexes = messages.flatMap((m, i) => (m.role === "user" ? [i] : []));
-    const recent = userIndexes.slice(-(IMAGE_FOLLOW_UP_TURNS + 1));
-    for (const i of recent) if (messages[i]!.imageUri) lastImageIndex = i;
-  }
+  const lastImageIndex = includeImages ? imageMessageIndex(messages) : -1;
   return messages.map((m, i) =>
     i === lastImageIndex
       ? { role: m.role, content: m.content, mediaPath: m.imageUri }
@@ -143,6 +151,33 @@ export class LLMEngine {
   private streamCallback: ((token: string) => void) | null = null;
   /** Timestamp of the last interrupt call; used to avoid immediate post-interrupt re-generate races. */
   private lastInterruptAtMs = 0;
+  /**
+   * The native generate call in progress. interrupt() only asks it to stop, so the model must not be
+   * freed until this settles: deleting it mid-generate crashed in Module::~Module (Play crash on a
+   * Kyocera URBANO V04, 0.12.0, from a Settings tap while a reply was still being written).
+   */
+  private generationInFlight: Promise<unknown> | null = null;
+  /** A model waiting to be freed once its generation returns; initialize() waits for it. */
+  private pendingDispose: Promise<void> | null = null;
+
+  /** Runs the native generate and records it, so unload() can wait for it before freeing the model. */
+  private runNativeGenerate(llm: LLMModule, mapped: Message[]): Promise<string> {
+    const run = llm.generate(mapped);
+    this.generationInFlight = run;
+    const clear = () => {
+      if (this.generationInFlight === run) this.generationInFlight = null;
+    };
+    run.then(clear, clear);
+    return run;
+  }
+
+  private deleteModule(m: LLMModule) {
+    try {
+      m.delete();
+    } catch (e) {
+      console.warn("[OfflineMate] LLM unload failed (model may still be in use):", e);
+    }
+  }
 
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -221,6 +256,9 @@ export class LLMEngine {
       this.interrupt();
       this.unload();
     }
+    // Free the previous model before loading the next, so two never sit in memory at once.
+    if (this.pendingDispose) await this.pendingDispose;
+    if (myGen !== this.loadGeneration) throw new Error("Model load cancelled");
 
     const tokenCallback = (token: string) => this.streamCallback?.(token);
 
@@ -311,8 +349,11 @@ export class LLMEngine {
           }
         }
       };
+      // unload() may run between retries; never call into a freed model.
+      const llm = this.llm;
+      if (!llm) throw new Error("Model unloaded");
       try {
-        return await this.llm.generate(mapped);
+        return await this.runNativeGenerate(llm, mapped);
       } catch (e) {
         if (buffer.length > previousBufferLength) return buffer;
         if (this.isModelBusyError(e) && retries < LLMEngine.GENERATE_BUSY_RETRY_DELAYS_MS.length) {
@@ -356,8 +397,11 @@ export class LLMEngine {
           }
         }
       };
+      // unload() may run between retries; never call into a freed model.
+      const llm = this.llm;
+      if (!llm) throw new Error("Model unloaded");
       try {
-        return await this.llm.generate(mapped);
+        return await this.runNativeGenerate(llm, mapped);
       } catch (error) {
         if (this.isModelBusyError(error) && retries < LLMEngine.GENERATE_BUSY_RETRY_DELAYS_MS.length) {
           const delayMs = LLMEngine.GENERATE_BUSY_RETRY_DELAYS_MS[retries]!;
@@ -393,36 +437,39 @@ export class LLMEngine {
   }
 
   unload() {
-    if (!this.llm) {
-      this.isLoaded = false;
-      this.initializedTier = null;
-      this.initializedModelId = null;
-      return;
-    }
-    try {
-      if (
-        (this.isLoaded || this.loadInFlight) &&
-        typeof (this.llm as { interrupt?: () => void }).interrupt === "function"
-      ) {
-        try {
-          (this.llm as { interrupt: () => void }).interrupt();
-        } catch (e) {
-          const code = (e as { code?: number })?.code;
-          const msg = e instanceof Error ? e.message : String(e);
-          if (code !== 102 && !/not loaded/i.test(msg)) {
-            console.warn("[OfflineMate] LLM interrupt before unload failed:", e);
-          }
+    const m = this.llm;
+    this.llm = null;
+    this.isLoaded = false;
+    this.initializedTier = null;
+    this.initializedModelId = null;
+    if (!m) return;
+    if (typeof (m as { interrupt?: () => void }).interrupt === "function") {
+      try {
+        (m as { interrupt: () => void }).interrupt();
+      } catch (e) {
+        const code = (e as { code?: number })?.code;
+        const msg = e instanceof Error ? e.message : String(e);
+        if (code !== 102 && !/not loaded/i.test(msg)) {
+          console.warn("[OfflineMate] LLM interrupt before unload failed:", e);
         }
       }
-      this.llm.delete();
-    } catch (e) {
-      console.warn("[OfflineMate] LLM unload failed (model may still be in use):", e);
-    } finally {
-      this.llm = null;
-      this.isLoaded = false;
-      this.initializedTier = null;
-      this.initializedModelId = null;
     }
+    const running = this.generationInFlight;
+    if (!running) {
+      this.deleteModule(m);
+      return;
+    }
+    // A reply is still being written: free the model only once the interrupted generate returns.
+    const dispose = running
+      .then(
+        () => undefined,
+        () => undefined,
+      )
+      .then(() => this.deleteModule(m));
+    this.pendingDispose = dispose;
+    void dispose.then(() => {
+      if (this.pendingDispose === dispose) this.pendingDispose = null;
+    });
   }
 }
 

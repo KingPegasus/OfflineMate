@@ -19,6 +19,8 @@ interface Props {
   onReadinessChange?: (ready: boolean) => void;
   /** Lets the parent lock tier/model selection while files download. */
   onDownloadingChange?: (downloading: boolean) => void;
+  /** The "Downloads once (Wi-Fi is best)…" line; onboarding hides it while the other choices are open. */
+  showHelp?: boolean;
 }
 
 type Readiness = "checking" | "ready" | "partial" | "missing" | "unknown";
@@ -36,7 +38,7 @@ async function loadReadiness(tier: ModelTier, modelId: string | null): Promise<L
   }
 }
 
-export function ModelDownloader({ tier, modelId = null, onReadinessChange, onDownloadingChange }: Props) {
+export function ModelDownloader({ tier, modelId = null, onReadinessChange, onDownloadingChange, showHelp = true }: Props) {
   const [readiness, setReadiness] = useState<Readiness>("checking");
   const [bytesLeft, setBytesLeft] = useState(0);
   const download = useModelDownload();
@@ -80,20 +82,21 @@ export function ModelDownloader({ tier, modelId = null, onReadinessChange, onDow
     return <DownloadProgressCard state={download.state} title={`${model.family} ${model.size}`} onCancel={download.cancel} />;
   }
 
+  // "missing" needs no status line: the button says what it downloads.
   const status =
     readiness === "checking"
       ? "Checking what's on your phone…"
       : readiness === "ready"
-        ? `${model.family} ${model.size} is downloaded and ready.`
+        ? "Downloaded and ready to use."
         : readiness === "partial"
           ? `Partly downloaded. About ${formatBytes(bytesLeft)} left.`
-          : readiness === "missing"
-            ? `Not downloaded yet. About ${formatBytes(bytesLeft)} (chat, voice input and notes search).`
-            : "Couldn't check the files on your phone.";
+          : readiness === "unknown"
+            ? "Couldn't check the files on your phone."
+            : null;
 
   return (
     <View style={styles.box}>
-      <Text style={styles.label}>{status}</Text>
+      {status ? <Text style={[styles.label, readiness === "ready" && styles.ready]}>{status}</Text> : null}
       {readiness !== "ready" && readiness !== "checking" ? (
         <TouchableOpacity style={styles.button} onPress={() => void startDownload()} accessibilityRole="button">
           <Text style={styles.buttonText}>
@@ -101,19 +104,18 @@ export function ModelDownloader({ tier, modelId = null, onReadinessChange, onDow
           </Text>
         </TouchableOpacity>
       ) : null}
-      {readiness !== "ready" ? (
-        <Text style={styles.help}>
-          Wi-Fi recommended. You can also continue now and download later from Settings.
-        </Text>
+      {readiness !== "ready" && showHelp ? (
+        <Text style={styles.help}>Downloads once (Wi-Fi is best). After that it works without internet.</Text>
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  box: { backgroundColor: "#111827", borderRadius: 10, padding: 12, gap: 8 },
+  box: { gap: 8 },
   label: { color: "#e5e7eb" },
-  button: { alignSelf: "flex-start", backgroundColor: "#1d4ed8", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 14 },
-  buttonText: { color: "#e5e7eb", fontWeight: "700" },
-  help: { color: "#6b7280", fontSize: 12, lineHeight: 17 },
+  ready: { color: "#86efac", fontWeight: "600" },
+  button: { backgroundColor: "#2563eb", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  buttonText: { color: "#f9fafb", fontWeight: "700", fontSize: 16 },
+  help: { color: "#9ca3af", fontSize: 12, lineHeight: 17 },
 });

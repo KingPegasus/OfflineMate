@@ -43,6 +43,8 @@ export const setReminderTool: Tool = {
     const sourceText = (params.text || params.query || "").trim();
     const text = resolveReminderText(params.text, params.query);
     const seconds = resolveReminderSeconds(params.seconds, sourceText);
+    // `seconds` counts from now; the permission prompt below can take a while to answer.
+    const requestedAt = Date.now();
     console.log("[OfflineMate] Reminder request:", { text, seconds, sourceText: sourceText.slice(0, 80) });
 
     if (seconds <= 0 && isPastTimeToday(sourceText)) {
@@ -69,6 +71,10 @@ export const setReminderTool: Tool = {
         retryable: true,
       };
     }
+    // Count the time spent on the permission prompt, so "at 9" still rings at 9:00 (it rang at 9:01
+    // after a minute on the prompt) and "in 10 minutes" means 10 minutes from asking.
+    const waitedSeconds = Math.round((Date.now() - requestedAt) / 1000);
+    const remaining = Math.max(1, seconds - waitedSeconds);
     const content: Notifications.NotificationContentInput = {
       title: "OfflineMate Reminder",
       body: text,
@@ -76,12 +82,12 @@ export const setReminderTool: Tool = {
     };
     await Notifications.scheduleNotificationAsync({
       content,
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: remaining },
     });
-    console.log("[OfflineMate] Reminder scheduled in", seconds, "seconds:", text);
+    console.log("[OfflineMate] Reminder scheduled in", remaining, "seconds:", text);
     // A full sentence, because chat shows it as-is when the model can't phrase a confirmation.
     // "in 20 minutes" needs "to go off", not "for": "Reminder set for in 20 minutes" read wrong.
-    const when = describeReminderTime(seconds);
+    const when = describeReminderTime(remaining);
     const lead = when.startsWith("in ") ? `Reminder set to go off ${when}` : `Reminder set for ${when}`;
     // "Remind me … to stretch." keeps the user's full stop in the text; don't add a second one.
     return { ok: true, message: `${lead}: ${text}${/[.!?]$/.test(text) ? "" : "."}` };

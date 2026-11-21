@@ -106,4 +106,15 @@ PY=python tools/uc-build.sh compilation "landscape square vertical"
 cd tools && node stills.mjs uc-thumbs.json
 ```
 
+### Photo Short
+
+`out/usecases/offlinemate-photo-short-1080x1920.mp4` (47 s) is a music-only YouTube Short of six real photo questions on Standard (LFM 2.5 VL 1.6B), airplane mode on: a water-cycle diagram, a nutrition label, an event poster, a Japanese sign, a Bluetooth error and a fridge. The music is the 128 bpm `beat` style in `uc_audio.py`: kick, offbeat bass, claps, pumping chords, a lead hook, and a snare-roll build into the first scene. The model's wait (50–70 s on the emulator) is cut, and the end card says so.
+
+- `video/photo-uc.html?s=<scene>` draws the photos. Render them to `raw/photo-uc/`, then `adb push` them to `/sdcard/Pictures/` and run a media scan.
+- `tools/uc-photo-record.sh <clip> <x> <y> "<prompt>"` records one clip. `<x> <y>` is the photo's position in the picker grid (dismiss the picker's cloud banner first).
+- `tools/uc_photo_detect.py <clip>...` prints the cut points, including when the answer starts streaming and when it finishes.
+- `tools/uc_photo_timeline.py` writes `video/usecases/photo-short.json`. Then run `uc_screen.py`, `uc_audio.py mix`, `render-uc.mjs` and the ffmpeg mux as in `uc-build.sh`.
+
+Math scenes (a homework equation, a bill split) were tried and dropped: the 1.6B model got the arithmetic wrong.
+
 Recording setup (0.11.0): release build on `ops_pixel`, Standard tier with Gemma 4 E2B, **airplane mode on** (`cmd connectivity airplane-mode enable`), location off (it hides the satellite icon), status bar demo mode, Gboard disabled. Seed data: contacts Ali Khan (+92 300 1234567) and Sara Ahmed, a local calendar with "Dentist appointment" tomorrow 3–4 PM, and one note, "dentist appointment is Friday at 3pm". Delete leftover alarms in the Clock app first, because the alarm tool opens the Clock app on the new alarm, and the script scrolls that list to the top. Gemma ran at about 26 tokens/s on the emulator (host CPU). A phone is usually slower.

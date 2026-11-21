@@ -52,6 +52,7 @@ describe("settings store", () => {
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
       persistChatHistory: false,
+      showTechnicalDetails: false,
     });
   });
 
@@ -85,6 +86,7 @@ describe("migrateSettingsState", () => {
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
       persistChatHistory: false,
+      showTechnicalDetails: false,
     });
   });
 
@@ -97,6 +99,7 @@ describe("migrateSettingsState", () => {
       webSearchEnabled: true,
       hasCompletedOnboarding: false,
       persistChatHistory: false,
+      showTechnicalDetails: false,
     });
   });
 
@@ -141,7 +144,14 @@ describe("migrateSettingsState", () => {
       webSearchEnabled: false,
       hasCompletedOnboarding: true,
       persistChatHistory: true,
+      showTechnicalDetails: false,
     });
+  });
+
+  it("keeps technical details off when migrating v6 settings, and keeps them on once chosen", () => {
+    const v6 = { selectedTier: "lite", hasCompletedOnboarding: true, persistChatHistory: true };
+    expect(migrateSettingsState(v6, 6).showTechnicalDetails).toBe(false);
+    expect(migrateSettingsState({ ...v6, showTechnicalDetails: true }, 7).showTechnicalDetails).toBe(true);
   });
 
   it("migrates standardModelId from v5 into tierModelIds.standard", () => {
@@ -156,8 +166,34 @@ describe("migrateSettingsState", () => {
       },
       5
     );
-    expect(result.tierModelIds).toEqual({ lite: null, standard: "qwen3.5-2b", full: null });
+    expect(result.tierModelIds).toEqual({ lite: "smollm2-135m", standard: "qwen3.5-2b", full: "qwen3-4b" });
     expect(result.selectedTier).toBe("standard");
+  });
+
+  it("keeps people who finished setup before 0.14.0 on the text-only defaults they downloaded", () => {
+    const v7 = {
+      selectedTier: "standard",
+      tierModelIds: { lite: null, standard: null, full: "llama3.2-3b" },
+      hasCompletedOnboarding: true,
+    };
+    expect(migrateSettingsState(v7, 7).tierModelIds).toEqual({
+      lite: "smollm2-135m",
+      standard: "gemma4-e2b",
+      full: "llama3.2-3b",
+    });
+  });
+
+  it("gives new installs and unfinished setups the photo-model defaults", () => {
+    expect(migrateSettingsState({ hasCompletedOnboarding: false }, 7).tierModelIds).toEqual({
+      lite: null,
+      standard: null,
+      full: null,
+    });
+    expect(migrateSettingsState({ hasCompletedOnboarding: true, tierModelIds: { lite: null, standard: null, full: null } }, 8).tierModelIds).toEqual({
+      lite: null,
+      standard: null,
+      full: null,
+    });
   });
 
   it("rejects invalid tier model ids", () => {

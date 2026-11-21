@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useVoice } from "@/hooks/useVoice";
 import { getTierVoiceDownloadMb } from "@/ai/model-manager";
 import { isMicJustAllowed, isSttModelMissing } from "@/voice/stt-engine";
+import { downloadFailureMessage } from "@/utils/download-format";
 
 /** Transcripts that mean "no usable input" — do not send to chat. */
 function isNoInput(transcript: string): boolean {
@@ -28,24 +29,27 @@ export function VoiceButton({ onTranscript }: VoiceButtonProps) {
     useVoice();
   const isDownloading = modelDownloadProgress !== null;
 
+  const startVoiceDownload = () => {
+    downloadVoiceModel()
+      .then(() => Alert.alert("Voice typing is ready", "Hold the mic button and speak."))
+      .catch((error: unknown) => {
+        console.warn("[OfflineMate] Voice model download failed:", error);
+        const { title, message } = downloadFailureMessage(error instanceof Error ? error.message : String(error));
+        Alert.alert(title, message, [
+          { text: "Not now", style: "cancel" },
+          { text: "Try again", onPress: startVoiceDownload },
+        ]);
+      });
+  };
+
   const offerModelDownload = () => {
     Alert.alert(
-      "Download speech model?",
-      `Voice input needs the offline Whisper speech model (~${getTierVoiceDownloadMb(selectedTier)} MB). ` +
-        "It is downloaded once and then works without internet.",
+      "Turn on voice typing?",
+      `Voice typing needs a one-time download of about ${getTierVoiceDownloadMb(selectedTier)} MB. ` +
+        "After that it works without internet.",
       [
         { text: "Not now", style: "cancel" },
-        {
-          text: "Download",
-          onPress: () => {
-            downloadVoiceModel()
-              .then(() => Alert.alert("Speech model ready", "Hold the mic button and speak."))
-              .catch((error: unknown) => {
-                const msg = error instanceof Error ? error.message : "Failed to download the speech model.";
-                Alert.alert("Download failed", msg);
-              });
-          },
-        },
+        { text: "Download", onPress: startVoiceDownload },
       ],
     );
   };

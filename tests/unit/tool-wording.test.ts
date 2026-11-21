@@ -4,20 +4,25 @@ import { describeCreatedEvent, describeDateRange, describeEvent } from "@/tools/
 import { permissionOffMessage } from "@/tools/permission-message";
 import { setReminderTool } from "@/tools/reminders-tool";
 
-const notifications = vi.hoisted(() => ({ granted: true }));
+const notifications = vi.hoisted(() => ({ granted: true, promptMs: 0 }));
 
 vi.mock("react-native", () => ({ Platform: { OS: "android" } }));
 vi.mock("expo-notifications", () => ({
   AndroidImportance: { HIGH: 4 },
   SchedulableTriggerInputTypes: { TIME_INTERVAL: "timeInterval" },
   setNotificationChannelAsync: vi.fn(async () => undefined),
-  requestPermissionsAsync: async () => ({ granted: notifications.granted, status: notifications.granted ? "granted" : "denied" }),
+  requestPermissionsAsync: async () => {
+    // Time spent answering the permission prompt.
+    if (notifications.promptMs) vi.setSystemTime(Date.now() + notifications.promptMs);
+    return { granted: notifications.granted, status: notifications.granted ? "granted" : "denied" };
+  },
   scheduleNotificationAsync: vi.fn(async () => "id"),
 }));
 vi.mock("expo-calendar/legacy", () => ({}));
 
 beforeEach(() => {
   notifications.granted = true;
+  notifications.promptMs = 0;
   vi.spyOn(console, "log").mockImplementation(() => {});
 });
 
@@ -26,6 +31,21 @@ describe("reminder confirmation", () => {
     const result = await setReminderTool.execute({ text: "Remind me in 20 minutes to stretch" });
     expect(result.ok).toBe(true);
     expect(result.message).toBe("Reminder set to go off in 20 minutes: stretch.");
+  });
+
+  // Found testing 0.14.0: "Remind me at 9" after 75 s on the permission prompt was set for 9:01.
+  it("counts the time spent on the permission prompt", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 10, 21, 8, 50, 0));
+    notifications.promptMs = 75_000;
+    const Notifications = await import("expo-notifications");
+    const schedule = vi.mocked(Notifications.scheduleNotificationAsync);
+    schedule.mockClear();
+    const result = await setReminderTool.execute({ text: "Remind me in 10 minutes to call the bank" });
+    vi.useRealTimers();
+    expect(result.ok).toBe(true);
+    const trigger = schedule.mock.calls[0]![0].trigger as { seconds: number };
+    expect(trigger.seconds).toBe(600 - 75);
   });
 
   it("explains where to turn notifications on", async () => {
