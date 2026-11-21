@@ -32,6 +32,9 @@ export default function TabsLayout() {
         headerStyle: { backgroundColor: "#ffffff", height: headerHeight },
         headerTintColor: "#111827",
         headerTitleStyle: { fontWeight: "700" },
+        // iOS centres titles by default, which pushed "Chat" against the New and Chats buttons on iPhone.
+        // Left-aligned on both platforms, as Android already showed it.
+        headerTitleAlign: "left",
         tabBarActiveTintColor: "#60a5fa",
         tabBarInactiveTintColor: "#9ca3af",
         ...(isWide

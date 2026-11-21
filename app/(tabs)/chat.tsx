@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { ChatBubble } from "@/components/ChatBubble";
 import { ChatListPane } from "@/components/ChatListPane";
@@ -195,6 +195,9 @@ export default function ChatScreen() {
           <ScrollView
             style={styles.messages}
             keyboardShouldPersistTaps="handled"
+            // Swiping the conversation down hides the keyboard. On iPhone there's no back button, and the open
+            // keyboard covers the tab bar; tapping empty space was the only way to close it.
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
             contentContainerStyle={[styles.messagesContent, column]}
           >
             <ChatModelBadge
