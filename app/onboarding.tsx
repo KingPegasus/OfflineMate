@@ -131,7 +131,12 @@ export default function OnboardingScreen() {
                     <Text style={styles.optionTitle}>{tier.label}</Text>
                     {/* RAM, not download size: Balanced and Smartest download the same model. */}
                     <Text style={styles.meta}>{tier.ramLabel}</Text>
-                    {tier.key === recommended ? <Text style={styles.tag}>Recommended</Text> : null}
+                    {tier.key === recommended ? (
+                      // One line on narrow phones (360 dp wide): shrink the text rather than wrap "Recommende / d".
+                      <Text style={styles.tag} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                        Recommended
+                      </Text>
+                    ) : null}
                   </Pressable>
                 );
               })}
@@ -234,7 +239,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#111827",
     borderRadius: 10,
     paddingVertical: 10,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     borderWidth: 1,
     borderColor: "#1f2937",
     alignItems: "center",
@@ -265,9 +270,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     borderRadius: 999,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 2,
     overflow: "hidden",
+    maxWidth: "100%",
+    textAlign: "center",
   },
   disabled: { opacity: 0.5 },
   meta: { color: "#6b7280", fontSize: 12 },
