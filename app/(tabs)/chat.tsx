@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
@@ -8,6 +9,7 @@ import { ChatListPane } from "@/components/ChatListPane";
 import { ChatComposer } from "@/components/ChatComposer";
 import { ChatModelBadge } from "@/components/ChatModelBadge";
 import { ErrorBanner } from "@/components/ErrorBanner";
+import { ChatSuggestions } from "@/components/ChatSuggestions";
 import { LlmInitDownloadModal } from "@/components/LlmInitDownloadModal";
 import { LiveThinkingPanel } from "@/components/LiveThinkingPanel";
 import { StreamingText } from "@/components/StreamingText";
@@ -71,6 +73,7 @@ export default function ChatScreen() {
     error,
   } = useLLMChat();
   const errorTier = useChatStore((s) => s.errorTier);
+  const errorKind = useChatStore((s) => s.errorKind);
   const selectedTier = useSettingsStore((s) => s.selectedTier);
   const selectedModelId = useSettingsStore((s) => s.tierModelIds[selectedTier] ?? null);
   const tierSpec = getTierSpec(selectedTier);
@@ -125,6 +128,55 @@ export default function ChatScreen() {
     startNewConversation("New chat");
   };
 
+  // New chat and Open chats sit in the header (they took a whole row above the chat, a lot on a small
+  // phone). The two-pane layout has the chat list beside the conversation instead.
+  const navigation = useNavigation();
+  const newChatRef = useRef(handleNewChat);
+  useEffect(() => {
+    newChatRef.current = handleNewChat;
+  });
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: isTwoPane
+        ? undefined
+        : () => (
+            <View style={styles.headerActions}>
+              <Pressable
+                style={styles.headerBtn}
+                onPress={() => newChatRef.current()}
+                accessibilityRole="button"
+                accessibilityLabel="New chat"
+                hitSlop={6}
+              >
+                <Ionicons name="add" size={20} color="#111827" />
+                <Text style={styles.headerBtnText}>New</Text>
+              </Pressable>
+              <Pressable
+                style={styles.headerBtn}
+                onPress={() => router.push("/chats" as never)}
+                accessibilityRole="button"
+                accessibilityLabel="Open chats"
+                hitSlop={6}
+              >
+                <Ionicons name="chatbubbles-outline" size={18} color="#111827" />
+                <Text style={styles.headerBtnText}>Chats</Text>
+              </Pressable>
+            </View>
+          ),
+    });
+  }, [navigation, isTwoPane, router]);
+
+  const errorBanner = error
+    ? errorTier && errorKind === "not-downloaded"
+      ? { title: "Almost ready", tone: "info" as const, label: `Download ${getTierSpec(errorTier).label}` }
+      : errorTier && errorKind === "no-vision"
+        ? { title: "This assistant can't see photos", tone: "info" as const, label: "Choose one in Settings" }
+        : errorTier
+          ? { title: "The assistant couldn't start", tone: "error" as const, label: `Open ${getTierSpec(errorTier).label} in Settings` }
+          : { title: "Something went wrong", tone: "error" as const, label: null }
+    : null;
+  const showSuggestions = messages.length === 0 && !isLoading && !streamingResponse && !error;
+
   return (
     // The header already covers the status bar; padding the top again left an empty band above the chat.
     <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
@@ -140,16 +192,6 @@ export default function ChatScreen() {
           ref={tabletopRef}
           onLayout={onTabletopLayout}
         >
-          {isTwoPane ? null : (
-            <View style={[styles.conversationBar, column]}>
-              <Pressable style={styles.primaryBtn} onPress={handleNewChat}>
-                <Text style={styles.primaryBtnText}>+ New chat</Text>
-              </Pressable>
-              <Pressable style={styles.secondaryBtn} onPress={() => router.push("/chats" as never)}>
-                <Text style={styles.secondaryBtnText}>Open chats</Text>
-              </Pressable>
-            </View>
-          )}
           <ScrollView
             style={styles.messages}
             keyboardShouldPersistTaps="handled"
@@ -162,24 +204,6 @@ export default function ChatScreen() {
               canSeePhotos={modelSupportsVision(activeModel)}
               showTechnicalDetails={showTechnicalDetails}
             />
-            {error ? (
-              <ErrorBanner
-                message={error}
-                action={
-                  errorTier
-                    ? {
-                        label: `Open ${getTierSpec(errorTier).label} in Settings`,
-                        onPress: () =>
-                          // `at` makes every tap a new param value, so Settings reopens the picker each time.
-                          router.push({
-                            pathname: "/settings",
-                            params: { tier: errorTier, at: String(Date.now()) },
-                          } as never),
-                      }
-                    : undefined
-                }
-              />
-            ) : null}
             {messages.map((m) => (
               <ChatBubble
                 key={m.id}
@@ -200,6 +224,33 @@ export default function ChatScreen() {
               }
             />
             {streamingResponse ? <StreamingText text={streamingResponse} /> : null}
+            {/* Below the messages: it's about the one just sent. */}
+            {error && errorBanner ? (
+              <ErrorBanner
+                message={error}
+                title={errorBanner.title}
+                tone={errorBanner.tone}
+                action={
+                  errorTier && errorBanner.label
+                    ? {
+                        label: errorBanner.label,
+                        onPress: () =>
+                          // `at` makes every tap a new param value, so Settings reopens the picker each time.
+                          router.push({
+                            pathname: "/settings",
+                            params: { tier: errorTier, at: String(Date.now()) },
+                          } as never),
+                      }
+                    : undefined
+                }
+              />
+            ) : null}
+            {showSuggestions ? (
+              <ChatSuggestions
+                onPick={setPrompt}
+                onAskAboutPhoto={modelSupportsVision(activeModel) ? () => void handleAttachImage() : undefined}
+              />
+            ) : null}
           </ScrollView>
           <KeyboardStickyView
             offset={{ closed: 0, opened: 0 }}
@@ -276,5 +327,17 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: { color: "#93c5fd", fontWeight: "600", fontSize: 12 },
   messages: { flex: 1 },
+  headerActions: { flexDirection: "row", gap: 8, marginRight: 12 },
+  headerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#eef2f7",
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingLeft: 8,
+    paddingRight: 12,
+  },
+  headerBtnText: { color: "#111827", fontWeight: "700", fontSize: 13 },
   messagesContent: { flexGrow: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12 },
 });

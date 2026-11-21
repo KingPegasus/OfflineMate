@@ -29,6 +29,7 @@ import {
 } from "@/ai/model-manager";
 import { speak } from "@/voice/tts-engine";
 import { isMemoryPressureHigh } from "@/utils/performance";
+import { pickDownloadedTier } from "@/utils/tier-recommendation";
 import { withForegroundTimeout } from "@/utils/foreground-timeout";
 import { saveImportantMemory } from "@/context/long-term-memory";
 import { executePlanSteps, planStepsFromPrompt } from "@/ai/agent-planner";
@@ -42,7 +43,7 @@ import { isEnabled } from "@/config/feature-flags";
 import { approximateTokenCount } from "@/utils/tokenizer";
 import { stripTokPerSecLines } from "@/utils/tok-per-sec";
 import { createRateTracker } from "@/utils/download-format";
-import type { ChatMessage, ModelTier, ToolResult } from "@/types/assistant";
+import type { ChatMessage, ModelSetupKind, ModelTier, ToolResult } from "@/types/assistant";
 
 /** Cold load from storage + runtime init can take several minutes on mid-range phones; partial downloads also stall until complete. */
 const MODEL_INIT_TIMEOUT_MS = 300_000;
@@ -242,18 +243,22 @@ export class ModelSetupError extends Error {
   constructor(
     readonly tier: ModelTier,
     message: string,
+    /** Lets Chat show "Almost ready" with a Download button instead of an error. */
+    readonly kind: ModelSetupKind = "load-failed",
   ) {
     super(message);
     this.name = "ModelSetupError";
   }
 }
 
-function settingsFixSteps(tier: ModelTier, filesMayBeDamaged = true): string {
-  const tierName = getTierSpec(tier).label;
-  const action = filesMayBeDamaged
-    ? "tap Download now (or Re-download if it already shows Downloaded)"
-    : "tap Download now";
-  return `Tap "Open ${tierName} in Settings" below (or Settings → ${tierName}), pick a model, ${action}, then send your message again.`;
+/** Chat's message when a size's model isn't on the phone; its button opens the download. */
+function notDownloadedMessage(tier: ModelTier): string {
+  return `Your ${getTierSpec(tier).label} assistant isn't on this phone yet. It's a one-time download; after that it works without internet.`;
+}
+
+/** Chat's message when a model is downloaded but won't start; its button opens it in Settings. */
+function couldNotStartMessage(tier: ModelTier): string {
+  return `The ${getTierSpec(tier).label} assistant couldn't start. In Settings you can download it again (Re-download fixes a damaged download), or choose a smaller size.`;
 }
 
 async function assertChatAssetsReady(tier: ModelTier, modelId?: string | null): Promise<void> {
@@ -277,7 +282,7 @@ async function assertChatAssetsReady(tier: ModelTier, modelId?: string | null): 
     .join(", ");
   const tierName = getTierSpec(tier).label;
   console.warn("[OfflineMate] Chat assets missing:", tierName, missing);
-  throw new ModelSetupError(tier, `The ${tierName} model is not downloaded yet. ${settingsFixSteps(tier, false)}`);
+  throw new ModelSetupError(tier, notDownloadedMessage(tier), "not-downloaded");
 }
 
 /** Ask before switching to a smaller tier after primary model init fails. */
@@ -421,13 +426,23 @@ export function useLLMChat() {
         }
       };
       try {
-        let activeTier = tier;
+        // If the selected size isn't downloaded (picked but the download was skipped or cancelled), use
+        // a size that is, and select it so the badge and Settings say what's answering.
+        let activeTier = await pickDownloadedTier(tier, (t) =>
+          getTierChatAssetReadiness(t, tierModelIds[t] ?? null)
+            .then((r) => r.ready)
+            .catch(() => false),
+        );
+        if (activeTier !== tier) {
+          console.log("[OfflineMate] Selected tier not downloaded; using downloaded tier:", tier, "->", activeTier);
+          setTier(activeTier);
+        }
         const activeModelId = tierModelIds[activeTier] ?? null;
         let initError: Error | null = null;
         if (imageUri) {
           // Check before loading so a text-only model is not loaded just to reject the image.
           const visionError = visionUnsupportedMessage(activeTier, activeModelId);
-          if (visionError) throw new ModelSetupError(activeTier, visionError);
+          if (visionError) throw new ModelSetupError(activeTier, visionError, "no-vision");
         }
         const llmInitOpts = {
           modelId: activeModelId,
@@ -454,7 +469,8 @@ export function useLLMChat() {
               // Files were present but short (interrupted download): the fix is downloading, not switching tier.
               throw new ModelSetupError(
                 tier,
-                `The ${tierName} model file was incomplete and has been removed. ${settingsFixSteps(tier, false)}`,
+                `The ${tierName} download didn't finish, so it was removed. Download it again to start chatting.`,
+                "not-downloaded",
               );
             }
             if (initError instanceof ModelSetupError && !fallback) {
@@ -467,10 +483,7 @@ export function useLLMChat() {
               if (!proceed) {
                 throw initError instanceof ModelSetupError
                   ? initError
-                  : new ModelSetupError(
-                      tier,
-                      `Could not load the ${tierName} model. ${settingsFixSteps(tier)} You can also pick a smaller size there.`,
-                    );
+                  : new ModelSetupError(tier, couldNotStartMessage(tier));
               }
               activeTier = fallback;
               setTier(fallback);
@@ -496,12 +509,12 @@ export function useLLMChat() {
                 console.error("[OfflineMate] LLM init failed for fallback tier:", fallback, fb.message, fb);
                 throw new ModelSetupError(
                   fallback,
-                  `Could not load any model. ${settingsFixSteps(fallback)} Use a stable connection; the first load after install can take several minutes on some devices.`,
+                  `The assistant couldn't start. In Settings you can download it again, or choose a smaller size. The first start after installing can take a few minutes on some phones.`,
                 );
               }
             } else {
               console.error("[OfflineMate] LLM init failed (no fallback tier).", initError?.message, initError);
-              throw new ModelSetupError(tier, `Could not load the ${tierName} model. ${settingsFixSteps(tier)}`);
+              throw new ModelSetupError(tier, couldNotStartMessage(tier));
             }
           }
         } finally {
@@ -515,7 +528,7 @@ export function useLLMChat() {
         if (imageUri) {
           // A failed load may have fallen back to a smaller tier whose model has no vision.
           const visionError = visionUnsupportedMessage(activeTier, tierModelIds[activeTier] ?? null);
-          if (visionError) throw new ModelSetupError(activeTier, visionError);
+          if (visionError) throw new ModelSetupError(activeTier, visionError, "no-vision");
         }
         // Image questions go straight to the vision model: no tools, notes search or web search.
         const intent: IntentType = imageUri ? "direct" : routeIntent(cleaned);
@@ -996,7 +1009,11 @@ export function useLLMChat() {
         replyWasClean = false;
         const message = errorValue instanceof Error ? errorValue.message : "Unknown chat error";
         console.error("[OfflineMate] Chat error:", message, errorValue);
-        setError(message, errorValue instanceof ModelSetupError ? errorValue.tier : null);
+        setError(
+          message,
+          errorValue instanceof ModelSetupError ? errorValue.tier : null,
+          errorValue instanceof ModelSetupError ? errorValue.kind : null,
+        );
       } finally {
         setLoading(false);
         setStreamingResponse("");

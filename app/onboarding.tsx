@@ -12,7 +12,7 @@ import {
   modelSupportsVision,
   resolveModelForTier,
 } from "@/ai/model-registry";
-import { getTierAssets } from "@/ai/model-manager";
+import { getTierAssets, getTierChatAssetReadiness } from "@/ai/model-manager";
 import { VisionBadge } from "@/components/VisionBadge";
 import { useSettingsStore } from "@/stores/settings-store";
 import { ModelDownloader } from "@/components/ModelDownloader";
@@ -37,9 +37,16 @@ export default function OnboardingScreen() {
   const [showChoices, setShowChoices] = useState(false);
   const [showAllModels, setShowAllModels] = useState(false);
   const setTier = useSettingsStore((s) => s.setSelectedTier);
-  const selectedTier = useSettingsStore((s) => s.selectedTier);
-  const selectedModelId = useSettingsStore((s) => s.tierModelIds[selectedTier] ?? null);
+  const savedTier = useSettingsStore((s) => s.selectedTier);
+  const tierModelIds = useSettingsStore((s) => s.tierModelIds);
   const setTierModelId = useSettingsStore((s) => s.setTierModelId);
+  /**
+   * The size and model picked here. They become the assistant only once that model is on the phone
+   * (already downloaded, or its download finishes), so looking at Balanced and then skipping or
+   * cancelling keeps the assistant that works. null model = the size's default.
+   */
+  const [selectedTier, setSelectedTier] = useState<ModelTier>(savedTier);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(tierModelIds[savedTier] ?? null);
   const hasCompletedOnboarding = useSettingsStore((s) => s.hasCompletedOnboarding);
   const completeOnboarding = useSettingsStore((s) => s.completeOnboarding);
   // Only the first setup follows the recommendation; running setup again from Settings keeps the user's choice.
@@ -51,9 +58,47 @@ export default function OnboardingScreen() {
       .catch(() => setPhoneRamGb(null));
     void getDeviceTierRecommendation().then((tier) => {
       setRecommended(tier);
-      if (followRecommendation.current) setTier(tier);
+      if (followRecommendation.current) {
+        setIsSelectedTierReady(false);
+        setSelectedTier(tier);
+        setSelectedModelId(useSettingsStore.getState().tierModelIds[tier] ?? null);
+      }
     });
-  }, [setTier]);
+  }, []);
+
+  /** Makes the pick the assistant chat uses. */
+  const commitPick = () => {
+    setTier(selectedTier);
+    setTierModelId(selectedTier, selectedModelId);
+  };
+
+  // A picked model that's on the phone (already, or once its download finishes) becomes the assistant.
+  useEffect(() => {
+    if (!isSelectedTierReady) return;
+    setTier(selectedTier);
+    setTierModelId(selectedTier, selectedModelId);
+  }, [isSelectedTierReady, selectedTier, selectedModelId, setTier, setTierModelId]);
+
+  /**
+   * Skip: an undownloaded pick replaces the saved choice only when no size has a model on the phone,
+   * so chat knows what to offer for download. Otherwise the saved choice stays, and chat uses a size
+   * that is downloaded (pickDownloadedTier).
+   */
+  const leaveSetup = async () => {
+    if (!isSelectedTierReady) {
+      const saved = useSettingsStore.getState();
+      const readiness = await Promise.all(
+        MODEL_TIERS.map((t) =>
+          getTierChatAssetReadiness(t.key, saved.tierModelIds[t.key] ?? null)
+            .then((r) => r.ready)
+            .catch(() => false),
+        ),
+      );
+      if (!readiness.some(Boolean)) commitPick();
+    }
+    completeOnboarding();
+    router.replace("/chat");
+  };
 
   const tierSpec = getTierSpec(selectedTier);
   const activeModel = resolveModelForTier(selectedTier, selectedModelId);
@@ -65,14 +110,19 @@ export default function OnboardingScreen() {
   const chooseTier = (tier: ModelTier) => {
     if (isDownloading) return;
     followRecommendation.current = false;
-    setTier(tier);
+    // Until the downloader checks the new pick, it isn't known to be downloaded; a stale "ready" from
+    // the previous pick would otherwise save this one.
+    setIsSelectedTierReady(false);
+    setSelectedTier(tier);
+    setSelectedModelId(tierModelIds[tier] ?? null);
   };
 
   const chooseModel = (modelId: string) => {
     if (isDownloading) return;
     followRecommendation.current = false;
+    setIsSelectedTierReady(false);
     // Same convention as Settings: the tier default is stored as null.
-    setTierModelId(selectedTier, modelId === tierSpec.primary.id ? null : modelId);
+    setSelectedModelId(modelId === tierSpec.primary.id ? null : modelId);
   };
 
   return (
@@ -80,10 +130,13 @@ export default function OnboardingScreen() {
     <SafeAreaView style={styles.root} edges={["left", "right", "bottom"]}>
       <ScrollView contentContainerStyle={[styles.content, isWide && styles.contentWide]}>
         <Text style={styles.h1}>Welcome to OfflineMate</Text>
-        <Text style={styles.body}>
-          Your assistant runs on this phone, so your chats stay private and work without internet. It needs a one-time
-          download first.
-        </Text>
+        {/* Hidden while the choices are open, so they fit on a small phone without scrolling. */}
+        {showChoices ? null : (
+          <Text style={styles.body}>
+            Your assistant runs on this phone, so your chats stay private and work without internet. It needs a
+            one-time download first.
+          </Text>
+        )}
 
         <View style={styles.card}>
           <Text style={styles.eyebrow}>{isRecommended ? "Recommended for your phone" : "Your choice"}</Text>
@@ -97,6 +150,8 @@ export default function OnboardingScreen() {
             modelId={selectedModelId}
             onReadinessChange={setIsSelectedTierReady}
             onDownloadingChange={setIsDownloading}
+            // Saves a few lines so the open choices fit on a small phone without scrolling.
+            showHelp={!showChoices}
           />
         </View>
 
@@ -202,10 +257,7 @@ export default function OnboardingScreen() {
             <Pressable
               style={[styles.continue, !isSelectedTierReady && styles.continueLater]}
               accessibilityRole="button"
-              onPress={() => {
-                completeOnboarding();
-                router.replace("/chat");
-              }}
+              onPress={() => void leaveSetup()}
             >
               <Text style={[styles.continueText, !isSelectedTierReady && styles.continueLaterText]}>
                 {isSelectedTierReady ? "Start chatting" : "Skip for now"}

@@ -3,7 +3,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { VisionBadge } from "@/components/VisionBadge";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, useWindowDimensions, View } from "react-native";
 import Constants from "expo-constants";
 import { useSettingsStore } from "@/stores/settings-store";
 import {
@@ -161,6 +161,8 @@ function SummaryLine({
 export default function SettingsScreen() {
   const router = useRouter();
   const { isWide } = useBreakpoint();
+  /** Phones up to about 4.7" (under 380 dp wide) get a shorter summary card. */
+  const compactSummary = useWindowDimensions().width < 380;
   const selectedTier = useSettingsStore((s) => s.selectedTier);
   const tierModelIds = useSettingsStore((s) => s.tierModelIds);
   const setTier = useSettingsStore((s) => s.setSelectedTier);
@@ -437,7 +439,9 @@ export default function SettingsScreen() {
               <Text style={styles.summaryButtonText}>Download now</Text>
             </Pressable>
           ) : null}
-          <View style={styles.divider} />
+          {/* The options are right below under Change settings; on a narrow phone this line only adds scrolling. */}
+          {compactSummary ? null : <View style={styles.divider} />}
+          {compactSummary ? null : (
           <SummaryLine
             icon="options-outline"
             text={[
@@ -447,6 +451,7 @@ export default function SettingsScreen() {
               ...(memoryCount > 0 ? [`${memoryCount} ${memoryCount === 1 ? "memory" : "memories"}`] : []),
             ].join(" · ")}
           />
+          )}
         </View>
         {isDownloadingSelected && modelPickerTier === null ? (
           <DownloadProgressCard

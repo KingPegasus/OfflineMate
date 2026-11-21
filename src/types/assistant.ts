@@ -22,6 +22,12 @@ export interface ChatConversation {
 
 export type ModelTier = "lite" | "standard" | "full";
 
+/**
+ * Why chat can't answer until something is set up: the model isn't downloaded (or its download was
+ * incomplete), it's downloaded but couldn't start, or a photo was sent to a model that can't see.
+ */
+export type ModelSetupKind = "not-downloaded" | "load-failed" | "no-vision";
+
 export interface ToolResult {
   ok: boolean;
   message: string;

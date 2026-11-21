@@ -36,3 +36,27 @@ export function describePhoneRam(reportedGb: number | null): string | null {
   if (reportedGb === null || !Number.isFinite(reportedGb) || reportedGb <= 0) return null;
   return `Your phone has ${soldRamGb(reportedGb)} GB of RAM.`;
 }
+
+/** Sizes to try when the selected one isn't downloaded: nearest first, smaller before bigger. */
+const FALLBACK_ORDER: Record<ModelTier, ModelTier[]> = {
+  lite: ["standard", "full"],
+  standard: ["lite", "full"],
+  full: ["standard", "lite"],
+};
+
+/**
+ * The size chat should use: the selected one when its model is on the phone, otherwise the nearest
+ * size whose model is. Choosing Balanced without finishing its download used to leave chat asking
+ * for that download although Light was ready. Returns the selected size when nothing is downloaded,
+ * so chat can offer the download.
+ */
+export async function pickDownloadedTier(
+  selected: ModelTier,
+  isReady: (tier: ModelTier) => Promise<boolean>,
+): Promise<ModelTier> {
+  if (await isReady(selected)) return selected;
+  for (const tier of FALLBACK_ORDER[selected]) {
+    if (await isReady(tier)) return tier;
+  }
+  return selected;
+}

@@ -19,6 +19,8 @@ interface Props {
   onReadinessChange?: (ready: boolean) => void;
   /** Lets the parent lock tier/model selection while files download. */
   onDownloadingChange?: (downloading: boolean) => void;
+  /** The "Downloads once (Wi-Fi is best)…" line; onboarding hides it while the other choices are open. */
+  showHelp?: boolean;
 }
 
 type Readiness = "checking" | "ready" | "partial" | "missing" | "unknown";
@@ -36,7 +38,7 @@ async function loadReadiness(tier: ModelTier, modelId: string | null): Promise<L
   }
 }
 
-export function ModelDownloader({ tier, modelId = null, onReadinessChange, onDownloadingChange }: Props) {
+export function ModelDownloader({ tier, modelId = null, onReadinessChange, onDownloadingChange, showHelp = true }: Props) {
   const [readiness, setReadiness] = useState<Readiness>("checking");
   const [bytesLeft, setBytesLeft] = useState(0);
   const download = useModelDownload();
@@ -102,7 +104,7 @@ export function ModelDownloader({ tier, modelId = null, onReadinessChange, onDow
           </Text>
         </TouchableOpacity>
       ) : null}
-      {readiness !== "ready" ? (
+      {readiness !== "ready" && showHelp ? (
         <Text style={styles.help}>Downloads once (Wi-Fi is best). After that it works without internet.</Text>
       ) : null}
     </View>

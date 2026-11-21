@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { getTierSpec, MODEL_TIERS } from "@/ai/model-registry";
-import { describePhoneRam, describeRecommendation, recommendTierForDevice, soldRamGb } from "@/utils/tier-recommendation";
+import {
+  describePhoneRam,
+  describeRecommendation,
+  pickDownloadedTier,
+  recommendTierForDevice,
+  soldRamGb,
+} from "@/utils/tier-recommendation";
 
 describe("recommendTierForDevice", () => {
   it("suggests Light for 3 and 4 GB phones", () => {
@@ -66,5 +72,29 @@ describe("RAM wording", () => {
     expect(describePhoneRam(7.6)).toBe("Your phone has 8 GB of RAM.");
     expect(describePhoneRam(null)).toBeNull();
     expect(describePhoneRam(0)).toBeNull();
+  });
+});
+
+// Found testing 0.14.0: picking Balanced and not finishing its download left chat asking for that
+// download although Light was ready.
+describe("pickDownloadedTier", () => {
+  const readyOnly =
+    (...tiers: string[]) =>
+    async (tier: string) =>
+      tiers.includes(tier);
+
+  it("keeps the selected size when it's downloaded", async () => {
+    expect(await pickDownloadedTier("standard", readyOnly("standard", "lite"))).toBe("standard");
+  });
+
+  it("uses a downloaded size when the selected one isn't, nearest and smaller first", async () => {
+    expect(await pickDownloadedTier("standard", readyOnly("lite"))).toBe("lite");
+    expect(await pickDownloadedTier("standard", readyOnly("lite", "full"))).toBe("lite");
+    expect(await pickDownloadedTier("full", readyOnly("lite", "standard"))).toBe("standard");
+    expect(await pickDownloadedTier("lite", readyOnly("full"))).toBe("full");
+  });
+
+  it("keeps the selected size when nothing is downloaded, so chat can offer the download", async () => {
+    expect(await pickDownloadedTier("standard", readyOnly())).toBe("standard");
   });
 });
