@@ -171,6 +171,21 @@ export class LLMEngine {
     return run;
   }
 
+  /**
+   * A run whose caller gave up (a planning or search step timed out) keeps going natively, and the
+   * next request then failed with "The model is currently generating" (code 104; seen testing 0.14.0
+   * on the emulator). Stop it and wait for it to end before starting another.
+   */
+  private async waitForPreviousGeneration(): Promise<void> {
+    const running = this.generationInFlight;
+    if (!running) return;
+    this.interrupt();
+    await running.then(
+      () => undefined,
+      () => undefined,
+    );
+  }
+
   private deleteModule(m: LLMModule) {
     try {
       m.delete();
@@ -349,6 +364,7 @@ export class LLMEngine {
           }
         }
       };
+      await this.waitForPreviousGeneration();
       // unload() may run between retries; never call into a freed model.
       const llm = this.llm;
       if (!llm) throw new Error("Model unloaded");
@@ -397,6 +413,7 @@ export class LLMEngine {
           }
         }
       };
+      await this.waitForPreviousGeneration();
       // unload() may run between retries; never call into a freed model.
       const llm = this.llm;
       if (!llm) throw new Error("Model unloaded");

@@ -275,8 +275,9 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#030712" },
-  content: { padding: 20, gap: 12 },
-  contentWide: { width: "100%", maxWidth: READABLE_MAX_WIDTH, alignSelf: "center", paddingTop: 32 },
+  // Little top padding: the Setup header above already leaves space.
+  content: { padding: 20, paddingTop: 4, gap: 12 },
+  contentWide: { width: "100%", maxWidth: READABLE_MAX_WIDTH, alignSelf: "center", paddingTop: 12 },
   h1: { color: "#e5e7eb", fontSize: 26, fontWeight: "800" },
   body: { color: "#9ca3af", lineHeight: 20 },
   card: { backgroundColor: "#111827", borderRadius: 14, padding: 16, gap: 10, borderWidth: 1, borderColor: "#1f2937" },

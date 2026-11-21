@@ -35,6 +35,8 @@ export function buildPrompt(input: PromptBuildInput): ChatMessage[] {
           "Retrieved text from the user's indexed notes (semantic search).",
           `There are exactly ${selectedContext.length} passage(s) below (${contextChars} characters total). This is ALL that was retrieved—there are no other hidden passages.`,
           "Answer ONLY from this text: quote it or paraphrase in one or two sentences. If the passage mentions the topic (even briefly), summarize what it says—short notes are valid; do not refuse for 'insufficient context'.",
+          // Found testing 0.14.0: "What did I save about bread?" got "I saved: pick up bread".
+          "These are notes the USER wrote. Refer to them as the user's (\"You saved…\", \"Your note says…\"), never as yours (not \"I saved\").",
           "Only say you found nothing relevant if the passage truly does not relate to the user's question.",
           "Do NOT invent extra passages, bullet lists of fake excerpts, or facts that are not in the text below—including inside <redacted_thinking>. If you use <redacted_thinking>, restate only what appears under Context.",
           "",

@@ -59,3 +59,26 @@ describe("LLMEngine.unload", () => {
     await vi.waitFor(() => expect(module.delete).toHaveBeenCalledOnce());
   });
 });
+
+// Seen testing 0.14.0: a run whose caller timed out kept going, and the next request failed with
+// "The model is currently generating" (code 104).
+describe("LLMEngine.generate while a previous run is still going", () => {
+  it("stops the previous run and waits for it before starting the next", async () => {
+    const { module, finish } = fakeModule();
+    const engine = loadedEngine(module);
+    const message = [{ id: "1", role: "user" as const, content: "Hi", createdAt: 0 }];
+    const first = engine.generate(message);
+    await vi.waitFor(() => expect(module.generate).toHaveBeenCalledTimes(1));
+
+    const second = engine.generate(message);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(module.interrupt).toHaveBeenCalled();
+    expect(module.generate).toHaveBeenCalledTimes(1);
+
+    finish("first");
+    await first;
+    await vi.waitFor(() => expect(module.generate).toHaveBeenCalledTimes(2));
+    finish("second");
+    await expect(second).resolves.toBe("second");
+  });
+});
