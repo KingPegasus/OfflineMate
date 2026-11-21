@@ -10,7 +10,12 @@ const PANE_GAP = 16;
 /** A title for a note saved without one: its first few words. */
 function noteTitleFromText(text: string): string {
   const firstLine = text.split(/\r?\n/)[0]!.trim();
-  return firstLine.length <= 40 ? firstLine : `${firstLine.slice(0, 40).replace(/\s+\S*$/, "")}…`;
+  if (firstLine.length <= 40) return firstLine;
+  // Cut at a word, and drop the punctuation it ends on: "…Friday at 3pm.…" read oddly.
+  return `${firstLine
+    .slice(0, 40)
+    .replace(/\s+\S*$/, "")
+    .replace(/[\s.,;:!?]+$/, "")}…`;
 }
 
 export default function NotesScreen() {

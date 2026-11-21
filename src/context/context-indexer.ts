@@ -20,7 +20,12 @@ function chunkText(input: string) {
 }
 
 export function indexNoteForRetrieval(noteId: string, title: string, content: string) {
-  const chunks = chunkText(`${title}\n${content}`);
+  // "Title: text", so a passage shown back to the user reads like the note. A title that the text starts
+  // with (notes saved without one get their first words) is left out rather than repeated.
+  const body = content.trim();
+  const head = title.trim().replace(/…$/, "");
+  const source = !head || body.toLowerCase().startsWith(head.toLowerCase()) ? body : `${head}: ${body}`;
+  const chunks = chunkText(source);
   chunks.forEach((chunk, index) => {
     void upsertVectorChunk("note", noteId, chunk, index).catch(() => {
       // Keep note creation path resilient if background indexing fails.
