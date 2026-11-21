@@ -23,7 +23,11 @@ const server = http.createServer((req, res) => {
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const size = { vertical: [1080, 1920], square: [1080, 1080], landscape: [1920, 1080] }[format];
-const browser = await chromium.launch({ args: ['--force-color-profile=srgb', '--hide-scrollbars', '--font-render-hinting=none'] });
+// PW_EXECUTABLE: a Chromium binary to use when the playwright package's own browser isn't downloaded (as in stills.mjs).
+const browser = await chromium.launch({
+  args: ['--force-color-profile=srgb', '--hide-scrollbars', '--font-render-hinting=none'],
+  ...(process.env.PW_EXECUTABLE && { executablePath: process.env.PW_EXECUTABLE }),
+});
 const page = await browser.newPage({ viewport: { width: size[0], height: size[1] }, deviceScaleFactor: 1 });
 page.on('pageerror', e => console.error('page error:', e.message));
 await page.goto(`http://127.0.0.1:${server.address().port}/overlay.html?f=${format}`, { waitUntil: 'networkidle' });

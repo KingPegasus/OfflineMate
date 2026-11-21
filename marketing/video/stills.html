@@ -37,8 +37,9 @@
 const q = new URLSearchParams(location.search);
 const W = innerWidth, H = innerHeight, c = document.getElementById('c');
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
-const phone = (shot, x, y, h) => {
-  const w = Math.round(h * 0.45), p = el('div', 'phone');
+// ratio: screen width / height. 0.45 is a 1080x2400 phone; a foldable's cover screen is wider (?ar=0.516).
+const phone = (shot, x, y, h, ratio = 0.45) => {
+  const w = Math.round(h * ratio), p = el('div', 'phone');
   const r = Math.round(w * 0.085), bz = Math.max(8, Math.round(w * 0.024));
   Object.assign(p.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', borderRadius: r + 'px' });
   p.style.setProperty('--bz', bz + 'px');
@@ -89,8 +90,9 @@ if (layout === 'store') {
 } else if (layout === 'device') {
   // Just the framed screen on a transparent background (website gallery).
   c.style.background = 'none'; c.innerHTML = '';
+  const ratio = q.get('ar') ? Number(q.get('ar')) : 0.45;
   const pad = Math.round(W * 0.06), h = H - pad * 2;
-  imgs.push(phone(q.get('shot'), Math.round((W - h * 0.45) / 2), pad, h).img);
+  imgs.push(phone(q.get('shot'), Math.round((W - h * ratio) / 2), pad, h, ratio).img);
 } else if (layout === 'tablet-device') {
   // A framed landscape tablet on a transparent background (website gallery).
   c.style.background = 'none'; c.innerHTML = '';

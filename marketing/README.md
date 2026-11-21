@@ -25,6 +25,7 @@ Source and build scripts for the demo video, website images and Play Store graph
 | `video/shots/picker-lite.png`, `onboarding.png` | Retaken for 0.12.0: the Lite picker shows the image icon on LFM 2.5 VL 450M; setup shows sizes in GB. Airplane mode on (hides the satellite icon). |
 | `video/shots/chat.png`, `tools-chat.png`, `tablet-chat.png`, `tablet7-chat.png` | Retaken for 0.12.0 so the composer shows the image button. Phone chat: Standard, Gemma 4 E2B. Tools chat: Lite, SmolLM2 135M, density 360 (move the "Dentist appointment" event to tomorrow 3–4 PM first). Tablets: Lite, LFM 2.5 350M. Airplane mode on, demo status bar. |
 | `video/shots/tablet-photo-chat.png`, `tablet7-photo-chat.png` | Photo question on the tablet, Lite with LFM 2.5 VL 450M (0.12.0): "What drinks are on this menu, and how much is a latte?" The phone's "Which drink is cheapest…" got a wrong answer from the 450M model. The 7-inch shot is scrolled so the answer shows. |
+| `video/shots/*` (0.14.0) | Retaken on the 0.14.0 release build, airplane mode on, demo status bar. Phone (`ops_pixel`, Balanced, LFM 2.5 VL 1.6B): `chat`, `chat-new` (Try asking), `photo-chat`, `notes`, `onboarding` (Choose a different model open), `picker` (Light: choose a model, Use Light), `help` (replaces `tools`), `settings`, `tools-chat` (density 360; needs an event tomorrow and the "Dentist" note). Tablet: `tablet-chat` (Light, LFM 2.5 350M), `tablet-photo-chat` and `tablet-picker` (LFM 2.5 VL 450M), `tablet-notes`, `tablet-settings`. Foldable (`ops_fold`, Light): `fold-open-photo` and `fold-half-notes` (inner screen, 2208×1840; half-open with `adb shell cmd device_state state 1`) and `fold-cover-photo` (cover screen, 1080×2092, `state 0`). The fold has two displays, so `screencap` needs `-d <id>` from `dumpsys SurfaceFlinger --display-id`. |
 | `raw/` | Recordings and intermediates (git-ignored). |
 
 ## Outputs
@@ -44,10 +45,10 @@ Source and build scripts for the demo video, website images and Play Store graph
 | 4.6–9 | 01 Works in airplane mode | "Turn on airplane mode. It keeps working." | Quick settings, Airplane mode on |
 | 9–17.5 | 02 Ask anything | "Ask anything. The answer is written on your device, not in the cloud." | "Give me 3 tips to beat jet lag", answered at real speed by LFM 2.5 350M |
 | 17.5–23 | 03 Notes stay private | "Save a note, and it stays on your phone." | Notes tab, a trip checklist saved |
-| 23–29 | 04 A model for every phone | "Pick the model that fits your phone. Lite, Standard, or Full." | Settings tiers and the Lite model picker |
-| 29–35 | End card | "OfflineMate. Private A.I. that works offline. By Rhyme Solutions." | offlinemate.com, "Coming soon to Google Play" |
+| 23–29 | 04 A model for every phone | "Pick the size that fits your phone. Light, Balanced, or Smartest." | Settings sizes and the Light model sheet |
+| 29–35 | End card | "OfflineMate. Private A.I. that works offline. By Rhyme Solutions." | offlinemate.com, "Get it on Google Play" |
 
-Every claim matches the app: the answer and the note were made with airplane mode on, on the Lite tier. When the app goes live on Google Play, change "Coming soon to Google Play" in `video/overlay.html` and re-render.
+Every claim matches the app: the answer and the note were made with airplane mode on. Re-recorded for 0.14.0 on Balanced (LFM 2.5 VL 1.6B); before that it was the Lite tier with LFM 2.5 350M.
 
 ## Rebuild
 

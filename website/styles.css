@@ -685,6 +685,36 @@ h1 {
   margin: 0 auto;
 }
 
+/* Foldable screenshots: the unfolded and half-open inner screen, then the narrower cover screen. */
+.screenshot-grid--fold {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 0.45fr);
+  align-items: end;
+}
+
+@media (max-width: 720px) {
+  .screenshot-grid--fold {
+    grid-template-columns: 1fr;
+  }
+
+  .screenshot-grid--fold .shot-card--cover .shot {
+    max-width: 14rem;
+    margin: 0 auto;
+  }
+}
+
+.screenshot-grid--fold .shot-card {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  text-align: center;
+}
+
+.screenshot-grid--fold .shot {
+  border: 0;
+  border-radius: 0;
+}
+
 /* Demo video */
 .demo-video {
   margin: 0 auto clamp(1.5rem, 4vw, 2.5rem);

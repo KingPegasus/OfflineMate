@@ -16,7 +16,8 @@ describe("website content", () => {
   const home = readPage("index.html");
   const modelsPage = readPage("models.html");
 
-  it.each(MODEL_TIERS.map((tier) => [tier.name, tier] as const))("homepage lists the %s models from the registry", (name, tier) => {
+  // The homepage uses the names the app shows (Light, Balanced, Smartest) since 0.14.0.
+  it.each(MODEL_TIERS.map((tier) => [tier.label, tier] as const))("homepage lists the %s models from the registry", (name, tier) => {
     const card = home.match(new RegExp(`<article class="tier-card">\\s*<h3>${name}</h3>([\\s\\S]*?)</article>`))?.[1] ?? "";
     const rows = [...card.matchAll(/<li><span><a href="[^"]*">([^<]+)<\/a>(.*?)<\/span><span>([^<]+)<\/span><\/li>/g)];
 

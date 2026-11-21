@@ -12,7 +12,7 @@ LINES = [
     "Turn on airplane mode. It keeps working.",
     "Ask anything. The answer is written on your device, not in the cloud.",
     "Save a note, and it stays on your phone.",
-    "Pick the model that fits your phone. Lite, Standard, or Full.",
+    "Pick the size that fits your phone. Light, Balanced, or Smartest.",
     "OfflineMate. Private A.I. that works offline. By Rhyme Solutions.",
 ]
 
