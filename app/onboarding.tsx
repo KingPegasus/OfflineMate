@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { getDeviceTierRecommendation } from "@/utils/device-profiler";
+import { getDeviceRamGb, getDeviceTierRecommendation } from "@/utils/device-profiler";
 import {
   getModelsForTier,
   getTierSpec,
@@ -19,7 +19,7 @@ import { ModelDownloader } from "@/components/ModelDownloader";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { READABLE_MAX_WIDTH } from "@/utils/layout";
 import { formatBytes } from "@/utils/download-format";
-import { describeRecommendation } from "@/utils/tier-recommendation";
+import { describePhoneRam, describeRecommendation } from "@/utils/tier-recommendation";
 import type { ModelTier } from "@/types/assistant";
 
 /** Everything the first download fetches for a tier and model: chat, voice input and notes search. */
@@ -31,6 +31,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const { isWide } = useBreakpoint();
   const [recommended, setRecommended] = useState<ModelTier | null>(null);
+  const [phoneRamGb, setPhoneRamGb] = useState<number | null>(null);
   const [isSelectedTierReady, setIsSelectedTierReady] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
@@ -45,6 +46,9 @@ export default function OnboardingScreen() {
   const followRecommendation = useRef(!hasCompletedOnboarding);
 
   useEffect(() => {
+    void getDeviceRamGb()
+      .then(setPhoneRamGb)
+      .catch(() => setPhoneRamGb(null));
     void getDeviceTierRecommendation().then((tier) => {
       setRecommended(tier);
       if (followRecommendation.current) setTier(tier);
@@ -108,7 +112,10 @@ export default function OnboardingScreen() {
 
         {showChoices ? (
           <View style={styles.choices}>
-            <Text style={styles.legendText}>Smaller is faster and a smaller download; bigger is smarter but needs a newer phone.</Text>
+            <Text style={styles.legendText}>
+              Smaller is faster; bigger is smarter but needs more memory (RAM).
+              {describePhoneRam(phoneRamGb) ? ` ${describePhoneRam(phoneRamGb)}` : ""}
+            </Text>
             <View style={styles.sizeRow}>
               {MODEL_TIERS.map((tier) => {
                 const selected = tier.key === selectedTier;
@@ -117,12 +124,13 @@ export default function OnboardingScreen() {
                     key={tier.key}
                     onPress={() => chooseTier(tier.key)}
                     accessibilityRole="radio"
-                    accessibilityLabel={`${tier.label}, ${formatBytes(totalDownloadBytes(tier.key, null))}${tier.key === recommended ? ", recommended" : ""}`}
+                    accessibilityLabel={`${tier.label}, for phones with ${tier.ramLabel}${tier.key === recommended ? ", recommended" : ""}`}
                     accessibilityState={{ selected, disabled: isDownloading }}
                     style={[styles.sizeCell, selected && styles.optionSelected, isDownloading && styles.disabled]}
                   >
                     <Text style={styles.optionTitle}>{tier.label}</Text>
-                    <Text style={styles.meta}>{formatBytes(totalDownloadBytes(tier.key, null))}</Text>
+                    {/* RAM, not download size: Balanced and Smartest download the same model. */}
+                    <Text style={styles.meta}>{tier.ramLabel}</Text>
                     {tier.key === recommended ? <Text style={styles.tag}>Recommended</Text> : null}
                   </Pressable>
                 );

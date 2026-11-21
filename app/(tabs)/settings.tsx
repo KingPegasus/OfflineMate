@@ -33,6 +33,8 @@ import { llmEngine } from "@/ai/llm-engine";
 import type { ModelTier } from "@/types/assistant";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { DIALOG_MAX_WIDTH, READABLE_MAX_WIDTH } from "@/utils/layout";
+import { getDeviceRamGb } from "@/utils/device-profiler";
+import { describePhoneRam } from "@/utils/tier-recommendation";
 
 function safeMemoryCount(): number {
   try {
@@ -173,6 +175,12 @@ export default function SettingsScreen() {
   const setShowTechnicalDetails = useSettingsStore((s) => s.setShowTechnicalDetails);
   const clearAllConversations = useChatStore((s) => s.clearAllConversations);
   const [memoryCount, setMemoryCount] = useState(0);
+  const [phoneRamGb, setPhoneRamGb] = useState<number | null>(null);
+  useEffect(() => {
+    void getDeviceRamGb()
+      .then(setPhoneRamGb)
+      .catch(() => setPhoneRamGb(null));
+  }, []);
   // Re-count when the tab is shown: "remember ..." messages add memories from the Chat tab.
   useFocusEffect(
     useCallback(() => {
@@ -451,7 +459,10 @@ export default function SettingsScreen() {
 
         <Text style={[styles.title, styles.titleGap]}>Change settings</Text>
         <Text style={styles.groupTitle}>Assistant size</Text>
-        <Text style={styles.hint}>Smaller is faster; bigger is smarter but needs a newer phone. Tap one to change it.</Text>
+        <Text style={styles.hint}>
+          Smaller is faster; bigger is smarter but needs more memory (RAM).
+          {describePhoneRam(phoneRamGb) ? ` ${describePhoneRam(phoneRamGb)}` : ""} Tap one to change it.
+        </Text>
         <View style={styles.sizeRow}>
           {MODEL_TIERS.map((tier) => {
             const inUse = tier.key === selectedTier;
@@ -465,8 +476,8 @@ export default function SettingsScreen() {
                 accessibilityHint="Choose or download a model for this size"
               >
                 <Text style={styles.itemTitle}>{tier.label}</Text>
+                <Text style={styles.itemSubtitle}>{tier.ramLabel}</Text>
                 {inUse ? <Text style={styles.inUseTag}>In use</Text> : null}
-                {showTechnicalDetails ? <Text style={styles.itemSubtitle}>{tier.targetRam}</Text> : null}
               </Pressable>
             );
           })}

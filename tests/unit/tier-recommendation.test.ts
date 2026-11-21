@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getTierSpec, MODEL_TIERS } from "@/ai/model-registry";
-import { describeRecommendation, recommendTierForDevice } from "@/utils/tier-recommendation";
+import { describePhoneRam, describeRecommendation, recommendTierForDevice, soldRamGb } from "@/utils/tier-recommendation";
 
 describe("recommendTierForDevice", () => {
   it("suggests Light for phones with little memory and no recent year class", () => {
@@ -39,5 +39,27 @@ describe("plain tier wording", () => {
       expect(tier.summary.length).toBeGreaterThan(20);
       expect(tier.summary).not.toMatch(/\b(RAM|GB|LLM|tier|token|quantiz)/i);
     }
+  });
+});
+
+// Balanced and Smartest download the same model, so the size buttons show RAM, not download size.
+describe("RAM wording", () => {
+  it("each size says how much RAM a phone needs, and the sizes differ", () => {
+    expect(MODEL_TIERS.map((t) => t.ramLabel)).toEqual(["3–4 GB RAM", "6–8 GB RAM", "10 GB+ RAM"]);
+  });
+
+  it("turns the memory a phone reports into the RAM it was sold with", () => {
+    expect(soldRamGb(2.8)).toBe(3);
+    expect(soldRamGb(3.7)).toBe(4);
+    expect(soldRamGb(5.6)).toBe(6);
+    expect(soldRamGb(7.6)).toBe(8);
+    expect(soldRamGb(11.2)).toBe(12);
+    expect(soldRamGb(15.4)).toBe(16);
+  });
+
+  it("describes the phone's RAM in a sentence, or nothing when it's unknown", () => {
+    expect(describePhoneRam(7.6)).toBe("Your phone has 8 GB of RAM.");
+    expect(describePhoneRam(null)).toBeNull();
+    expect(describePhoneRam(0)).toBeNull();
   });
 });

@@ -55,6 +55,8 @@ export interface TierSpec {
   /** One everyday sentence on the trade-off, for onboarding and Settings. */
   summary: string;
   targetRam: string;
+  /** "6–8 GB RAM": how much memory a phone needs for this size, shown on the size buttons. */
+  ramLabel: string;
   estimatedDownload: string;
   primary: ModelSpec;
   alternates: ModelSpec[];
@@ -260,6 +262,7 @@ export const MODEL_TIERS: TierSpec[] = [
     label: "Light",
     summary: "Fastest and the smallest download. Works on older phones; answers are simpler.",
     targetRam: "3-4 GB RAM",
+    ramLabel: "3–4 GB RAM",
     estimatedDownload: "~430 MB-1.3 GB",
     // Photo models are the defaults since 0.14.0; the old text-only defaults stay as alternates, and
     // settings migration v8 keeps existing users on them (OLD_TIER_DEFAULT_IDS).
@@ -276,6 +279,7 @@ export const MODEL_TIERS: TierSpec[] = [
     label: "Balanced",
     summary: "Good answers at a comfortable speed. Suits most phones from the last few years.",
     targetRam: "6-8 GB RAM",
+    ramLabel: "6–8 GB RAM",
     estimatedDownload: "~2.3 GB",
     primary: lfm25_vl_1_6b,
     alternates: [gemma4_e2b, qwen17b, qwen35_2b, minicpm5_2b, smol17b, llama1b],
@@ -290,6 +294,7 @@ export const MODEL_TIERS: TierSpec[] = [
     label: "Smartest",
     summary: "For newer phones with plenty of memory. Can also run the largest models, which give the best answers.",
     targetRam: "10-12+ GB RAM",
+    ramLabel: "10 GB+ RAM",
     estimatedDownload: "~2.3-4.2 GB",
     primary: lfm25_vl_1_6b,
     alternates: [qwen4b, lfm25_2_6b, llama3b, gemma4_e2b_multimodal],
