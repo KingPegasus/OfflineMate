@@ -136,7 +136,12 @@ function shouldInterruptForRepetition(text: string): boolean {
 
 export class LLMEngine {
   private static readonly POST_INTERRUPT_COOLDOWN_MS = 450;
-  private static readonly GENERATE_BUSY_RETRY_DELAYS_MS = [120, 260, 500, 900];
+  /**
+   * Retries when the native runner still says it's generating (code 104). Its promise can settle a
+   * moment before it is free again, and on a slow phone that moment outlasted the old ~2 s of retries
+   * ("The model is currently generating…" seen testing 0.14.0). About 16 s in all.
+   */
+  private static readonly GENERATE_BUSY_RETRY_DELAYS_MS = [150, 300, 600, 1000, 1500, 2500, 4000, 6000];
   private initializedTier: ModelTier | null = null;
   private initializedModelId: string | null = null;
   /** Text-only models would fail on an image, so images are sent only when the loaded model has vision. */
@@ -376,6 +381,7 @@ export class LLMEngine {
           const delayMs = LLMEngine.GENERATE_BUSY_RETRY_DELAYS_MS[retries]!;
           retries += 1;
           console.warn("[OfflineMate] LLM generate busy after interrupt; retrying in", delayMs, "ms");
+          this.interrupt();
           await this.sleep(delayMs);
           continue;
         }
@@ -424,6 +430,7 @@ export class LLMEngine {
           const delayMs = LLMEngine.GENERATE_BUSY_RETRY_DELAYS_MS[retries]!;
           retries += 1;
           console.warn("[OfflineMate] LLM generate busy after interrupt; retrying in", delayMs, "ms");
+          this.interrupt();
           await this.sleep(delayMs);
           continue;
         }

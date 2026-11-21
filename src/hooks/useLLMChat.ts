@@ -332,6 +332,17 @@ function looksLikeAgenticDecisionLeak(text: string): boolean {
 
 function summarizeToolResult(toolResult?: string): string | null {
   if (!toolResult) return null;
+  // Web results are a list; the first line alone was a bare page title ("- Tokyo Population 2026")
+  // when the model couldn't phrase an answer. Show the top results instead.
+  if (toolResult.trimStart().startsWith("search.web:")) {
+    const lines = toolResult
+      .replace(/^\s*search\.web:\s*/, "")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("- "))
+      .slice(0, 3);
+    if (lines.length > 0) return `Here's what I found online:\n${lines.join("\n")}`;
+  }
   const firstNonPlan = toolResult
     .split(/\r?\n/)
     .map((line) => line.trim())
