@@ -68,9 +68,27 @@ describe("website content", () => {
 
   it("video structured data has an uploadDate with a time zone (Search Console rejects a bare date)", () => {
     const jsonLd = JSON.parse(home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? "{}");
-    const video = jsonLd["@graph"].find((item: { "@type": string }) => item["@type"] === "VideoObject");
-    expect(video.uploadDate).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})$/);
-    expect(Number.isNaN(Date.parse(video.uploadDate))).toBe(false);
+    const videos = jsonLd["@graph"].filter((item: { "@type": string }) => item["@type"] === "VideoObject");
+    expect(videos.length).toBeGreaterThan(1);
+    for (const video of videos) {
+      expect(video.uploadDate, video["@id"]).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})$/);
+      expect(Number.isNaN(Date.parse(video.uploadDate))).toBe(false);
+    }
+  });
+
+  it("every video, poster and caption file the home page uses exists, and each clip has structured data", () => {
+    const files = [...home.matchAll(/(?:src|poster)="(\/media\/[^"]+)"/g)].map((m) => m[1]);
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      expect(fs.existsSync(path.join(process.cwd(), "website", file)), file).toBe(true);
+    }
+    const jsonLd = JSON.parse(home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? "{}");
+    const contentUrls = jsonLd["@graph"]
+      .filter((item: { "@type": string }) => item["@type"] === "VideoObject")
+      .map((v: { contentUrl: string }) => new URL(v.contentUrl).pathname);
+    for (const clip of files.filter((f) => f.endsWith(".mp4"))) {
+      expect(contentUrls, clip).toContain(clip);
+    }
   });
 
   it("FAQ structured data matches the visible answers", () => {
