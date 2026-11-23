@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.13.1] - 2026-11-23
+
+README and website only; the app is unchanged. A reviewer said the GitHub page made people read everything before learning how to run the app, and shared links showed GitHub's default preview.
+
+### Changed
+- `README.md` rewritten: a quick start sits right under the demo (install from Google Play, or clone, `npm ci` and `npx expo run:android --variant release`), followed by the features, what goes online and what doesn't, the tiers, a new Tablets and foldables section, how it works and development. New images in `docs/media/`: `demo.gif` (airplane mode on, then an answer at real speed), `phones.png` and `tablet.png`, about twice their shown size so they stay sharp on high-density screens.
+- `docs/media/social-preview.jpg` (1280×640) for the repository's social preview, rendered by the new `github-social-preview` job in `marketing/tools/stills-jobs.json`.
+
+### Added
+- Website: a Videos section on the home page (and a Videos link in the menu) with six use-case clips of about 15 seconds each: save a note, find a note, alarm, calendar, contacts and weather. The clips are served from the site (`website/media/uses/`, 720×720 H.264, about 400 KB each, with posters and English captions), so there's no third-party player or tracking, and each has `VideoObject` structured data. `tests/unit/website-content.test.ts` now checks every video's `uploadDate`, that every video, poster and caption file exists, and that each clip has structured data.
+
+### Known issues
+- GitHub has no API for the social preview: upload `docs/media/social-preview.jpg` by hand in Settings → General → Social preview.
+
 ## [0.13.0] - 2026-11-20
 
 Foldable phones: the app switches between the phone and tablet layouts as you fold and unfold, without losing what you were doing, and keeps content off the fold when the phone is half-open. Also fixes the keyboard closing by itself while typing when the microphone is denied, and the app closing on Chromebooks.
