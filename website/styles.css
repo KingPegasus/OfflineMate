@@ -740,6 +740,56 @@ h1 {
   text-align: center;
 }
 
+/* Use-case clips: square videos in a grid, three across on wide screens. */
+.clip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 2.2vw, 1.5rem);
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .clip-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .clip-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.clip-card {
+  margin: 0;
+}
+
+.clip-card video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  background: #020617;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 16px 36px -24px rgba(0, 0, 0, 0.55);
+}
+
+.clip-card figcaption {
+  margin-top: 0.6rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.clip-card figcaption strong {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
 /* ——— Sections ——— */
 section {
   margin-bottom: 3.5rem;

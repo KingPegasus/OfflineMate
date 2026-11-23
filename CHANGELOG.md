@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [0.14.0] - 2026-11-20
+## [0.14.0] - 2026-11-23
 
 Easier for people who aren't technical: every size now defaults to a model that can look at photos, setup recommends one download for your phone with a single button and needs no scrolling, the Tools tab becomes **Help**, Settings shows what's set up before what you can change, download problems offer **Try again** in plain words, and the app says what things do in everyday words. Model names, ids and reply speed move behind **Settings → Advanced → Show technical details**.
 
@@ -63,7 +63,21 @@ Easier for people who aren't technical: every size now defaults to a model that 
 - Play Store screenshots still show the old screens (onboarding, chat, the Tools tab, the tier list, the model picker, the privacy panel) and weren't re-rendered or uploaded. `marketing/tools/stills-jobs.json` now points at the new shots, but the 7-inch tablet shots (`tablet7-*.png`) are old, and the store captions ("Built-in tools", "A tier that fits your phone") would need rewording first. The use-case videos and the Photo Short also show the old screens.
 - The models page, the offline AI guide and the Play listing still call the sizes Lite, Standard and Full; the homepage and the Settings guide give both names.
 - Light's new default, LFM 2.5 VL 450M, refuses some plain requests: "Give me 3 tips to beat jet lag" got "I'm sorry, but I can't provide you with 3 tips…" on the Android tablet and on the iPhone simulator, and "What should I pack for a weekend at the beach?" got "Pack for a weekend at the beach." The tablet chat screenshot uses LFM 2.5 350M for that reason. Photo questions and tools work.
-- Tier keys and routing are unchanged. Saved model choices are kept (settings migration v8 pins old defaults); only labels and the defaults for new installs moved. The new screens were checked on the Android phone and tablet emulators (release builds); the tablet rail also on the iPad Pro 11-inch simulator. The plain-language screens weren't checked on iOS phones or the unfolded Pixel Fold.
+- Tier keys and routing are unchanged. Saved model choices are kept (settings migration v8 pins old defaults); only labels and the defaults for new installs moved. The new screens were checked on the Android phone and tablet emulators (release builds); the tablet rail also on the iPad Pro 11-inch simulator. Later also checked on the Pixel Fold emulator (open, half-open, closed) and on the iPhone 18 Pro and iPad Pro 11-inch simulators.
+
+## [0.13.1] - 2026-11-23
+
+README and website only; the app is unchanged. A reviewer said the GitHub page made people read everything before learning how to run the app, and shared links showed GitHub's default preview.
+
+### Changed
+- `README.md` rewritten: a quick start sits right under the demo (install from Google Play, or clone, `npm ci` and `npx expo run:android --variant release`), followed by the features, what goes online and what doesn't, the tiers, a new Tablets and foldables section, how it works and development. New images in `docs/media/`: `demo.gif` (airplane mode on, then an answer at real speed), `phones.png` and `tablet.png`, about twice their shown size so they stay sharp on high-density screens.
+- `docs/media/social-preview.jpg` (1280×640) for the repository's social preview, rendered by the new `github-social-preview` job in `marketing/tools/stills-jobs.json`.
+
+### Added
+- Website: a Videos section on the home page (and a Videos link in the menu) with six use-case clips of about 15 seconds each: save a note, find a note, alarm, calendar, contacts and weather. The clips are served from the site (`website/media/uses/`, 720×720 H.264, about 400 KB each, with posters and English captions), so there's no third-party player or tracking, and each has `VideoObject` structured data. `tests/unit/website-content.test.ts` now checks every video's `uploadDate`, that every video, poster and caption file exists, and that each clip has structured data.
+
+### Known issues
+- GitHub has no API for the social preview: upload `docs/media/social-preview.jpg` by hand in Settings → General → Social preview.
 
 ## [0.13.0] - 2026-11-20
 

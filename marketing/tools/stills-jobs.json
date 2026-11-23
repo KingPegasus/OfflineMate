@@ -102,6 +102,17 @@
     }
   },
   {
+    "out": "../out/web/github-social-preview.png",
+    "w": 1280,
+    "h": 640,
+    "params": {
+      "layout": "og",
+      "shot": "photo-chat",
+      "head": "Private AI that works <em>offline</em>",
+      "sub": "Open-source AI assistant for Android. Chat, photos, voice, notes and tools run on your phone. No cloud, no account."
+    }
+  },
+  {
     "out": "../out/web/frame-chat.png",
     "w": 640,
     "h": 1320,

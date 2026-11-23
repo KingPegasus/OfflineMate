@@ -36,6 +36,8 @@ Source and build scripts for the demo video, website images and Play Store graph
 - `out/offlinemate-demo.en.srt`: captions, for all three.
 - `../assets/play-store-listing/`: Play Store graphics (copied from `out/store/`; see its README).
 - `../website/media/`, `../website/screenshots/*.webp` (phone and `tablet-*`), `../website/og-image.jpg`: the website copies.
+- `../website/media/uses/`: the six use-case clips on the website's Videos section (720×720 H.264, posters from `out/usecases/thumbs/`, captions converted from the SRTs).
+- `../docs/media/`: README images. `social-preview.jpg` (1280×640, the `github-social-preview` job in `tools/stills-jobs.json`) is uploaded by hand in GitHub **Settings → General → Social preview**. `demo.gif` is the demo's 4.6–17.6 s (airplane mode on, then an answer) at 480 px (shown at 320), 10 fps. `phones.png` joins `out/web/frame-chat`, `frame-photo-chat` and `frame-tools-chat` at 520 px each; `tablet.png` is `frame-tablet-photo-chat` at 1400 px. Both are about twice their shown size so they stay sharp on high-density screens.
 
 ## Script (35 s)
 
