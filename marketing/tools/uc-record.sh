@@ -25,7 +25,8 @@ center() { # center of the first node whose text/desc contains $1
 }
 
 # Fresh chat before recording starts.
-read -r nx ny < <(center "+ New chat"); a shell input tap "$nx" "$ny"; sleep 1.5
+# 0.14.0 moved "+ New chat" into the header as "New".
+read -r nx ny < <(center 'text="New"'); a shell input tap "$nx" "$ny"; sleep 1.5
 read -r ix iy < <(center "Ask OfflineMate")
 read -r sx sy < <(center 'text="Send"')
 

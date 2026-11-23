@@ -1,0 +1,66 @@
+{
+  "id": "photo",
+  "style": "calm",
+  "duration": 18.28,
+  "screen": "raw/uc/photo-screen.mp4",
+  "screenStart": 0,
+  "phone": {
+    "in": 0
+  },
+  "scenes": [
+    {
+      "num": null,
+      "kicker": "Ask about a photo",
+      "chip": "Airplane mode on",
+      "online": false,
+      "hook": "What's on the <em>menu?</em>",
+      "promptAt": 5.03,
+      "prompt": "Which drink is cheapest?",
+      "cps": 21.4,
+      "answerAt": 10.78,
+      "answer": "The cheapest drink is the espresso, priced at $2.50.",
+      "t": [
+        0.0,
+        14.88
+      ]
+    }
+  ],
+  "end": 14.88,
+  "vo": [
+    {
+      "at": 0.25,
+      "text": "Got a photo? Ask about it."
+    },
+    {
+      "at": 11.03,
+      "text": "OfflineMate reads it on your phone, even in airplane mode."
+    },
+    {
+      "at": 15.33,
+      "text": "Get OfflineMate free on Google Play."
+    }
+  ],
+  "clips": [
+    {
+      "src": "raw/uc/photo.mp4",
+      "from": 4.4,
+      "to": 9.48,
+      "hold": 2.4
+    },
+    {
+      "src": "raw/uc/photo.mp4",
+      "from": 9.5,
+      "to": 11.2
+    },
+    {
+      "src": "raw/uc/photo.mp4",
+      "from": 68.9,
+      "to": 74.0,
+      "holdEnd": 0.6
+    }
+  ],
+  "music": {
+    "style": "calm",
+    "bpm": 100
+  }
+}

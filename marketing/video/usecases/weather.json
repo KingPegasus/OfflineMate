@@ -1,7 +1,7 @@
 {
   "id": "weather",
   "style": "calm",
-  "duration": 17.91,
+  "duration": 17.77,
   "screen": "raw/uc/weather-screen.mp4",
   "screenStart": 0,
   "phone": {
@@ -16,46 +16,46 @@
       "hook": "Heading <em>out?</em>",
       "promptAt": 2.9,
       "prompt": "What's the current weather in London?",
-      "cps": 21.4,
-      "answerAt": 7.96,
-      "answer": "London, United Kingdom: 8°C (47°F), mainly clear. Feels like 4°C, wind 16 km/h. Today 4–8°C, 0% chance of rain.",
+      "cps": 22.8,
+      "answerAt": 7.82,
+      "answer": "London, United Kingdom: 7°C (45°F), overcast. Feels like 3°C, wind 12 km/h. Today 4–7°C, 0% chance of rain.",
       "t": [
         0.0,
-        14.51
+        14.37
       ]
     }
   ],
-  "end": 14.51,
+  "end": 14.37,
   "vo": [
     {
       "at": 0.25,
       "text": "Heading out? Ask about the weather."
     },
     {
-      "at": 8.21,
+      "at": 8.07,
       "text": "Weather is the one feature that goes online. Only the city name is sent, and one switch turns it off."
     },
     {
-      "at": 14.96,
+      "at": 14.82,
       "text": "Get OfflineMate free on Google Play."
     }
   ],
   "clips": [
     {
       "src": "raw/uc/weather.mp4",
-      "from": 2.82,
-      "to": 6.53,
+      "from": 2.62,
+      "to": 6.19,
       "hold": 2.4
     },
     {
       "src": "raw/uc/weather.mp4",
-      "from": 8.9,
-      "to": 10.6
+      "from": 6.2,
+      "to": 7.9
     },
     {
       "src": "raw/uc/weather.mp4",
-      "from": 10.6,
-      "to": 14.6,
+      "from": 26.2,
+      "to": 30.2,
       "holdEnd": 2.7
     }
   ],

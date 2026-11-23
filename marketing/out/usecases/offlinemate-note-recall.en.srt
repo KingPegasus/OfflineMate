@@ -3,10 +3,10 @@
 Can't remember the details? Ask your notes.
 
 2
-00:00:08,100 --> 00:00:10,895
-It finds the right note in seconds, on your device.
+00:00:08,630 --> 00:00:10,721
+It finds the right note, on your device.
 
 3
-00:00:12,050 --> 00:00:14,077
+00:00:11,670 --> 00:00:13,697
 Get OfflineMate free on Google Play.
 

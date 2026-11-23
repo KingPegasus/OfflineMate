@@ -16,7 +16,7 @@
       "hook": "Need a number <em>fast?</em>",
       "promptAt": 2.9,
       "prompt": "What's Ali's number?",
-      "cps": 25.3,
+      "cps": 25.0,
       "answerAt": 6.99,
       "answer": "Found 1 contact for \"Ali\".\n- Ali Khan: +92 300 1234567",
       "t": [
@@ -43,19 +43,19 @@
   "clips": [
     {
       "src": "raw/uc/contact.mp4",
-      "from": 2.82,
-      "to": 5.56,
+      "from": 2.6,
+      "to": 5.34,
       "hold": 2.4
     },
     {
       "src": "raw/uc/contact.mp4",
-      "from": 7.2,
-      "to": 8.9
+      "from": 5.4,
+      "to": 7.1
     },
     {
       "src": "raw/uc/contact.mp4",
-      "from": 8.9,
-      "to": 12.6,
+      "from": 25.5,
+      "to": 29.2,
       "holdEnd": 0.46
     }
   ],

@@ -271,5 +271,19 @@
       "shot": "usecases/shots/weather.png",
       "layout": "square"
     }
+  },
+  {
+    "out": "../out/usecases/thumbs/photo-square-1080x1080.png",
+    "w": 1080,
+    "h": 1080,
+    "page": "thumb.html",
+    "params": {
+      "layout": "square",
+      "head": "What's on the <em>menu?</em>",
+      "kicker": "Ask about a photo",
+      "bubble": "Which drink is cheapest?",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/photo.png"
+    }
   }
 ]

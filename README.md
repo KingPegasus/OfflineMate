@@ -33,7 +33,7 @@
 
 ## Quick start
 
-**Just want to use it?** Install it free from **[Google Play](https://play.google.com/store/apps/details?id=com.offlinemate.app)**. On first launch it suggests a model tier for your phone; download it once (about 430 MB on Lite), turn on airplane mode, and ask something.
+**Just want to use it?** Install it free from **[Google Play](https://play.google.com/store/apps/details?id=com.offlinemate.app)**. On first launch it suggests an assistant size for your phone (Light, Balanced or Smartest); download it once (about 620 MB on Light), turn on airplane mode, and ask something.
 
 **Want to build it?** You need Node 24+, JDK 17 and the Android SDK ([full setup](BUILDING.md)). With a phone plugged in or an emulator running:
 
@@ -43,14 +43,14 @@ npm ci
 npx expo run:android --variant release
 ```
 
-The app installs and opens on the device. Pick a tier, let the model download, and send your first message. Nothing after that needs a connection.
+The app installs and opens on the device. Keep the suggested size or pick another, let the model download, and send your first message. Nothing after that needs a connection.
 
 ---
 
 ## What it does
 
 <p align="center">
-  <img src="docs/media/phones.png" alt="Three OfflineMate screens: an offline chat, a question about a café menu photo answered on the phone, and one chat using four tools" width="100%" />
+  <img src="docs/media/phones.png" alt="Three OfflineMate screens with the Balanced assistant: an offline chat, a question about a café menu photo answered on the phone, and one chat using four tools" width="100%" />
 </p>
 
 | | |
@@ -60,7 +60,7 @@ The app installs and opens on the device. Pick a tier, let the model download, a
 | 🎙️ **Voice** | Hold to speak, with on-device speech-to-text, and have answers read aloud. |
 | 📝 **Notes with memory** | Save notes, then ask "what did I save about the dentist?" Semantic search (RAG) finds them by meaning. |
 | 🛠️ **Phone tools** | "Remind me in 10 minutes", "what's on my calendar tomorrow", "set an alarm for 7", "what's Mom's number". Only with the permissions you grant. |
-| 📱 **Any phone** | Lite, Standard and Full tiers fit phones from 3 GB to 12+ GB of RAM. |
+| 📱 **Any phone** | Three sizes, Light, Balanced and Smartest, fit phones from 3–4 GB to 10 GB+ of RAM. |
 | 🗂️ **Tablets and foldables** | Side-by-side layouts on tablets, and on foldables when unfolded or half-open. |
 
 ### Tablets and foldables
@@ -68,7 +68,7 @@ The app installs and opens on the device. Pick a tier, let the model download, a
 On a tablet, a side rail replaces the bottom tabs and your chats sit beside the conversation. Foldables switch between the phone and tablet layouts as you fold and unfold, without losing what you typed. Half-open, the screen splits at the fold so nothing sits under the hinge ([foldable screenshots](docs/foldable/)).
 
 <p align="center">
-  <img src="docs/media/tablet.png" alt="OfflineMate on a tablet: the chat list on the left, and on the right a café menu photo with the on-device answer listing the drinks and the price of a latte" width="100%" />
+  <img src="docs/media/tablet.png" alt="OfflineMate on a tablet: the side rail and chat list on the left, and on the right a café menu photo with the on-device answer listing the drinks and the price of a latte" width="100%" />
 </p>
 
 ### What goes online, and what doesn't
@@ -79,15 +79,15 @@ On a tablet, a side rail replaces the bottom tabs and your chats sit beside the 
 
 Details: [privacy policy](docs/legal/privacy-policy.md).
 
-### Which tier fits your phone
+### Which size fits your phone
 
-| Tier | Phone RAM | Default model | Download | Notes search |
+| Size | Phone RAM | Default model | Download | Notes search |
 |---|---|---|---|---|
-| Lite | 3–4 GB | SmolLM2 135M | ~430 MB | — |
-| Standard | 6–8 GB | Gemma 4 E2B | ~2.5 GB | ✅ |
-| Full | 10–12+ GB | Qwen 3 4B | ~2.6 GB | ✅ |
+| Light | 3–4 GB | LFM 2.5 VL 450M | ~620 MB | — |
+| Balanced | 6–8 GB | LFM 2.5 VL 1.6B | ~2.3 GB | ✅ |
+| Smartest | 10 GB+ | LFM 2.5 VL 1.6B | ~2.3 GB | ✅ |
 
-Each tier also offers alternatives (Llama 3.2, LFM 2.5, Qwen 3.5, MiniCPM5) and vision models for photo questions. See [how to choose a model](https://offlinemate.com/models.html).
+All three defaults can answer questions about photos. Each size also offers alternatives you can download instead: SmolLM2 and LFM 2.5 on Light; Gemma 4 E2B, Llama 3.2, Qwen 3, Qwen 3.5, SmolLM2 and MiniCPM5 on Balanced; Qwen 3 4B, LFM 2.5 2.6B, Llama 3.2 3B and Gemma 4 E2B multimodal on Smartest. Before version 0.14 the sizes were called Lite, Standard and Full. See [how to choose a model](https://offlinemate.com/models.html).
 
 > Phone-sized models are less capable than large cloud models and can make mistakes. Check anything important.
 
