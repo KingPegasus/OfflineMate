@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { MarkdownText } from "@/components/MarkdownText";
+import { meetingServiceFor } from "@/tools/meeting-link";
+import type { MessageLink } from "@/types/assistant";
 import { formatTokPerSec, hasMeasuredTokPerSec } from "@/utils/tok-per-sec";
 
 interface Props {
@@ -12,9 +15,21 @@ interface Props {
   tokensPerSecond?: number | null;
   /** User messages: gallery image sent with the prompt. */
   imageUri?: string;
+  /** Assistant replies: buttons such as "Join Google Meet" (meeting links only). */
+  links?: MessageLink[];
 }
 
-export function ChatBubble({ role, content, thinking, tokensPerSecond, imageUri }: Props) {
+/** Opens a meeting link in its app (Zoom, Teams, Meet) or the browser. Checked again here: messages are stored. */
+async function openMeetingLink(url: string) {
+  if (!meetingServiceFor(url)) return;
+  try {
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert("Couldn't open the meeting", "Long-press the button to copy the link instead.");
+  }
+}
+
+export function ChatBubble({ role, content, thinking, tokensPerSecond, imageUri, links }: Props) {
   const isUser = role === "user";
   const isAssistant = role === "assistant";
   const [isThinkingOpen, setIsThinkingOpen] = useState(false);
@@ -63,6 +78,31 @@ export function ChatBubble({ role, content, thinking, tokensPerSecond, imageUri 
         <MarkdownText text={content} style={styles.text} boldStyle={styles.textBold} />
         {isAssistant && hasMeasuredTokPerSec(tokensPerSecond) ? (
           <Text style={styles.metric}>{formatTokPerSec(tokensPerSecond)}</Text>
+        ) : null}
+        {isAssistant && links?.length ? (
+          <View style={styles.links}>
+            {links
+              .filter((l) => meetingServiceFor(l.url))
+              .map((l) => (
+                <TouchableOpacity
+                  key={l.url}
+                  style={styles.linkBtn}
+                  onPress={() => void openMeetingLink(l.url)}
+                  onLongPress={() => {
+                    void Clipboard.setStringAsync(l.url);
+                    Alert.alert("Link copied", l.url);
+                  }}
+                  accessibilityRole="link"
+                  accessibilityLabel={l.label}
+                  accessibilityHint="Opens the meeting. Long-press to copy the link."
+                >
+                  <Ionicons name="videocam-outline" size={18} color="#f9fafb" />
+                  <Text style={styles.linkText} numberOfLines={1}>
+                    {l.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+          </View>
         ) : null}
         {isAssistant ? (
           <View style={styles.actions}>
@@ -117,6 +157,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   thinkingText: { color: "#9ca3af", fontSize: 12 },
+  links: { marginTop: 10, gap: 8, alignItems: "flex-start" },
+  linkBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    maxWidth: "100%",
+    backgroundColor: "#2563eb",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  linkText: { color: "#f9fafb", fontWeight: "700", fontSize: 15, flexShrink: 1 },
   actions: {
     marginTop: 8,
     flexDirection: "row",

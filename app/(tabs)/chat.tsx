@@ -216,6 +216,7 @@ export default function ChatScreen() {
                 // Reply speed is a technical detail, off unless chosen in Settings → Advanced.
                 tokensPerSecond={showTechnicalDetails ? m.tokensPerSecond : undefined}
                 imageUri={m.imageUri}
+                links={m.links}
               />
             ))}
             <LiveThinkingPanel

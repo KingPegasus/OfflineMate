@@ -43,7 +43,7 @@ import { isEnabled } from "@/config/feature-flags";
 import { approximateTokenCount } from "@/utils/tokenizer";
 import { stripTokPerSecLines } from "@/utils/tok-per-sec";
 import { createRateTracker } from "@/utils/download-format";
-import type { ChatMessage, ModelSetupKind, ModelTier, ToolResult } from "@/types/assistant";
+import type { ChatMessage, MessageLink, ModelSetupKind, ModelTier, ToolResult } from "@/types/assistant";
 
 /** Cold load from storage + runtime init can take several minutes on mid-range phones; partial downloads also stall until complete. */
 const MODEL_INIT_TIMEOUT_MS = 300_000;
@@ -227,8 +227,8 @@ function estimateTokensPerSecond(text: string, elapsedMs: number): number | null
 }
 
 /** The speed is kept on the message (ChatBubble shows it) so it never enters the reply text or the prompt. */
-function createAssistantMessage(content: string, tokensPerSecond: number | null): ChatMessage {
-  return { ...createMessage("assistant", content), tokensPerSecond };
+function createAssistantMessage(content: string, tokensPerSecond: number | null, links?: MessageLink[]): ChatMessage {
+  return { ...createMessage("assistant", content), tokensPerSecond, ...(links?.length ? { links } : {}) };
 }
 
 /** Model load/download failure the user fixes from the tier's model picker in Settings. */
@@ -547,6 +547,8 @@ export function useLLMChat() {
         console.log("[OfflineMate] Intent:", intent, "prompt length:", cleaned.length);
         let contextSnippets: string[] = [];
         let toolResult: string | undefined;
+        // Buttons the tools returned (a calendar event's Join link), shown under the reply.
+        const replyLinks: MessageLink[] = [];
         let planSummary: string | undefined;
         let agenticDirectAnswer: string | undefined;
         let needsPostInterruptDelay = false;
@@ -759,6 +761,7 @@ export function useLLMChat() {
                 console.warn("[OfflineMate] Tool failed:", correlationId, toolName, msg);
                 return msg;
               }
+              if (result.links?.length) replyLinks.push(...result.links);
               const payloadText =
                 result.payload && Object.keys(result.payload).length > 0
                   ? `\nPayload: ${JSON.stringify(result.payload)}`
@@ -805,7 +808,7 @@ export function useLLMChat() {
           setStreamingThinkClosed(true);
           setStreamingThinking([]);
           setStreamingResponse(replyText);
-          pushMessage(createAssistantMessage(replyText, null), requestConversationId);
+          pushMessage(createAssistantMessage(replyText, null, replyLinks), requestConversationId);
           console.log(`[OfflineMate] Tool reply (deterministic): ${JSON.stringify(replyText.slice(0, 200))}`);
           if (voiceEnabled) {
             await speak(replyText);
@@ -1004,7 +1007,7 @@ export function useLLMChat() {
         setStreamingResponse(replyText);
         pushMessage(
           {
-            ...createAssistantMessage(replyText, tokensPerSecond),
+            ...createAssistantMessage(replyText, tokensPerSecond, replyLinks),
             thinking: finalThinking.length > 0 ? finalThinking : undefined,
           },
           requestConversationId,
