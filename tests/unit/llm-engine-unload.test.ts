@@ -44,7 +44,25 @@ describe("LLMEngine.unload", () => {
 
     finish("partial");
     await expect(reply).resolves.toBe("partial");
-    await vi.waitFor(() => expect(module.delete).toHaveBeenCalledOnce());
+    expect(module.delete).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(module.delete).toHaveBeenCalledOnce(), { timeout: 3000 });
+  });
+
+  // Play crash (Samsung Galaxy A50, Android 11, 0.12.0): the same Module::~Module crash from a tap that
+  // unloaded the model. The native runner can still be finishing just after generate() returns.
+  it("waits a moment after a reply that has just finished before freeing the model", async () => {
+    const { module, finish } = fakeModule();
+    const engine = loadedEngine(module);
+    const reply = engine.generate([{ id: "1", role: "user", content: "Hi", createdAt: 0 }]);
+    await vi.waitFor(() => expect(module.generate).toHaveBeenCalled());
+    finish("done");
+    await reply;
+
+    const started = Date.now();
+    engine.unload();
+    expect(module.delete).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(module.delete).toHaveBeenCalledOnce(), { timeout: 3000 });
+    expect(Date.now() - started).toBeGreaterThanOrEqual(LLMEngine.DISPOSE_SETTLE_MS - 50);
   });
 
   it("frees the model once even if unload is called again while waiting", async () => {
@@ -56,7 +74,7 @@ describe("LLMEngine.unload", () => {
     engine.unload();
     finish();
     await reply;
-    await vi.waitFor(() => expect(module.delete).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(module.delete).toHaveBeenCalledOnce(), { timeout: 3000 });
   });
 });
 

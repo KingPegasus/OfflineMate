@@ -164,16 +164,33 @@ export class LLMEngine {
   private generationInFlight: Promise<unknown> | null = null;
   /** A model waiting to be freed once its generation returns; initialize() waits for it. */
   private pendingDispose: Promise<void> | null = null;
+  /** When the last native generate returned (ms), for the settle wait in unload(). */
+  private lastGenerationSettledAt = 0;
+  /**
+   * How long after a generate returns before the model may be freed. The native runner can still be
+   * finishing for a moment after the JS promise settles (testing 0.14.0 saw "The model is currently
+   * generating" right after a reply). The same Module::~Module crash as the Kyocera one came in from a
+   * Samsung Galaxy A50 (Android 11, 0.12.0), from a tap that unloaded the model.
+   */
+  static readonly DISPOSE_SETTLE_MS = 1500;
 
   /** Runs the native generate and records it, so unload() can wait for it before freeing the model. */
   private runNativeGenerate(llm: LLMModule, mapped: Message[]): Promise<string> {
     const run = llm.generate(mapped);
     this.generationInFlight = run;
     const clear = () => {
+      this.lastGenerationSettledAt = Date.now();
       if (this.generationInFlight === run) this.generationInFlight = null;
     };
     run.then(clear, clear);
     return run;
+  }
+
+  /** Waits until no generate is running and the last one returned at least DISPOSE_SETTLE_MS ago. */
+  private async waitUntilSettled(running: Promise<unknown> | null): Promise<void> {
+    if (running) await running.then(() => undefined, () => undefined);
+    const left = LLMEngine.DISPOSE_SETTLE_MS - (Date.now() - this.lastGenerationSettledAt);
+    if (left > 0) await this.sleep(left);
   }
 
   /**
@@ -479,17 +496,14 @@ export class LLMEngine {
       }
     }
     const running = this.generationInFlight;
-    if (!running) {
+    const sinceLast = Date.now() - this.lastGenerationSettledAt;
+    if (!running && sinceLast >= LLMEngine.DISPOSE_SETTLE_MS) {
       this.deleteModule(m);
       return;
     }
-    // A reply is still being written: free the model only once the interrupted generate returns.
-    const dispose = running
-      .then(
-        () => undefined,
-        () => undefined,
-      )
-      .then(() => this.deleteModule(m));
+    // A reply is still being written, or one just ended: free the model once the interrupted generate
+    // returns and the native runner has had time to finish.
+    const dispose = this.waitUntilSettled(running).then(() => this.deleteModule(m));
     this.pendingDispose = dispose;
     void dispose.then(() => {
       if (this.pendingDispose === dispose) this.pendingDispose = null;
