@@ -116,7 +116,7 @@
                   src="/screenshots/settings.webp"
                   width="480"
                   height="990"
-                  alt="OfflineMate settings on a phone: the model tiers, then Open Onboarding, Speak responses and Web search and weather, each with an info button, and the privacy and network boundaries panel."
+                  alt="OfflineMate settings on a phone: Your setup shows the Balanced assistant, downloaded and able to look at photos. Change settings has the Light, Balanced and Smartest sizes with their RAM, then switches for Read replies aloud, Web search and weather, and Keep chats after closing the app, each with an info button."
                   loading="lazy"
                   decoding="async"
                 />
@@ -128,7 +128,7 @@
                   src="/screenshots/tablet-settings.webp"
                   width="1600"
                   height="1100"
-                  alt="OfflineMate settings on a tablet with the side rail: the tiers, every option with an info button, the privacy panel, Persist chat history, Clear chats and memories and Rate OfflineMate."
+                  alt="OfflineMate settings on a tablet with the side rail: Your setup with the Light assistant (LFM 2.5 VL 450M), then the three sizes with their RAM and the options with switches and info buttons."
                   loading="lazy"
                   decoding="async"
                 />
@@ -138,13 +138,14 @@
           </section>
 
           <section aria-labelledby="tier-heading">
-            <h2 id="tier-heading">Model tier</h2>
+            <h2 id="tier-heading">Assistant size</h2>
             <div class="prose card">
               <p>
-                The top of Settings shows the <strong>active model</strong> and the three tiers: <strong>Lite</strong>
-                (3–4 GB of RAM), <strong>Standard</strong> (6–8 GB) and <strong>Full</strong> (10–12 GB or more). Tap a
-                tier to pick a model for it and download it if needed. Larger models give better answers but need more
-                memory and storage. See <a href="/models.html">every model and its size</a>.
+                The top of Settings shows the assistant <strong>in use</strong> and the three sizes:
+                <strong>Light</strong> (the Lite tier, 3–4 GB of RAM), <strong>Balanced</strong> (Standard, 6–8 GB) and
+                <strong>Smartest</strong> (Full, 10–12 GB or more). Tap a size to pick a model for it and download it if
+                needed. Smaller is faster and a smaller download; bigger gives better answers but needs a newer phone. See
+                <a href="/models.html">every model and its size</a>.
               </p>
               <p>
                 Models with an <strong>image icon</strong> can read photos: attach one from your gallery with the image
@@ -164,11 +165,11 @@
             <div class="prose card">
               <dl class="settings-list">
                 <div id="open-onboarding">
-                  <dt>Open Onboarding</dt>
-                  <dd>Runs the first-time setup again: pick a tier and download its model. Your chats, notes and settings stay.</dd>
+                  <dt>Set up again</dt>
+                  <dd>Runs the first-time setup again: see the size recommended for your phone, or choose another, and download it. Your chats, notes and settings stay.</dd>
                 </div>
                 <div id="speak-responses">
-                  <dt>Speak responses (TTS) <span class="settings-default">Off by default</span></dt>
+                  <dt>Read replies aloud <span class="settings-default">Off by default</span></dt>
                   <dd>
                     Reads each reply aloud with your phone’s built-in voice. Depending on your phone and voice settings,
                     the voice provider may process the text online.
@@ -184,7 +185,7 @@
                   </dd>
                 </div>
                 <div id="persist-chat-history">
-                  <dt>Persist chat history on device <span class="settings-default">Off by default</span></dt>
+                  <dt>Keep chat history <span class="settings-default">Off by default</span></dt>
                   <dd>
                     When on, your chats are saved on your phone and are still there after you close the app. When off,
                     chats are cleared when the app closes, and turning it off deletes saved chats. Nothing is uploaded
@@ -204,12 +205,19 @@
                   <dt>Rate OfflineMate</dt>
                   <dd>Opens OfflineMate’s Google Play page so you can rate or review it.</dd>
                 </div>
+                <div id="show-technical-details">
+                  <dt>Show technical details <span class="settings-default">Off by default</span></dt>
+                  <dd>
+                    Under <strong>Advanced</strong>. Shows the reply speed under each answer (in tokens per second), the
+                    exact model name and id in Chat and Settings, and tool ids in the Tools tab.
+                  </dd>
+                </div>
               </dl>
             </div>
           </section>
 
           <section aria-labelledby="boundaries-heading">
-            <h2 id="boundaries-heading">Privacy and network boundaries</h2>
+            <h2 id="boundaries-heading">Privacy and internet use</h2>
             <div class="prose card">
               <p>
                 The panel in Settings sums up what uses the network. Chat, note search and the tools run on your phone

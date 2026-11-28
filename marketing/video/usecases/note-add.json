@@ -1,7 +1,7 @@
 {
   "id": "note-add",
   "style": "calm",
-  "duration": 16.53,
+  "duration": 16.77,
   "screen": "raw/uc/note-add-screen.mp4",
   "screenStart": 0,
   "phone": {
@@ -16,56 +16,56 @@
       "hook": "Don't let it <em>slip</em>",
       "promptAt": 2.9,
       "prompt": "Save a note: book the car service for Saturday",
-      "cps": 22.1,
-      "answerAt": 8.28,
-      "answer": "Note saved: Book car service",
+      "cps": 21.6,
+      "answerAt": 8.32,
+      "answer": "Note saved: book the car service for Saturday",
       "after": {
         "head": "Saved in <em>Notes</em>",
         "sub": "Stored on your phone. No account, no cloud.",
-        "at": 11.53
+        "at": 11.57
       },
       "t": [
         0.0,
-        13.13
+        13.37
       ]
     }
   ],
-  "end": 13.13,
+  "end": 13.37,
   "vo": [
     {
       "at": 0.25,
       "text": "Something you can't forget? Tell OfflineMate."
     },
     {
-      "at": 8.53,
+      "at": 8.57,
       "text": "It's saved in Notes, and it stays on your phone."
     },
     {
-      "at": 13.58,
+      "at": 13.82,
       "text": "Get OfflineMate free on Google Play."
     }
   ],
   "clips": [
     {
       "src": "raw/uc/note-add.mp4",
-      "from": 2.78,
-      "to": 6.81,
+      "from": 2.59,
+      "to": 6.66,
       "hold": 2.4
     },
     {
       "src": "raw/uc/note-add.mp4",
-      "from": 9.6,
-      "to": 11.3
+      "from": 6.7,
+      "to": 8.4
     },
     {
       "src": "raw/uc/note-add.mp4",
-      "from": 11.3,
-      "to": 14.6
+      "from": 26.2,
+      "to": 29.5
     },
     {
       "src": "raw/uc/note-add.mp4",
-      "from": 19.9,
-      "to": 21.6
+      "from": 40.6,
+      "to": 42.5
     }
   ],
   "music": {

@@ -1,11 +1,22 @@
 import { useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createNote, deleteNote, listNotes, type NoteRow } from "@/db/notes-repository";
 import { useBreakpoint, useHingeSplit } from "@/hooks/useBreakpoint";
 import { LIST_PANE_WIDTH, READABLE_MAX_WIDTH } from "@/utils/layout";
 
 const PANE_GAP = 16;
+
+/** A title for a note saved without one: its first few words. */
+function noteTitleFromText(text: string): string {
+  const firstLine = text.split(/\r?\n/)[0]!.trim();
+  if (firstLine.length <= 40) return firstLine;
+  // Cut at a word, and drop the punctuation it ends on: "…Friday at 3pm.…" read oddly.
+  return `${firstLine
+    .slice(0, 40)
+    .replace(/\s+\S*$/, "")
+    .replace(/[\s.,;:!?]+$/, "")}…`;
+}
 
 export default function NotesScreen() {
   const [title, setTitle] = useState("");
@@ -54,41 +65,48 @@ export default function NotesScreen() {
 
   const composer = (
     <View style={styles.card}>
-      <Text style={styles.title}>Notes</Text>
+      {/* The header already says "Notes"; this card is the form for a new one. */}
+      <Text style={styles.title}>Add a note</Text>
       <TextInput
         value={title}
         onChangeText={setTitle}
-        placeholder="Title"
+        placeholder="Title (optional)"
         placeholderTextColor="#6b7280"
         style={styles.input}
       />
       <TextInput
         value={content}
         onChangeText={setContent}
-        placeholder="Write note..."
+        placeholder="Write your note…"
         placeholderTextColor="#6b7280"
         style={[styles.input, styles.multiline]}
         multiline
       />
-      <Text
-        style={styles.save}
+      {/* A real button, greyed out until there's something to save. It used to be a text link that did
+          nothing unless both fields were filled. The title is optional: it falls back to the first words. */}
+      <Pressable
+        style={[styles.save, !content.trim() && styles.saveDisabled]}
+        disabled={!content.trim()}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !content.trim() }}
         onPress={() => {
-          if (!title.trim() || !content.trim()) return;
-          const id = createNote(title.trim(), content.trim());
+          const text = content.trim();
+          if (!text) return;
+          const id = createNote(title.trim() || noteTitleFromText(text), text);
           setTitle("");
           setContent("");
           setSelectedId(id);
           setRefreshKey((k) => k + 1);
         }}
       >
-        Save Note
-      </Text>
+        <Text style={styles.saveText}>Save note</Text>
+      </Pressable>
     </View>
   );
 
   if (isTwoPane) {
     return (
-      <SafeAreaView style={styles.root}>
+      <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
         <View
           style={[styles.panes, bookSplit && { gap: PANE_GAP + bookSplit.gap }]}
           ref={bookRef}
@@ -140,10 +158,17 @@ export default function NotesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.root}>
+    // The header already covers the status bar; padding the top again left an empty band.
+    <SafeAreaView style={styles.root} edges={isWide ? ["bottom"] : []}>
       <View style={[styles.column, isWide && styles.columnWide]}>
         {composer}
         <ScrollView style={styles.list}>
+          {notes.length === 0 ? (
+            <Text style={styles.emptyHint}>
+              Notes you save here, or by saying “Add a note…” in Chat, show up below. You can ask Chat about them
+              later, like “What did I save about the dentist?”
+            </Text>
+          ) : null}
           {notes.map((note) => (
             <View key={note.id} style={styles.note}>
               <View style={styles.noteHeader}>
@@ -175,7 +200,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   multiline: { minHeight: 80, textAlignVertical: "top" },
-  save: { color: "#60a5fa", fontWeight: "700" },
+  save: { backgroundColor: "#2563eb", borderRadius: 10, paddingVertical: 11, alignItems: "center", marginTop: 2 },
+  saveDisabled: { backgroundColor: "#1e293b" },
+  saveText: { color: "#f9fafb", fontWeight: "700" },
+  emptyHint: { color: "#9ca3af", lineHeight: 20, paddingHorizontal: 4, paddingTop: 4 },
   list: { flex: 1 },
   note: { backgroundColor: "#111827", borderRadius: 10, padding: 12, marginBottom: 8 },
   noteActive: { borderWidth: 1, borderColor: "#60a5fa", backgroundColor: "#0f1b33" },

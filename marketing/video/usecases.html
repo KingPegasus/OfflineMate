@@ -62,6 +62,8 @@
   #end .tag { font: 500 42px/1.2 Inter, sans-serif; color: var(--muted); }
   #end .url { font: 700 52px/1 Outfit, sans-serif; color: var(--accent); margin-top: 14px; }
   #end .play { font: 600 32px/1 Inter, sans-serif; padding: 18px 30px; border-radius: 999px; border: 1px solid var(--line); background: rgba(15,23,42,.7); }
+  #end .note { font: 500 26px/1.35 Inter, sans-serif; color: var(--muted); opacity: .8; margin-top: 10px; }
+  #end .note:empty { display: none; }
 
   /* Flashy reel: full-screen kinetic words over the phone. */
   #pop { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
@@ -110,6 +112,7 @@
     <div class="tag">Private AI that works offline</div>
     <div class="url">offlinemate.com</div>
     <div class="play">Get it on Google Play</div>
+    <div class="note"></div>
   </div>
   <div id="flash"></div>
   <div id="bar"></div>
@@ -162,6 +165,7 @@ let TL = null;
 async function load() {
   TL = await (await fetch('/' + P.get('tl'))).json();
   window.DURATION = TL.duration;
+  end.querySelector('.note').textContent = TL.endNote || '';
   if (TL.screen) {
     video.src = '/' + TL.screen;
     await new Promise((res, rej) => { video.onloadeddata = res; video.onerror = () => rej(new Error('screen video failed to load')); });

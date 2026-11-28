@@ -1,0 +1,31 @@
+[
+  {
+    "out": "../out/usecases/thumbs/photo-short-cover-1080x1920.png",
+    "w": 1080,
+    "h": 1920,
+    "page": "thumb.html",
+    "params": {
+      "layout": "tall",
+      "kicker": "Ask about any photo",
+      "head": "No Wi-Fi?<br>Ask your <em>photos</em>",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/photo/nutrition-answer.png",
+      "cards": "usecases/shots/photo/diagram.jpg:24:830:300:-11;usecases/shots/photo/sign.jpg:715:930:280:9;usecases/shots/photo/poster.jpg:760:1510:250:-7",
+      "phoneTop": "760"
+    }
+  },
+  {
+    "out": "../out/usecases/thumbs/photo-short-youtube-1280x720.png",
+    "w": 1280,
+    "h": 720,
+    "page": "thumb.html",
+    "params": {
+      "layout": "wide",
+      "kicker": "Ask about any photo",
+      "head": "No Wi-Fi?<br>Ask your <em>photos</em>",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/photo/nutrition-answer.png",
+      "cards": "usecases/shots/photo/diagram.jpg:560:365:180:-9;usecases/shots/photo/sign.jpg:740:440:165:8"
+    }
+  }
+]

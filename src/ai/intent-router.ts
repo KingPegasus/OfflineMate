@@ -37,6 +37,16 @@ const TOOL_KEYWORDS = [
   "calendar today",
   "what's on my",
   "whats on my",
+  // "When's my next meeting?", "Join my next call" (0.14.0: the reply has the meeting's Join button)
+  "next meeting",
+  "upcoming meeting",
+  "next event",
+  "upcoming event",
+  "next appointment",
+  "next call",
+  "join my meeting",
+  "join the meeting",
+  "join my next",
   // Contacts & messaging — space-suffix phrases (not bare call/message/contact)
   "text ",
   "phone ",

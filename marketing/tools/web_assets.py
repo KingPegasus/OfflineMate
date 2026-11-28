@@ -11,8 +11,10 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 OUT = ROOT / "marketing" / "out"
 WEB = ROOT / "website"
 
-FRAMES = ["chat", "notes", "onboarding", "picker-lite", "tools", "settings", "tools-chat", "photo-chat"]
-TABLET_FRAMES = ["chat", "notes", "picker-lite", "settings", "photo-chat"]
+FRAMES = ["chat", "chat-new", "notes", "onboarding", "picker", "help", "settings", "tools-chat", "photo-chat"]
+TABLET_FRAMES = ["chat", "notes", "picker", "settings", "photo-chat"]
+# Foldable (0.14.0): unfolded and half-opened inner screen (2208x1840), and the cover screen (1080x2092).
+FOLD_FRAMES = {"fold-open-photo": (1320, 1200), "fold-half-notes": (1320, 1200), "fold-cover-photo": (480, 930)}
 
 
 def ffmpeg():
@@ -34,6 +36,11 @@ def images():
         im = Image.open(OUT / "web" / f"frame-tablet-{name}.png").convert("RGBA")
         im = im.resize((1600, 1100), Image.LANCZOS)        # shown up to ~1000 CSS px wide (chat) or ~500 (pair)
         dst = WEB / "screenshots" / f"tablet-{name}.webp"
+        im.save(dst, "WEBP", quality=82, method=6)
+        print("wrote", dst.relative_to(ROOT), dst.stat().st_size // 1024, "KB")
+    for name, size in FOLD_FRAMES.items():
+        im = Image.open(OUT / "web" / f"frame-{name}.png").convert("RGBA").resize(size, Image.LANCZOS)
+        dst = WEB / "screenshots" / f"{name}.webp"
         im.save(dst, "WEBP", quality=82, method=6)
         print("wrote", dst.relative_to(ROOT), dst.stat().st_size // 1024, "KB")
     og = Image.open(OUT / "web" / "og-image.png").convert("RGB")

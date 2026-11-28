@@ -48,8 +48,15 @@ export interface ModelSpec {
 
 export interface TierSpec {
   key: ModelTier;
+  /** Technical tier name (website, store listing, Advanced in Settings). */
   name: "Lite" | "Standard" | "Full";
+  /** Plain-language name shown in the app. */
+  label: "Light" | "Balanced" | "Smartest";
+  /** One everyday sentence on the trade-off, for onboarding and Settings. */
+  summary: string;
   targetRam: string;
+  /** "6–8 GB RAM": how much memory a phone needs for this size, shown on the size buttons. */
+  ramLabel: string;
   estimatedDownload: string;
   primary: ModelSpec;
   alternates: ModelSpec[];
@@ -252,10 +259,15 @@ export const MODEL_TIERS: TierSpec[] = [
   {
     key: "lite",
     name: "Lite",
+    label: "Light",
+    summary: "Fastest and the smallest download. Works on older phones; answers are simpler.",
     targetRam: "3-4 GB RAM",
+    ramLabel: "3–4 GB RAM",
     estimatedDownload: "~430 MB-1.3 GB",
-    primary: smol135m,
-    alternates: [smol360m, lfm25_350m, lfm25_vl_450m],
+    // Photo models are the defaults since 0.14.0; the old text-only defaults stay as alternates, and
+    // settings migration v8 keeps existing users on them (OLD_TIER_DEFAULT_IDS).
+    primary: lfm25_vl_450m,
+    alternates: [smol135m, smol360m, lfm25_350m],
     futureUpgrade: {
       id: "qwen3.5-0.8b",
       note: "Exported, but the 8da4w file is ~1.4 GB; too large for Lite until a smaller export ships.",
@@ -264,10 +276,13 @@ export const MODEL_TIERS: TierSpec[] = [
   {
     key: "standard",
     name: "Standard",
+    label: "Balanced",
+    summary: "Good answers at a comfortable speed. Suits most phones from the last few years.",
     targetRam: "6-8 GB RAM",
-    estimatedDownload: "~2.5 GB",
-    primary: gemma4_e2b,
-    alternates: [qwen17b, qwen35_2b, minicpm5_2b, smol17b, llama1b, lfm25_vl_1_6b],
+    ramLabel: "6–8 GB RAM",
+    estimatedDownload: "~2.3 GB",
+    primary: lfm25_vl_1_6b,
+    alternates: [gemma4_e2b, qwen17b, qwen35_2b, minicpm5_2b, smol17b, llama1b],
     futureUpgrade: {
       id: "qwen3.5-2b",
       note: "Available as a Standard alternate in Settings for side-by-side testing.",
@@ -276,16 +291,26 @@ export const MODEL_TIERS: TierSpec[] = [
   {
     key: "full",
     name: "Full",
+    label: "Smartest",
+    summary: "For newer phones with plenty of memory. Can also run the largest models, which give the best answers.",
     targetRam: "10-12+ GB RAM",
-    estimatedDownload: "~2.6 GB",
-    primary: qwen4b,
-    alternates: [lfm25_2_6b, llama3b, lfm25_vl_1_6b, gemma4_e2b_multimodal],
+    ramLabel: "10 GB+ RAM",
+    estimatedDownload: "~2.3-4.2 GB",
+    primary: lfm25_vl_1_6b,
+    alternates: [qwen4b, lfm25_2_6b, llama3b, gemma4_e2b_multimodal],
     futureUpgrade: {
       id: "qwen3.5-4b",
       note: "Not exported for ExecuTorch as of react-native-executorch 0.11.0.",
     },
   },
 ];
+
+/** Tier defaults before 0.14.0, when they were text-only. Settings migration v8 pins them for existing users. */
+export const OLD_TIER_DEFAULT_IDS: Record<ModelTier, string> = {
+  lite: "smollm2-135m",
+  standard: "gemma4-e2b",
+  full: "qwen3-4b",
+};
 
 export function getTierSpec(tier: ModelTier): TierSpec {
   return MODEL_TIERS.find((it) => it.key === tier) ?? MODEL_TIERS[1];
@@ -330,12 +355,12 @@ export function getVisionModelsForTier(tier: ModelTier): ModelSpec[] {
 export function visionUnsupportedMessage(tier: ModelTier, modelId?: string | null): string | null {
   const spec = resolveModelForTier(tier, modelId);
   if (modelSupportsVision(spec)) return null;
-  const tierName = getTierSpec(tier).name;
+  const tierName = getTierSpec(tier).label;
   const options = getVisionModelsForTier(tier).map((m) => `${m.family} ${m.size}`);
   const pick =
     options.length > 0
       ? `To ask about images, pick ${options.join(" or ")} for ${tierName} in Settings.`
-      : `No ${tierName} model can read images yet; switch to a tier with a vision model in Settings.`;
+      : `No ${tierName} model can read images yet; choose a model with the image icon in Settings.`;
   return `${spec.family} ${spec.size} can only read text. ${pick}`;
 }
 
@@ -353,11 +378,16 @@ function modelFileLabelFromSource(spec: ModelSpec): string {
   return spec.id;
 }
 
-/** Human-readable active model for UI (tier + family + size). */
+/** Human-readable active model for UI (plain tier label + family + size). */
 export function getActiveModelDisplayName(tier: ModelTier, modelId?: string | null): string {
   const tierSpec = getTierSpec(tier);
   const spec = resolveModelForTier(tier, modelId);
-  return `${tierSpec.name} · ${spec.family} ${spec.size}`;
+  return `${tierSpec.label} · ${spec.family} ${spec.size}`;
+}
+
+/** "Gemma 4 E2B": the model's own name, for pickers and the Advanced section. */
+export function modelDisplayName(spec: ModelSpec): string {
+  return `${spec.family} ${spec.size}`;
 }
 
 /** Human-readable primary model for UI (tier + family + size). */

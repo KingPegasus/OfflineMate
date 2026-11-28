@@ -29,7 +29,7 @@
     "h": 1920,
     "params": {
       "layout": "store",
-      "shot": "tools",
+      "shot": "help",
       "kicker": "Built-in tools",
       "head": "More than <em>chat</em>",
       "sub": "Calendar, alarms, reminders, contacts and notes."
@@ -65,7 +65,7 @@
     "h": 1920,
     "params": {
       "layout": "store",
-      "shot": "picker-lite",
+      "shot": "picker",
       "kicker": "Open models",
       "head": "Choose your <em>model</em>",
       "sub": "Image icon = reads photos. Gemma, Qwen, LFM and more."
@@ -143,23 +143,23 @@
     }
   },
   {
-    "out": "../out/web/frame-picker-lite.png",
+    "out": "../out/web/frame-picker.png",
     "w": 640,
     "h": 1320,
     "transparent": true,
     "params": {
       "layout": "device",
-      "shot": "picker-lite"
+      "shot": "picker"
     }
   },
   {
-    "out": "../out/web/frame-tools.png",
+    "out": "../out/web/frame-help.png",
     "w": 640,
     "h": 1320,
     "transparent": true,
     "params": {
       "layout": "device",
-      "shot": "tools"
+      "shot": "help"
     }
   },
   {
@@ -215,13 +215,13 @@
     }
   },
   {
-    "out": "../out/web/frame-tablet-picker-lite.png",
+    "out": "../out/web/frame-tablet-picker.png",
     "w": 1600,
     "h": 1100,
     "transparent": true,
     "params": {
       "layout": "tablet-device",
-      "shot": "tablet-picker-lite",
+      "shot": "tablet-picker",
       "ar": "1.6"
     }
   },
@@ -245,6 +245,49 @@
       "layout": "tablet-device",
       "shot": "tablet-photo-chat",
       "ar": "1.6"
+    }
+  },
+  {
+    "out": "../out/web/frame-chat-new.png",
+    "w": 640,
+    "h": 1320,
+    "transparent": true,
+    "params": {
+      "layout": "device",
+      "shot": "chat-new"
+    }
+  },
+  {
+    "out": "../out/web/frame-fold-open-photo.png",
+    "w": 1320,
+    "h": 1200,
+    "transparent": true,
+    "params": {
+      "layout": "tablet-device",
+      "shot": "fold-open-photo",
+      "ar": "1.2"
+    }
+  },
+  {
+    "out": "../out/web/frame-fold-half-notes.png",
+    "w": 1320,
+    "h": 1200,
+    "transparent": true,
+    "params": {
+      "layout": "tablet-device",
+      "shot": "fold-half-notes",
+      "ar": "1.2"
+    }
+  },
+  {
+    "out": "../out/web/frame-fold-cover-photo.png",
+    "w": 640,
+    "h": 1240,
+    "transparent": true,
+    "params": {
+      "layout": "device",
+      "shot": "fold-cover-photo",
+      "ar": "0.516"
     }
   },
   {
@@ -383,7 +426,7 @@
     "h": 1600,
     "params": {
       "layout": "tablet",
-      "shot": "tablet-picker-lite",
+      "shot": "tablet-picker",
       "ar": "1.6",
       "kicker": "Open models",
       "head": "Choose your <em>model</em>",

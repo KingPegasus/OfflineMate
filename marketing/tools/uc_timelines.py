@@ -20,15 +20,20 @@ ORDER = ["alarm", "note-add", "note-recall", "calendar", "contact", "tech"]
 # T: typing starts, D: typing done, S: sent. segs: what plays after the send, [from, to, kind].
 #   kind: wait (idle, already trimmed), reply (starts when the reply appears), result (another app/tab),
 #   stream (model writing the answer).
+# P (optional): where the first clip starts, when something happens before typing (the photo being attached).
+# Re-recorded for 0.14.0 (events + 1.0 s, checked with frame differences); "tech" is still the 0.11.0 clip. The
+# model's wait on the emulator (15-60 s) is cut to the "wait" segment.
 CUTS = {
-    "alarm": dict(T=3.31, D=4.74, S=5.59, segs=[(9.6, 11.3, "wait"), (11.3, 11.6, "result"), (12.85, 16.1, "result"), (16.1, 18.9, "reply")]),
-    "note-add": dict(T=3.28, D=5.36, S=6.21, segs=[(9.6, 11.3, "wait"), (11.3, 14.6, "reply"), (19.9, 21.6, "result")]),
-    "note-recall": dict(T=3.30, D=4.94, S=5.80, segs=[(6.4, 8.1, "wait"), (8.1, 12.0, "reply")]),
-    "calendar": dict(T=3.30, D=4.58, S=5.43, segs=[(8.3, 10.0, "wait"), (10.0, 13.8, "reply")]),
-    "contact": dict(T=3.32, D=4.11, S=4.96, segs=[(7.2, 8.9, "wait"), (8.9, 12.6, "reply")]),
+    "alarm": dict(T=3.10, D=4.54, S=5.38, segs=[(6.0, 7.7, "wait"), (32.1, 35.6, "result"), (42.2, 45.2, "reply")]),
+    "note-add": dict(T=3.09, D=5.22, S=6.06, segs=[(6.7, 8.4, "wait"), (26.2, 29.5, "reply"), (40.6, 42.5, "result")]),
+    "note-recall": dict(T=2.42, D=4.71, S=5.45, segs=[(6.0, 7.7, "wait"), (21.3, 24.2, "reply")]),
+    "calendar": dict(T=3.09, D=4.24, S=5.08, segs=[(5.7, 7.4, "wait"), (25.3, 29.1, "reply")]),
+    "contact": dict(T=3.10, D=3.90, S=4.74, segs=[(5.4, 7.1, "wait"), (25.5, 29.2, "reply")]),
     "tech": dict(T=3.31, D=4.99, S=5.83, segs=[(6.43, 14.6, "stream")]),
     # Recorded online (weather needs the internet): a short only, not in the airplane-mode compilation.
-    "weather": dict(T=3.32, D=5.05, S=5.93, segs=[(8.9, 10.6, "wait"), (10.6, 14.6, "reply")]),
+    "weather": dict(T=3.12, D=4.74, S=5.59, segs=[(6.2, 7.9, "wait"), (26.2, 30.2, "reply")]),
+    # The photo picked in the system picker, the question typed, then the answer streaming in.
+    "photo": dict(P=4.4, T=7.03, D=8.15, S=8.88, segs=[(9.5, 11.2, "wait"), (68.9, 74.0, "stream")]),
 }
 REPLY_SHOWS = 0.15      # after a reply segment starts
 STREAM_ANSWER = 1.6     # into a stream: enough of the first sentence is on screen
@@ -43,9 +48,10 @@ def case_block(cid, t0, hold, num=None):
     """Clips, scene and voiceover for one use case starting at t0. Returns (clips, scene, vo, end_time)."""
     c, k = CASES[cid], CUTS[cid]
     src = f"raw/uc/{cid}.mp4"
-    clips = [{"src": src, "from": round(k["T"] - 0.5, 2), "to": round(k["S"] + 0.6, 2), "hold": hold}]
-    t = t0 + hold + (k["S"] + 0.6 - (k["T"] - 0.5))
-    prompt_at = t0 + hold + 0.5
+    start = k.get("P", k["T"] - 0.5)
+    clips = [{"src": src, "from": round(start, 2), "to": round(k["S"] + 0.6, 2), "hold": hold}]
+    t = t0 + hold + (k["S"] + 0.6 - start)
+    prompt_at = t0 + hold + (k["T"] - start)
     cps = len(c["prompt"]) / max(0.4, k["D"] - k["T"])
     answer_at = after_at = None
     for a, b, kind in k["segs"]:
@@ -161,6 +167,10 @@ def reel():
 
 
 if __name__ == "__main__":
-    for cid in ORDER + ["weather"]: short(cid)
-    compilation()
-    reel()
+    # `python uc_timelines.py alarm photo` writes just those shorts; with no arguments, everything.
+    if len(sys.argv) > 1:
+        for cid in sys.argv[1:]: short(cid)
+    else:
+        for cid in ORDER + ["weather", "photo"]: short(cid)
+        compilation()
+        reel()

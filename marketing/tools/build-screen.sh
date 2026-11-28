@@ -16,21 +16,25 @@ F=""
 # Intro 0-4.6: hold the first chat frame, then the start of clip 1.
 F+="[0:v]trim=0:0.04,setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration=3,trim=0:2.6,setpts=PTS-STARTPTS[a0];"
 F+=$(seg 0 0 2.0 a1)
-# 01 Airplane mode 4.6-9.0
-F+=$(seg 0 2.0 6.4 b)
-# 02 Ask 9.0-17.5: typing, then the full answer at real speed
-F+=$(seg 0 10.9 13.6 c1)
-F+=$(seg 0 14.0 19.8 c2)
-# 03 Notes 17.5-23.0
-F+=$(seg 1 3.3 5.2 d1)
-F+=$(seg 1 7.6 9.6 d2)
-F+=$(seg 1 11.9 13.5 d3)
-# 04 Tiers 23.0-29.0: tier list, then the Lite model picker (held under the end card)
-F+=$(seg 2 3.4 6.4 e1)
-F+="[2:v]trim=18.0:21.0,setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration=6[e2];"
-# Android re-posts a system notification icon next to the clock; paint over it while the white app status bar is on screen
-# (not under quick settings, and not under the model picker, where the status bar is dimmed).
-F+="[a0][a1][b][c1][c2][d1][d2][d3][e1][e2]concat=n=10:v=1:a=0,trim=0:35,setpts=PTS-STARTPTS,drawbox=x=150:y=28:w=80:h=90:color=white:t=fill:enable='not(between(t,4.7,8.7))*lt(t,25.95)'[v]"
+# Clips re-recorded for 0.14.0 (Balanced, LFM 2.5 VL 1.6B; the new chat, Notes and Settings screens).
+# 01 Airplane mode 4.6-9.0: quick settings open, Airplane mode on, closing
+F+=$(seg 0 3.4 7.8 b)
+# 02 Ask 9.0-17.5: typing, the message sent, then the full answer at real speed (only the wait for the first word is cut)
+F+=$(seg 0 8.7 11.0 c1)
+F+=$(seg 0 13.4 13.9 cs)
+F+=$(seg 0 16.1 21.8 c2)
+# 03 Notes 17.5-23.0: the Notes tab, typing a note, Save note
+F+=$(seg 1 3.4 5.0 d1)
+F+=$(seg 1 5.9 8.3 d2)
+F+=$(seg 1 10.7 12.2 d3)
+# 04 Sizes 23.0-29.0: Light, Balanced and Smartest in Settings, then the Light model sheet (held under the end card)
+F+=$(seg 2 5.0 7.0 e1)
+F+="[2:v]trim=9.6:13.6,setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration=6[e2];"
+# Paint over status bar icons demo mode doesn't hide: the location icons before airplane mode goes on, and the
+# notification icons Android posts next to the clock after it (not while quick settings is open).
+F+="[a0][a1][b][c1][cs][c2][d1][d2][d3][e1][e2]concat=n=11:v=1:a=0,trim=0:35,setpts=PTS-STARTPTS,"
+F+="drawbox=x=680:y=28:w=250:h=84:color=white:t=fill:enable='lt(t,4.75)',"
+F+="drawbox=x=150:y=28:w=180:h=84:color=white:t=fill:enable='between(t,8.9,17.5)'[v]"
 "$FF" -y -loglevel error -i raw/c1-cfr.mp4 -i raw/c2-cfr.mp4 -i raw/c3-cfr.mp4 -filter_complex "$F" -map "[v]" \
   -c:v libx264 -preset medium -crf 14 -pix_fmt yuv420p -r 30 raw/screen.mp4
 echo "wrote raw/screen.mp4"

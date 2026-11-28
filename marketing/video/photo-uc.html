@@ -1,0 +1,243 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- Photo-question use-case images for the "Ask about a photo" short. Render with ?s=<scene>. -->
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;600;800&family=Bebas+Neue&family=Noto+Sans+JP:wght@700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1440px; overflow: hidden; font-family: Inter, sans-serif; }
+  .scene { display: none; width: 1080px; height: 1440px; position: relative; overflow: hidden; }
+  .scene.on { display: block; }
+
+  /* 1 homework */
+  #homework { background: #8a6b4a radial-gradient(circle at 30% 20%, #a07c58, #6d5236); }
+  #homework .paper { position: absolute; left: 90px; top: 80px; width: 900px; height: 1280px; transform: rotate(-2deg);
+    background: #fdfcf6 repeating-linear-gradient(#fdfcf6 0 63px, #9cc3e6 63px 65px); box-shadow: 0 20px 50px rgba(0,0,0,.45);
+    font-family: Caveat, cursive; color: #1d2d6b; padding: 150px 80px 0 150px; }
+  #homework .paper::before { content: ""; position: absolute; left: 120px; top: 0; bottom: 0; width: 3px; background: #e88; }
+  #homework h2 { position: absolute; top: 50px; left: 150px; font-size: 64px; font-weight: 700; }
+  #homework .name { position: absolute; top: 60px; right: 60px; font-size: 48px; }
+  #homework p { font-size: 78px; line-height: 130px; }
+  #homework .pencil { position: absolute; right: -40px; bottom: 120px; width: 600px; height: 46px; transform: rotate(-30deg);
+    background: linear-gradient(90deg, #333 0 4%, #f1c27d 4% 12%, #f5b700 12% 92%, #e8a0a0 92%); border-radius: 6px; box-shadow: 0 8px 18px rgba(0,0,0,.4); }
+
+  /* 2 diagram */
+  #diagram { background: #ece6d8; }
+  #diagram .page { position: absolute; inset: 60px 70px; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.25); padding: 60px; }
+  #diagram h2 { font-size: 54px; color: #0b4f8a; font-weight: 800; }
+  #diagram .sub { font-size: 30px; color: #555; margin: 10px 0 30px; }
+  #diagram svg { width: 100%; }
+  #diagram .cap { font-size: 28px; color: #333; margin-top: 20px; line-height: 1.4; }
+
+  /* 3 nutrition */
+  #nutrition { background: linear-gradient(135deg, #1a1a1a, #3a3a3a); }
+  #nutrition .wrap { position: absolute; left: 110px; top: 60px; width: 860px; height: 1320px; border-radius: 30px;
+    background: linear-gradient(180deg, #e63946 0 18%, #f1faee 18%); box-shadow: 0 20px 60px rgba(0,0,0,.6); padding: 30px 70px; }
+  #nutrition .brand { font-family: "Bebas Neue"; font-size: 110px; color: #fff; letter-spacing: 4px; text-align: center; line-height: 1.1; }
+  #nutrition .label { margin-top: 70px; border: 4px solid #000; padding: 20px 30px; background: #fff; color: #000; }
+  #nutrition .label h3 { font-size: 72px; font-weight: 800; border-bottom: 14px solid #000; padding-bottom: 6px; }
+  #nutrition .row { display: flex; justify-content: space-between; font-size: 40px; padding: 12px 0; border-bottom: 2px solid #000; }
+  #nutrition .row b { font-weight: 800; }
+  #nutrition .ind { padding-left: 40px; }
+  #nutrition .thick { border-bottom: 8px solid #000; }
+
+  /* 4 poster */
+  #poster { background: #3d3d3d url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23444'/%3E%3Ccircle cx='10' cy='10' r='2' fill='%23555'/%3E%3C/svg%3E"); }
+  #poster .p { position: absolute; left: 130px; top: 70px; width: 820px; height: 1300px; transform: rotate(1.5deg);
+    background: linear-gradient(160deg, #ff006e, #8338ec 55%, #3a0ca3); box-shadow: 0 20px 50px rgba(0,0,0,.6); color: #fff; text-align: center; padding: 80px 50px; }
+  #poster .pin { position: absolute; top: 20px; left: 50%; width: 30px; height: 30px; border-radius: 50%; background: #ffd60a; box-shadow: 0 4px 6px rgba(0,0,0,.5); }
+  #poster .k { font-size: 36px; letter-spacing: 8px; font-weight: 600; }
+  #poster .t { font-family: "Bebas Neue"; font-size: 210px; line-height: .9; margin: 40px 0; }
+  #poster .d { font-family: "Bebas Neue"; font-size: 96px; color: #ffd60a; }
+  #poster .v { font-size: 46px; font-weight: 800; margin-top: 20px; }
+  #poster .s { font-size: 34px; margin-top: 50px; line-height: 1.5; }
+  #poster .f { position: absolute; bottom: 60px; left: 0; right: 0; font-size: 34px; font-weight: 600; }
+
+  /* 5 bill */
+  #bill { background: #5a3a24 radial-gradient(circle at 70% 30%, #7a5236, #3e2716); }
+  #bill .r { position: absolute; left: 230px; top: 70px; width: 620px; height: 1300px; background: #fffef8; transform: rotate(-1deg);
+    box-shadow: 0 20px 50px rgba(0,0,0,.5); font-family: "Courier New", monospace; color: #222; padding: 60px 50px; font-size: 34px; }
+  #bill .c { text-align: center; }
+  #bill .big { font-size: 46px; font-weight: 700; }
+  #bill .ln { display: flex; justify-content: space-between; padding: 8px 0; }
+  #bill hr { border: none; border-top: 3px dashed #444; margin: 22px 0; }
+  #bill .tot { font-size: 46px; font-weight: 700; }
+
+  /* 6 error */
+  #error { background: #101418; }
+  #error .lap { position: absolute; left: 40px; top: 160px; width: 1000px; height: 700px; background: #222; border-radius: 24px; padding: 30px; transform: perspective(1400px) rotateX(6deg); }
+  #error .scr { width: 100%; height: 100%; background: linear-gradient(135deg, #1e3c72, #2a5298); position: relative; border-radius: 6px; overflow: hidden; }
+  #error .dlg { position: absolute; left: 140px; top: 130px; width: 660px; background: #f3f3f3; border-radius: 10px; box-shadow: 0 20px 50px rgba(0,0,0,.5); padding: 40px; color: #111; }
+  #error .dlg h3 { font-size: 40px; display: flex; align-items: center; gap: 20px; }
+  #error .ic { width: 56px; height: 56px; border-radius: 50%; background: #c42b1c; color: #fff; font-size: 40px; display: grid; place-items: center; font-weight: 800; }
+  #error .dlg p { font-size: 28px; margin: 24px 0; line-height: 1.4; }
+  #error .code { font-family: Consolas, monospace; font-size: 26px; color: #555; }
+  #error .btn { margin-top: 26px; text-align: right; }
+  #error .btn span { display: inline-block; background: #0067c0; color: #fff; padding: 12px 40px; border-radius: 6px; font-size: 26px; }
+  #error .base { position: absolute; left: 0; top: 860px; width: 1080px; height: 60px; background: linear-gradient(#bbb, #777); border-radius: 0 0 40px 40px; }
+  #error .desk { position: absolute; left: 0; right: 0; top: 920px; bottom: 0; background: linear-gradient(#3b2a1e, #22170f); }
+
+  /* 7 sign */
+  #sign { background: linear-gradient(#9ecbef, #dceefc 60%, #888 60%); }
+  #sign .pole { position: absolute; left: 520px; top: 600px; width: 40px; height: 900px; background: #777; }
+  #sign .b { position: absolute; left: 140px; top: 160px; width: 800px; background: #0a5c36; border: 10px solid #fff; border-radius: 20px; color: #fff; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+  #sign .ln { display: flex; justify-content: space-between; align-items: center; padding: 22px 0; border-bottom: 3px solid rgba(255,255,255,.4); }
+  #sign .ln:last-child { border: none; }
+  #sign .jp { font-family: "Noto Sans JP"; font-size: 72px; }
+  #sign .ar { font-size: 80px; font-weight: 800; }
+
+  /* 8 fridge */
+  #fridge { background: #dfe7ec; }
+  #fridge .in { position: absolute; inset: 40px 60px; background: linear-gradient(#f7fbfd, #e3ecf1); border-radius: 30px; border: 14px solid #cfd8dd; }
+  #fridge .shelf { position: absolute; left: 0; right: 0; height: 16px; background: rgba(180,200,210,.7); }
+  .item { position: absolute; display: grid; place-items: center; font-weight: 800; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="scene" id="homework">
+  <div class="paper">
+    <h2>Algebra – Q4</h2>
+    <div class="name">Ali, Gr 9</div>
+    <p>Solve for x:</p>
+    <p>&nbsp;&nbsp;&nbsp;3x + 7 = 22</p>
+    <p>&nbsp;</p>
+    <p>x = ?</p>
+  </div>
+  <div class="pencil"></div>
+</div>
+
+<div class="scene" id="diagram">
+  <div class="page">
+    <h2>Figure 5.2 The Water Cycle</h2>
+    <div class="sub">Chapter 5 · Earth Science</div>
+    <svg viewBox="0 0 900 820" font-family="Inter" font-weight="700">
+      <rect width="900" height="520" fill="#cfe8fb"/>
+      <circle cx="120" cy="100" r="60" fill="#ffc300"/>
+      <ellipse cx="560" cy="110" rx="160" ry="55" fill="#fff"/><ellipse cx="640" cy="80" rx="100" ry="50" fill="#fff"/>
+      <path d="M0 520 L0 600 L900 600 L900 380 L700 220 L560 400 L440 520 Z" fill="#6a994e"/>
+      <rect y="600" width="900" height="220" fill="#1d6fb8"/>
+      <g stroke="#c1121f" stroke-width="8" fill="none" marker-end="url(#a)">
+        <path d="M200 640 C 200 450, 300 250, 420 150"/>
+        <path d="M600 170 L 600 160"/>
+        <path d="M720 170 L 780 360"/>
+        <path d="M720 420 C 650 520, 600 560, 520 620"/>
+      </g>
+      <defs><marker id="a" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#c1121f"/></marker></defs>
+      <g fill="#4ea8de"><path d="M760 200 l-6 20 h12z"/><path d="M790 230 l-6 20 h12z"/><path d="M820 200 l-6 20 h12z"/></g>
+      <g font-size="34" fill="#111">
+        <text x="70" y="420">Evaporation</text>
+        <text x="420" y="60">Condensation</text>
+        <text x="660" y="330">Precipitation</text>
+        <text x="500" y="500">Runoff</text>
+        <text x="330" y="720" fill="#fff">Collection</text>
+      </g>
+    </svg>
+    <div class="cap">Water evaporates, condenses into clouds, falls as precipitation and collects in oceans, lakes and rivers.</div>
+  </div>
+</div>
+
+<div class="scene" id="nutrition">
+  <div class="wrap">
+    <div class="brand">PEAK BAR<br><span style="font-size:60px">CHOCOLATE PEANUT</span></div>
+    <div class="label">
+      <h3>Nutrition Facts</h3>
+      <div class="row thick"><span>Serving size</span><b>1 bar (60g)</b></div>
+      <div class="row thick"><b style="font-size:52px">Calories</b><b style="font-size:52px">230</b></div>
+      <div class="row"><b>Total Fat</b><span>9g</span></div>
+      <div class="row ind"><span>Saturated Fat</span><span>3g</span></div>
+      <div class="row"><b>Sodium</b><span>180mg</span></div>
+      <div class="row"><b>Total Carbohydrate</b><span>24g</span></div>
+      <div class="row ind"><span>Dietary Fiber</span><span>5g</span></div>
+      <div class="row ind"><span>Total Sugars</span><span>6g</span></div>
+      <div class="row thick"><b>Protein</b><b>20g</b></div>
+    </div>
+  </div>
+</div>
+
+<div class="scene" id="poster">
+  <div class="p">
+    <div class="pin"></div>
+    <div class="k">STUDENT UNION PRESENTS</div>
+    <div class="t">SPRING<br>BEATS</div>
+    <div class="d">FRI 14 MARCH · 7 PM</div>
+    <div class="v">Main Quad, North Campus</div>
+    <div class="s">Live DJs · Food trucks · Open mic<br>Free entry with student ID</div>
+    <div class="f">Tickets for guests: $5</div>
+  </div>
+</div>
+
+<div class="scene" id="bill">
+  <div class="r">
+    <div class="c big">SLICE HOUSE</div>
+    <div class="c">Pizza &amp; Shakes</div>
+    <div class="c">Table 6 · Guests 4</div>
+    <hr>
+    <div class="ln"><span>2 Large Pizza</span><span>36.00</span></div>
+    <div class="ln"><span>1 Garlic Bread</span><span>6.00</span></div>
+    <div class="ln"><span>4 Milkshake</span><span>20.00</span></div>
+    <hr>
+    <div class="ln"><span>Subtotal</span><span>62.00</span></div>
+    <div class="ln"><span>Tax</span><span>6.00</span></div>
+    <hr>
+    <div class="ln tot"><span>TOTAL</span><span>$68.00</span></div>
+    <hr>
+    <div class="c">Thank you!</div>
+  </div>
+</div>
+
+<div class="scene" id="error">
+  <div class="lap"><div class="scr">
+    <div class="dlg">
+      <h3><span class="ic">!</span>Bluetooth</h3>
+      <p>Couldn't connect to "Buds Pro". Make sure the device is turned on, charged and in pairing mode.</p>
+      <div class="code">Error code: 0x80070490</div>
+      <div class="btn"><span>Close</span></div>
+    </div>
+  </div></div>
+  <div class="base"></div>
+  <div class="desk"></div>
+</div>
+
+<div class="scene" id="sign">
+  <div class="pole"></div>
+  <div class="b">
+    <div class="ln"><span class="jp">出口</span><span class="ar">↑</span></div>
+    <div class="ln"><span class="jp">トイレ</span><span class="ar">→</span></div>
+    <div class="ln"><span class="jp">駅</span><span class="ar">←</span></div>
+  </div>
+</div>
+
+<div class="scene" id="fridge">
+  <div class="in">
+    <div class="shelf" style="top:440px"></div>
+    <div class="shelf" style="top:900px"></div>
+    <!-- top shelf: eggs, milk -->
+    <div class="item" style="left:60px;top:300px;width:360px;height:140px;background:#e9d8a6;border-radius:12px">
+      <div style="display:flex;gap:10px">
+        <span style="width:60px;height:80px;border-radius:50%;background:#fff3e0;display:inline-block"></span>
+        <span style="width:60px;height:80px;border-radius:50%;background:#fff3e0;display:inline-block"></span>
+        <span style="width:60px;height:80px;border-radius:50%;background:#fff3e0;display:inline-block"></span>
+        <span style="width:60px;height:80px;border-radius:50%;background:#fff3e0;display:inline-block"></span>
+      </div></div>
+    <div class="item" style="left:480px;top:120px;width:170px;height:320px;background:#fff;border:6px solid #2a6fdb;border-radius:20px 20px 8px 8px;color:#2a6fdb;font-size:36px">MILK</div>
+    <div class="item" style="left:700px;top:240px;width:200px;height:200px;background:#ffd166;border-radius:16px;font-size:34px;color:#7a4b00">CHEESE</div>
+    <!-- middle shelf: tomatoes, spinach, bread -->
+    <div class="item" style="left:60px;top:780px;width:120px;height:120px;border-radius:50%;background:#e63946"></div>
+    <div class="item" style="left:170px;top:790px;width:110px;height:110px;border-radius:50%;background:#d62828"></div>
+    <div class="item" style="left:330px;top:720px;width:260px;height:180px;background:#2d6a4f;border-radius:20px;color:#d8f3dc;font-size:34px">SPINACH</div>
+    <div class="item" style="left:640px;top:700px;width:260px;height:200px;background:#c68b59;border-radius:60px 60px 16px 16px;color:#fff;font-size:34px">BREAD</div>
+    <!-- bottom: onions, butter -->
+    <div class="item" style="left:80px;top:1180px;width:130px;height:130px;border-radius:50%;background:#d4a373"></div>
+    <div class="item" style="left:220px;top:1190px;width:120px;height:120px;border-radius:50%;background:#d4a373"></div>
+    <div class="item" style="left:420px;top:1210px;width:260px;height:110px;background:#fff3b0;border-radius:12px;font-size:32px;color:#8a6d00">BUTTER</div>
+  </div>
+</div>
+
+<script>
+  const s = new URLSearchParams(location.search).get('s') || 'homework';
+  document.getElementById(s).classList.add('on');
+</script>
+</body>
+</html>

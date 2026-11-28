@@ -11,6 +11,14 @@ export interface ChatMessage {
   imageUri?: string;
   /** Generation speed for assistant replies; null when not measured (shown as "n/a"). */
   tokensPerSecond?: number | null;
+  /** Buttons under an assistant reply, e.g. "Join Google Meet" for a calendar event's meeting link. */
+  links?: MessageLink[];
+}
+
+/** A button under a chat reply that opens a link (only meeting links on known services, see meeting-link.ts). */
+export interface MessageLink {
+  label: string;
+  url: string;
 }
 
 export interface ChatConversation {
@@ -22,6 +30,12 @@ export interface ChatConversation {
 
 export type ModelTier = "lite" | "standard" | "full";
 
+/**
+ * Why chat can't answer until something is set up: the model isn't downloaded (or its download was
+ * incomplete), it's downloaded but couldn't start, or a photo was sent to a model that can't see.
+ */
+export type ModelSetupKind = "not-downloaded" | "load-failed" | "no-vision";
+
 export interface ToolResult {
   ok: boolean;
   message: string;
@@ -30,5 +44,7 @@ export interface ToolResult {
   errorCode?: "PERMISSION_DENIED" | "NETWORK_UNAVAILABLE" | "PARSE_FAILURE" | "TIMEOUT" | "UNKNOWN";
   /** Whether the caller may safely retry. */
   retryable?: boolean;
+  /** Buttons for the reply (kept out of the model's prompt), e.g. meeting links from the calendar. */
+  links?: MessageLink[];
 }
 

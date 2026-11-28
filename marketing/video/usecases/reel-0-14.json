@@ -1,0 +1,244 @@
+{
+  "id": "reel-0-14",
+  "style": "flashy",
+  "duration": 25.5,
+  "screen": "raw/uc/reel-0-14-screen.mp4",
+  "screenStart": 0,
+  "phone": {
+    "in": 0
+  },
+  "scenes": [
+    {
+      "t": [
+        0.0,
+        4.688
+      ],
+      "num": "01",
+      "kicker": "No internet",
+      "chip": "Airplane mode on",
+      "hook": "It reads <em>your photos</em>",
+      "promptAt": 0.65,
+      "prompt": "Which drink is cheapest?",
+      "cps": 42.9,
+      "sentAt": 1.435,
+      "answerAt": 1.885,
+      "answer": "The cheapest drink is the espresso, priced at $2.50."
+    },
+    {
+      "t": [
+        4.688,
+        9.375
+      ],
+      "num": "02",
+      "kicker": "Travel",
+      "chip": "Airplane mode on",
+      "hook": "Translate <em>any sign</em>",
+      "promptAt": 5.337,
+      "prompt": "Translate this sign",
+      "cps": 46.9,
+      "sentAt": 5.967,
+      "answerAt": 6.418,
+      "answer": "The sign indicates directions for \"出口\" (exit), \"トイレ\" (toilet), and \"駅\" (station)."
+    },
+    {
+      "t": [
+        9.375,
+        13.594
+      ],
+      "num": "03",
+      "kicker": "Food",
+      "chip": "Airplane mode on",
+      "hook": "What's for <em>dinner?</em>",
+      "promptAt": 10.025,
+      "prompt": "What can I cook with this?",
+      "cps": 45.2,
+      "sentAt": 10.825,
+      "answerAt": 11.275,
+      "answer": "You can make a sandwich with the bread and cheese."
+    },
+    {
+      "t": [
+        13.594,
+        16.406
+      ],
+      "num": "04",
+      "kicker": "Reminders",
+      "chip": "Airplane mode on",
+      "hook": "Sets <em>reminders</em>",
+      "promptAt": 13.644,
+      "prompt": "Remind me in 20 minutes to stretch",
+      "cps": 38.0,
+      "sentAt": 14.764,
+      "answerAt": 15.214,
+      "answer": "Reminder set to go off in 20 minutes: stretch."
+    },
+    {
+      "t": [
+        16.406,
+        19.688
+      ],
+      "num": "05",
+      "kicker": "Notes",
+      "chip": "Airplane mode on",
+      "hook": "Finds <em>your notes</em>",
+      "promptAt": 16.456,
+      "prompt": "What did I save about the dentist?",
+      "cps": 29.7,
+      "sentAt": 17.826,
+      "answerAt": 18.276,
+      "answer": "Here's what your note says: Dentist appointment is Friday at 3pm. Bring the insurance card."
+    }
+  ],
+  "words": [
+    {
+      "t": [
+        19.688,
+        20.625
+      ],
+      "text": "100%<br><em>on your phone</em>",
+      "dim": 0.72,
+      "from": 1.25,
+      "rot": 0
+    },
+    {
+      "t": [
+        20.625,
+        21.562
+      ],
+      "text": "No<br>account",
+      "dim": 0.72,
+      "from": 1.25,
+      "rot": 0
+    },
+    {
+      "t": [
+        21.562,
+        22.5
+      ],
+      "text": "Free &amp;<br>open source",
+      "dim": 0.72,
+      "from": 1.25,
+      "rot": 0
+    }
+  ],
+  "flashes": [],
+  "pops": [],
+  "progress": true,
+  "end": 22.5,
+  "vo": [],
+  "clips": [
+    {
+      "src": "raw/uc14/p-menu.mp4",
+      "from": 4.44,
+      "to": 5.04
+    },
+    {
+      "src": "raw/uc14/p-menu.mp4",
+      "from": 6.93,
+      "to": 8.4,
+      "speed": 2
+    },
+    {
+      "src": "raw/uc14/p-menu.mp4",
+      "from": 8.78,
+      "to": 9.18
+    },
+    {
+      "src": "raw/uc14/p-menu.mp4",
+      "from": 70.18,
+      "to": 73.08,
+      "holdEnd": 0.052
+    },
+    {
+      "src": "raw/uc14/p-sign.mp4",
+      "from": 4.44,
+      "to": 5.04
+    },
+    {
+      "src": "raw/uc14/p-sign.mp4",
+      "from": 6.93,
+      "to": 8.09,
+      "speed": 2
+    },
+    {
+      "src": "raw/uc14/p-sign.mp4",
+      "from": 8.45,
+      "to": 8.85
+    },
+    {
+      "src": "raw/uc14/p-sign.mp4",
+      "from": 65.29,
+      "to": 68.19,
+      "holdEnd": 0.207
+    },
+    {
+      "src": "raw/uc14/p-fridge.mp4",
+      "from": 4.51,
+      "to": 5.11
+    },
+    {
+      "src": "raw/uc14/p-fridge.mp4",
+      "from": 7.03,
+      "to": 8.53,
+      "speed": 2
+    },
+    {
+      "src": "raw/uc14/p-fridge.mp4",
+      "from": 8.9,
+      "to": 9.3
+    },
+    {
+      "src": "raw/uc14/p-fridge.mp4",
+      "from": 63.14,
+      "to": 65.44,
+      "holdEnd": 0.169
+    },
+    {
+      "src": "raw/uc14/t-remind.mp4",
+      "from": 2.32,
+      "to": 4.46,
+      "speed": 2
+    },
+    {
+      "src": "raw/uc14/t-remind.mp4",
+      "from": 4.83,
+      "to": 5.23
+    },
+    {
+      "src": "raw/uc14/t-remind.mp4",
+      "from": 26.0,
+      "to": 27.1,
+      "holdEnd": 0.243
+    },
+    {
+      "src": "raw/uc14/t-note.mp4",
+      "from": 2.32,
+      "to": 4.96,
+      "speed": 2
+    },
+    {
+      "src": "raw/uc14/t-note.mp4",
+      "from": 5.35,
+      "to": 5.75
+    },
+    {
+      "src": "raw/uc14/t-note.mp4",
+      "from": 21.27,
+      "to": 22.77,
+      "holdEnd": 0.061
+    },
+    {
+      "src": "raw/uc14/t-note.mp4",
+      "from": 22.77,
+      "to": 22.82,
+      "holdEnd": 5.763
+    }
+  ],
+  "endNote": "Real answers, recorded in airplane mode. Waiting time cut.",
+  "music": {
+    "style": "beat",
+    "bpm": 128,
+    "drop": 1.885,
+    "tail": 0.0
+  }
+}

@@ -3,6 +3,7 @@ import {
   isRagAnswerGroundedInSnippets,
   isRagDismissiveRefusal,
   ragAnswerOrFallback,
+  tidySnippet,
   verbatimRagFallback,
 } from "@/ai/rag-grounding";
 
@@ -52,5 +53,17 @@ describe("rag-grounding", () => {
       'The context is insufficient. The statement "Dentist Need to go to dentist for checkup" does not contain sufficient information.';
     const out = ragAnswerOrFallback(bad, [snippet]);
     expect(out).toBe(verbatimRagFallback([snippet]));
+  });
+
+  it("shows notes in plain words, without a repeated title", () => {
+    expect(tidySnippet("Dentist Dentist appointment is Friday at 3pm.")).toBe("Dentist appointment is Friday at 3pm.");
+    expect(tidySnippet("Trip checklist: Passport, charger")).toBe("Trip checklist: Passport, charger");
+    expect(verbatimRagFallback(["Dentist Dentist appointment is Friday at 3pm."])).toBe(
+      "Here's what your note says:\n\nDentist appointment is Friday at 3pm.",
+    );
+    expect(verbatimRagFallback(["Bread: pick up bread", "Milk: buy milk"])).toBe(
+      "Here's what your notes say:\n\n- Bread: pick up bread\n- Milk: buy milk",
+    );
+    expect(verbatimRagFallback(["x"])).not.toContain("indexed");
   });
 });

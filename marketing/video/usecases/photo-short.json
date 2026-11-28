@@ -1,0 +1,497 @@
+{
+  "id": "photo-short",
+  "style": "flashy",
+  "duration": 47.06,
+  "screen": "raw/uc/photo-short-screen.mp4",
+  "screenStart": 0,
+  "phone": {
+    "in": 0
+  },
+  "scenes": [
+    {
+      "t": [
+        3.75,
+        9.844
+      ],
+      "num": "01",
+      "kicker": "Study",
+      "chip": "Airplane mode on",
+      "hook": "Exam <em>tomorrow?</em>",
+      "promptAt": 4.9,
+      "prompt": "Explain this diagram simply",
+      "cps": 26.0,
+      "sentAt": 6.49,
+      "answerAt": 6.94,
+      "answer": "This diagram illustrates the water cycle, showing how water moves between the Earth's surface and atmosphere…"
+    },
+    {
+      "t": [
+        9.844,
+        16.406
+      ],
+      "num": "02",
+      "kicker": "Gym",
+      "chip": "Airplane mode on",
+      "hook": "Post-workout <em>snack?</em>",
+      "promptAt": 10.994,
+      "prompt": "How much protein and sugar is in this?",
+      "cps": 20.0,
+      "sentAt": 13.444,
+      "answerAt": 13.894,
+      "answer": "The nutrition label shows that this bar contains 20 grams of protein and 6 grams of sugar."
+    },
+    {
+      "t": [
+        16.406,
+        22.5
+      ],
+      "num": "03",
+      "kicker": "Weekend",
+      "chip": "Airplane mode on",
+      "hook": "Going <em>out?</em>",
+      "promptAt": 17.556,
+      "prompt": "When and where is this event?",
+      "cps": 19.7,
+      "sentAt": 19.576,
+      "answerAt": 20.026,
+      "answer": "…scheduled for Friday, March 14th at 7 PM. It will take place at Main Quad, North Campus."
+    },
+    {
+      "t": [
+        22.5,
+        28.125
+      ],
+      "num": "04",
+      "kicker": "Travel",
+      "chip": "Airplane mode on",
+      "hook": "Lost in <em>Tokyo?</em>",
+      "promptAt": 23.65,
+      "prompt": "Translate this sign",
+      "cps": 21.6,
+      "sentAt": 25.08,
+      "answerAt": 25.53,
+      "answer": "The sign indicates directions for \"出口\" (exit), \"トイレ\" (toilet), and \"駅\" (station)."
+    },
+    {
+      "t": [
+        28.125,
+        35.156
+      ],
+      "num": "05",
+      "kicker": "Tech help",
+      "chip": "Airplane mode on",
+      "hook": "Earbuds <em>won't pair?</em>",
+      "promptAt": 29.275,
+      "prompt": "What does this mean and how do I fix it?",
+      "cps": 16.9,
+      "sentAt": 32.195,
+      "answerAt": 32.645,
+      "answer": "…you should ensure the device is turned on, charged, and in pairing mode."
+    },
+    {
+      "t": [
+        35.156,
+        41.25
+      ],
+      "num": "06",
+      "kicker": "Food",
+      "chip": "Airplane mode on",
+      "hook": "Nothing to <em>eat?</em>",
+      "promptAt": 36.306,
+      "prompt": "What can I cook with this?",
+      "cps": 18.8,
+      "sentAt": 38.236,
+      "answerAt": 38.686,
+      "answer": "You can make a sandwich with the bread and cheese."
+    }
+  ],
+  "words": [
+    {
+      "t": [
+        0,
+        0.9375
+      ],
+      "text": "No<br>Wi-Fi?",
+      "dim": 0.55,
+      "from": 1.8,
+      "rot": -4
+    },
+    {
+      "t": [
+        0.9375,
+        1.875
+      ],
+      "text": "No<br>data?",
+      "dim": 0.55,
+      "from": 1.8,
+      "rot": 4
+    },
+    {
+      "t": [
+        1.875,
+        3.75
+      ],
+      "text": "Ask your<br><span class=pink>photos.</span>",
+      "dim": 0.55,
+      "from": 1.6,
+      "rot": -2
+    },
+    {
+      "t": [
+        41.25,
+        42.188
+      ],
+      "text": "100%<br><em>on-device</em>",
+      "dim": 0.6,
+      "from": 1.6,
+      "rot": -3
+    },
+    {
+      "t": [
+        42.188,
+        42.656
+      ],
+      "text": "No<br>cloud",
+      "dim": 0.6,
+      "from": 1.6,
+      "rot": 3
+    },
+    {
+      "t": [
+        42.656,
+        43.125
+      ],
+      "text": "No<br>uploads",
+      "dim": 0.6,
+      "from": 1.6,
+      "rot": -3
+    },
+    {
+      "t": [
+        43.125,
+        44.062
+      ],
+      "text": "Works<br><em>offline</em>",
+      "dim": 0.6,
+      "from": 1.6,
+      "rot": 3
+    }
+  ],
+  "flashes": [
+    0,
+    0.938,
+    1.875,
+    3.75,
+    6.79,
+    9.844,
+    13.744,
+    16.406,
+    19.876,
+    22.5,
+    25.38,
+    28.125,
+    32.495,
+    35.156,
+    38.536,
+    41.25,
+    42.188,
+    42.656,
+    43.125
+  ],
+  "pops": [
+    {
+      "at": 3.75
+    },
+    {
+      "at": 4.688
+    },
+    {
+      "at": 5.625
+    },
+    {
+      "at": 6.562
+    },
+    {
+      "at": 7.5
+    },
+    {
+      "at": 8.438
+    },
+    {
+      "at": 9.844
+    },
+    {
+      "at": 10.781
+    },
+    {
+      "at": 11.719
+    },
+    {
+      "at": 12.656
+    },
+    {
+      "at": 13.594
+    },
+    {
+      "at": 14.531
+    },
+    {
+      "at": 15.469
+    },
+    {
+      "at": 16.406
+    },
+    {
+      "at": 17.344
+    },
+    {
+      "at": 18.281
+    },
+    {
+      "at": 19.219
+    },
+    {
+      "at": 20.156
+    },
+    {
+      "at": 21.094
+    },
+    {
+      "at": 22.5
+    },
+    {
+      "at": 23.438
+    },
+    {
+      "at": 24.375
+    },
+    {
+      "at": 25.312
+    },
+    {
+      "at": 26.25
+    },
+    {
+      "at": 27.188
+    },
+    {
+      "at": 28.125
+    },
+    {
+      "at": 29.062
+    },
+    {
+      "at": 30.0
+    },
+    {
+      "at": 30.938
+    },
+    {
+      "at": 31.875
+    },
+    {
+      "at": 32.812
+    },
+    {
+      "at": 33.75
+    },
+    {
+      "at": 35.156
+    },
+    {
+      "at": 36.094
+    },
+    {
+      "at": 37.031
+    },
+    {
+      "at": 37.969
+    },
+    {
+      "at": 38.906
+    },
+    {
+      "at": 39.844
+    }
+  ],
+  "progress": true,
+  "end": 44.062,
+  "vo": [],
+  "clips": [
+    {
+      "src": "raw/uc/p-diagram.mp4",
+      "from": 1.6,
+      "to": 1.65,
+      "hold": 3.7
+    },
+    {
+      "src": "raw/uc/p-diagram.mp4",
+      "from": 4.83,
+      "to": 5.88
+    },
+    {
+      "src": "raw/uc/p-diagram.mp4",
+      "from": 8.13,
+      "to": 9.62
+    },
+    {
+      "src": "raw/uc/p-diagram.mp4",
+      "from": 12.3,
+      "to": 12.8
+    },
+    {
+      "src": "raw/uc/p-diagram.mp4",
+      "from": 65.6,
+      "to": 66.5
+    },
+    {
+      "src": "raw/uc/p-diagram.mp4",
+      "from": 73.1,
+      "to": 74.8,
+      "holdEnd": 0.454
+    },
+    {
+      "src": "raw/uc/p-nutrition.mp4",
+      "from": 4.82,
+      "to": 5.87
+    },
+    {
+      "src": "raw/uc/p-nutrition.mp4",
+      "from": 8.12,
+      "to": 10.47
+    },
+    {
+      "src": "raw/uc/p-nutrition.mp4",
+      "from": 13.05,
+      "to": 13.55
+    },
+    {
+      "src": "raw/uc/p-nutrition.mp4",
+      "from": 66.4,
+      "to": 67.3
+    },
+    {
+      "src": "raw/uc/p-nutrition.mp4",
+      "from": 68.2,
+      "to": 69.9,
+      "holdEnd": 0.063
+    },
+    {
+      "src": "raw/uc/p-poster.mp4",
+      "from": 5.17,
+      "to": 6.22
+    },
+    {
+      "src": "raw/uc/p-poster.mp4",
+      "from": 8.48,
+      "to": 10.4
+    },
+    {
+      "src": "raw/uc/p-poster.mp4",
+      "from": 13.03,
+      "to": 13.53
+    },
+    {
+      "src": "raw/uc/p-poster.mp4",
+      "from": 67.8,
+      "to": 68.7
+    },
+    {
+      "src": "raw/uc/p-poster.mp4",
+      "from": 79.8,
+      "to": 81.5,
+      "holdEnd": 0.024
+    },
+    {
+      "src": "raw/uc/p-sign.mp4",
+      "from": 4.84,
+      "to": 5.89
+    },
+    {
+      "src": "raw/uc/p-sign.mp4",
+      "from": 8.13,
+      "to": 9.46
+    },
+    {
+      "src": "raw/uc/p-sign.mp4",
+      "from": 12.11,
+      "to": 12.61
+    },
+    {
+      "src": "raw/uc/p-sign.mp4",
+      "from": 65.3,
+      "to": 66.2
+    },
+    {
+      "src": "raw/uc/p-sign.mp4",
+      "from": 68.3,
+      "to": 70.0,
+      "holdEnd": 0.145
+    },
+    {
+      "src": "raw/uc/p-error.mp4",
+      "from": 4.82,
+      "to": 5.87
+    },
+    {
+      "src": "raw/uc/p-error.mp4",
+      "from": 8.09,
+      "to": 10.91
+    },
+    {
+      "src": "raw/uc/p-error.mp4",
+      "from": 13.51,
+      "to": 14.01
+    },
+    {
+      "src": "raw/uc/p-error.mp4",
+      "from": 66.6,
+      "to": 67.5
+    },
+    {
+      "src": "raw/uc/p-error.mp4",
+      "from": 75.8,
+      "to": 77.5,
+      "holdEnd": 0.061
+    },
+    {
+      "src": "raw/uc/p-fridge.mp4",
+      "from": 4.84,
+      "to": 5.89
+    },
+    {
+      "src": "raw/uc/p-fridge.mp4",
+      "from": 8.13,
+      "to": 9.96
+    },
+    {
+      "src": "raw/uc/p-fridge.mp4",
+      "from": 12.56,
+      "to": 13.06
+    },
+    {
+      "src": "raw/uc/p-fridge.mp4",
+      "from": 65.8,
+      "to": 66.7
+    },
+    {
+      "src": "raw/uc/p-fridge.mp4",
+      "from": 66.6,
+      "to": 68.3,
+      "holdEnd": 0.114
+    },
+    {
+      "src": "raw/uc/p-fridge.mp4",
+      "from": 68.3,
+      "to": 68.35,
+      "holdEnd": 5.763
+    }
+  ],
+  "endNote": "Real answers, recorded in airplane mode. Waiting time cut.",
+  "music": {
+    "style": "beat",
+    "bpm": 128,
+    "drop": 3.75,
+    "tail": 0.0
+  }
+}

@@ -1,0 +1,17 @@
+[
+  {
+    "out": "../out/usecases/thumbs/reel-0-14-cover-1080x1920.png",
+    "w": 1080,
+    "h": 1920,
+    "page": "thumb.html",
+    "params": {
+      "layout": "tall",
+      "kicker": "No Wi-Fi? No problem",
+      "head": "AI that reads<br>your <em>photos</em>, offline",
+      "badge": "Works in airplane mode",
+      "shot": "usecases/shots/reel14/menu-answer.png",
+      "cards": "usecases/shots/reel14/menu.jpg:24:830:300:-10;usecases/shots/reel14/sign.jpg:765:930:250:9;usecases/shots/reel14/fridge.jpg:800:1500:240:-7",
+      "phoneTop": "760"
+    }
+  }
+]

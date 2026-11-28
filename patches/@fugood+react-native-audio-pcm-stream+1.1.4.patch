@@ -1,0 +1,64 @@
+diff --git a/node_modules/@fugood/react-native-audio-pcm-stream/android/src/main/java/com/imxiqi/rnliveaudiostream/RNLiveAudioStreamModule.java b/node_modules/@fugood/react-native-audio-pcm-stream/android/src/main/java/com/imxiqi/rnliveaudiostream/RNLiveAudioStreamModule.java
+index 6d7d17d..119b2c9 100644
+--- a/node_modules/@fugood/react-native-audio-pcm-stream/android/src/main/java/com/imxiqi/rnliveaudiostream/RNLiveAudioStreamModule.java
++++ b/node_modules/@fugood/react-native-audio-pcm-stream/android/src/main/java/com/imxiqi/rnliveaudiostream/RNLiveAudioStreamModule.java
+@@ -86,10 +86,25 @@ public class RNLiveAudioStreamModule extends ReactContextBaseJavaModule {
+     }
+ 
+     @ReactMethod
+-    public void start() {
++    public synchronized void start() {
+         if (recorder == null || isRecording) return;
++        // OfflineMate patch: each recording thread owns the recorder it started with. The shared field
++        // let a quick stop/start (or init during a stop) start a second thread on the same recorder; the
++        // first thread to finish released it and set it to null, and the other crashed on release()
++        // (NullPointerException at RNLiveAudioStreamModule.java:115, Play crash on a Xiaomi Mi A3, 0.12.0).
++        final AudioRecord rec = recorder;
++        final int size = bufferSize;
++        // Taken by this thread: init() makes a new recorder for the next session.
++        recorder = null;
+         isRecording = true;
+-        recorder.startRecording();
++        try {
++            rec.startRecording();
++        } catch (Exception e) {
++            e.printStackTrace();
++            isRecording = false;
++            rec.release();
++            return;
++        }
+ 
+         Thread recordingThread = new Thread(new Runnable() {
+             public void run() {
+@@ -97,10 +112,10 @@ public class RNLiveAudioStreamModule extends ReactContextBaseJavaModule {
+                     int bytesRead;
+                     int count = 0;
+                     String base64Data;
+-                    byte[] buffer = new byte[bufferSize];
++                    byte[] buffer = new byte[size];
+ 
+                     while (isRecording) {
+-                        bytesRead = recorder.read(buffer, 0, buffer.length);
++                        bytesRead = rec.read(buffer, 0, buffer.length);
+ 
+                         // skip first 2 buffers to eliminate "click sound"
+                         if (bytesRead > 0 && ++count > 2) {
+@@ -108,12 +123,15 @@ public class RNLiveAudioStreamModule extends ReactContextBaseJavaModule {
+                             eventEmitter.emit("data", base64Data);
+                         }
+                     }
+-                    recorder.stop();
++                    rec.stop();
+                 } catch (Exception e) {
+                     e.printStackTrace();
+                 } finally {
+-                    recorder.release();
+-                    recorder = null;
++                    try {
++                        rec.release();
++                    } catch (Exception e) {
++                        e.printStackTrace();
++                    }
+                 }
+             }
+         });

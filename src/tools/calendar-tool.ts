@@ -3,7 +3,9 @@ import type { Calendar as CalendarRecord } from "expo-calendar/legacy";
 import { wantsCalendarAddIntent } from "@/ai/intent-router";
 import type { Tool } from "@/tools/tool-registry";
 import { parseDateRange, parseEventStart, eventEndFromStart } from "@/tools/date-parser";
+import { findMeetingLink, type MeetingLink, type MeetingService } from "@/tools/meeting-link";
 import { permissionOffMessage } from "@/tools/permission-message";
+import type { MessageLink } from "@/types/assistant";
 import { waitingForUser } from "@/utils/user-wait";
 
 async function ensureCalendarPermissions() {
@@ -44,19 +46,105 @@ export function describeCreatedEvent(title: string, start: Date, end: Date, now:
   return `Added "${title}" ${day}, ${timeOf(start)} – ${timeOf(end)}.`;
 }
 
-/** "Dentist appointment, 3:00 PM – 4:00 PM" (the day too when the range spans several days). */
+/**
+ * "Dentist appointment, 3:00 PM – 4:00 PM" (the day too when the range spans several days), with
+ * " · Google Meet" when the event has a meeting link (its Join button sits under the reply).
+ */
 export function describeEvent(
   e: { title?: string | null; startDate?: string | Date; endDate?: string | Date; allDay?: boolean },
   sameDay: boolean,
+  meeting?: MeetingService | null,
 ): string {
   const title = e.title?.trim() || "Untitled";
-  if (!e.startDate) return title;
+  const via = meeting ? ` · ${meeting}` : "";
+  if (!e.startDate) return `${title}${via}`;
   const start = new Date(e.startDate);
   const day = sameDay ? "" : `${dayOf(start)} `;
-  if (e.allDay) return `${title}, ${day}all day`.replace(/, $/, "");
+  if (e.allDay) return `${title}, ${day}all day`.replace(/, $/, "") + via;
   const end = e.endDate ? new Date(e.endDate) : null;
   const span = end && end > start ? `${timeOf(start)} – ${timeOf(end)}` : timeOf(start);
-  return `${title}, ${day}${span}`;
+  return `${title}, ${day}${span}${via}`;
+}
+
+type CalendarEventLike = {
+  id?: string;
+  title?: string | null;
+  startDate?: string | Date;
+  endDate?: string | Date;
+  allDay?: boolean;
+  location?: string | null;
+  notes?: string | null;
+  url?: string | null;
+};
+
+/** The event's meeting link: the location (Teams/Zoom invites), then iOS's URL field, then the description. */
+export function eventMeetingLink(e: CalendarEventLike): MeetingLink | null {
+  return findMeetingLink(e.location, e.url, e.notes);
+}
+
+/**
+ * Join buttons for events with a meeting link. One event: "Join Google Meet". Several: the event's
+ * title is added so each button says which meeting it opens.
+ */
+export function joinButtons(items: { title?: string | null; link: MeetingLink | null }[]): MessageLink[] {
+  const withLinks = items.filter((i): i is { title?: string | null; link: MeetingLink } => !!i.link);
+  return withLinks.map(({ title, link }) => ({
+    label: withLinks.length > 1 ? `Join ${link.service}: ${title?.trim() || "Untitled"}` : `Join ${link.service}`,
+    url: link.url,
+  }));
+}
+
+/** "When's my next meeting?", "Join my next call", "What's my next event?" */
+export function asksForNextEvent(text: string): { join: boolean } | null {
+  const t = text.toLowerCase();
+  const join = /\bjoin\b/.test(t) && /\b(meeting|call)\b/.test(t);
+  if (join || /\b(next|upcoming)\s+(meeting|call|event|appointment)\b/.test(t)) return { join };
+  return null;
+}
+
+const NEXT_EVENT_DAYS = 14;
+
+/** "in 25 min", "in 2 hr 5 min", or "" once it has started. */
+export function startsIn(start: Date, now: Date = new Date()): string {
+  const mins = Math.round((start.getTime() - now.getTime()) / 60000);
+  if (mins <= 0) return "";
+  if (mins < 60) return `in ${mins} min`;
+  if (mins < 24 * 60) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m ? `in ${h} hr ${m} min` : `in ${h} hr`;
+  }
+  return "";
+}
+
+/** The next event that hasn't ended (with a meeting link, for "join my next meeting"), as a reply. */
+export function describeNextEvent(
+  events: CalendarEventLike[],
+  join: boolean,
+  now: Date = new Date(),
+): { message: string; links: MessageLink[]; event: CalendarEventLike | null } {
+  const upcoming = events
+    .filter((e) => e.startDate && !e.allDay && new Date(e.endDate ?? e.startDate) > now)
+    .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime());
+  const next = join ? upcoming.find((e) => eventMeetingLink(e)) : upcoming[0];
+  if (!next) {
+    return {
+      message: join
+        ? `No meetings with a Zoom, Google Meet, Teams or Webex link in the next ${NEXT_EVENT_DAYS} days.`
+        : `Nothing on your calendar in the next ${NEXT_EVENT_DAYS} days.`,
+      links: [],
+      event: null,
+    };
+  }
+  const link = eventMeetingLink(next);
+  const start = new Date(next.startDate!);
+  const started = start <= now;
+  const day = describeDateRange({ start, end: start }, now);
+  const when = started ? `started at ${timeOf(start)}` : `${day} at ${timeOf(start)}`;
+  const soon = startsIn(start, now);
+  const lead = join || link ? "Your next meeting" : "Next on your calendar";
+  const message = `${lead}: ${next.title?.trim() || "Untitled"}, ${when}${soon ? ` (${soon})` : ""}${link ? ` · ${link.service}` : ""}.`;
+  return { message, links: joinButtons([{ title: next.title, link }]), event: next };
 }
 
 export const getCalendarEventsTool: Tool = {
@@ -76,9 +164,31 @@ export const getCalendarEventsTool: Tool = {
     }
     const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
     if (calendars.length === 0) {
-      return { ok: true, message: "No calendars found.", payload: { events: [] } };
+      return {
+        ok: true,
+        message:
+          "There's no calendar on this phone yet. Add a Google account (or another calendar account) in your phone's settings, and its events will show here.",
+        payload: { events: [] },
+      };
     }
     const query = (params.query || params.text || "today").trim();
+    const calendarIds = calendars.map((c) => c.id);
+    const next = asksForNextEvent(`${params.text ?? ""} ${params.query ?? ""}`);
+    if (next) {
+      const now = new Date();
+      const until = new Date(now.getTime() + NEXT_EVENT_DAYS * 86400000);
+      // From the start of today, so a meeting that has started but not ended still counts.
+      const from = new Date(now);
+      from.setHours(0, 0, 0, 0);
+      const events = await Calendar.getEventsAsync(calendarIds, from, until);
+      const reply = describeNextEvent(events, next.join, now);
+      return {
+        ok: true,
+        message: reply.message,
+        links: reply.links,
+        payload: { next: reply.event ? { title: reply.event.title, startDate: reply.event.startDate } : null },
+      };
+    }
     const range = parseDateRange(query);
     if (!range) {
       return {
@@ -87,11 +197,11 @@ export const getCalendarEventsTool: Tool = {
         errorCode: "PARSE_FAILURE",
       };
     }
-    const calendarIds = calendars.map((c) => c.id);
     const events = await Calendar.getEventsAsync(calendarIds, range.start, range.end);
     const label = describeDateRange(range);
     const sameDay = isSameDay(range.start, range.end);
-    const summary = events.map((e) => `- ${describeEvent(e, sameDay)}`);
+    const meetings = events.map((e) => eventMeetingLink(e));
+    const summary = events.map((e, i) => `- ${describeEvent(e, sameDay, meetings[i]?.service)}`);
     const message =
       events.length === 0
         ? `No events ${label}.`
@@ -99,13 +209,16 @@ export const getCalendarEventsTool: Tool = {
     return {
       ok: true,
       message,
+      links: joinButtons(events.map((e, i) => ({ title: e.title, link: meetings[i] }))),
       payload: {
-        events: events.map((e) => ({
+        // The meeting's service, not its link: the link goes to the Join button, not into the model's prompt.
+        events: events.map((e, i) => ({
           id: e.id,
           title: e.title,
           startDate: e.startDate,
           endDate: e.endDate,
           location: e.location,
+          ...(meetings[i] && { meeting: meetings[i]!.service }),
         })),
       },
     };
@@ -118,8 +231,9 @@ export function titleFromCommand(text: string): string | null {
   const title = m?.[1]?.replace(CALENDAR_SUFFIX, "").trim();
   return title || null;
 }
+// Stops at the first word of the date or time, weekdays included ("dentist appointment Friday at 3pm").
 const COMMAND_TITLE =
-  /^(?:please\s+)?(?:add|create|schedule|book|put|set up|make)\s+(?:a\s+|an\s+|my\s+)?(.+?)\s+(?:tomorrow|today|tonight|at|on|next|this)\b/i;
+  /^(?:please\s+)?(?:add|create|schedule|book|put|set up|make)\s+(?:a\s+|an\s+|my\s+)?(.+?)\s+(?:tomorrow|today|tonight|at|on|next|this|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i;
 const CALENDAR_SUFFIX = /\s+(?:to|on|in)\s+(?:my\s+|the\s+)?calendar$/i;
 
 /** Extract event title from query (e.g. "Meeting with John tomorrow at 2pm" -> "Meeting with John"). */
@@ -131,7 +245,7 @@ export function extractEventTitle(query: string, startStr?: string): string {
     /\b(?:schedule|create|add|set up)\s+(?:a\s+)?(?:meeting|event)\s+(?:called?\s+)?(.+?)(?:\s+(?:tomorrow|today|at|on|next))/i,
     /\b(?:meeting|event)\s+(?:with\s+)?(.+?)(?:\s+(?:tomorrow|today|at|on|next))/i,
     // "Add dentist appointment tomorrow at 3pm" -> "Dentist appointment"
-    /^(?:please\s+)?(?:add|create|schedule|book|put|set up|make)\s+(?:a\s+|an\s+|my\s+)?(.+?)\s+(?:tomorrow|today|tonight|at|on|next|this)\b/i,
+    /^(?:please\s+)?(?:add|create|schedule|book|put|set up|make)\s+(?:a\s+|an\s+|my\s+)?(.+?)\s+(?:tomorrow|today|tonight|at|on|next|this|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,
     /^(.+?)\s+(?:tomorrow|today|at|on|next\s+(?:monday|week))/i,
   ];
   for (const p of patterns) {
@@ -164,11 +278,19 @@ export const createCalendarTool: Tool = {
     }
     const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
     if (calendars.length === 0) {
-      return { ok: false, message: "No calendars available to add events." };
+      return {
+        ok: false,
+        message:
+          "There's no calendar on this phone to add this to. Add a Google account (or another calendar account) in your phone's settings, then ask again.",
+      };
     }
     const calendar = getWritableCalendar(calendars);
     if (!calendar) {
-      return { ok: false, message: "No writable calendar found." };
+      return {
+        ok: false,
+        message:
+          "Your phone's calendars can't take new events. Add a Google account (or another calendar account) in your phone's settings, then ask again.",
+      };
     }
     const sourceText = (params.text || params.query || "").trim();
     // The user's own words ("Add dinner with Ali tomorrow…") beat the planner's title, which can be partial ("The bank").

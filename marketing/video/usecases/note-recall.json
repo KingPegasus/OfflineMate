@@ -1,7 +1,7 @@
 {
   "id": "note-recall",
   "style": "calm",
-  "duration": 15.0,
+  "duration": 14.62,
   "screen": "raw/uc/note-recall-screen.mp4",
   "screenStart": 0,
   "phone": {
@@ -16,46 +16,47 @@
       "hook": "What did I <em>save?</em>",
       "promptAt": 2.9,
       "prompt": "What did I save about the dentist?",
-      "cps": 20.7,
-      "answerAt": 7.85,
-      "answer": "You saved that a dentist appointment is on Friday at 3pm.",
+      "cps": 14.8,
+      "answerAt": 8.38,
+      "answer": "Here's what your note says: Dentist appointment is Friday at 3pm. Bring the insurance card.",
       "t": [
         0.0,
-        11.6
+        11.22
       ]
     }
   ],
-  "end": 11.6,
+  "end": 11.22,
   "vo": [
     {
       "at": 0.25,
       "text": "Can't remember the details? Ask your notes."
     },
     {
-      "at": 8.1,
-      "text": "It finds the right note in seconds, on your device."
+      "at": 8.63,
+      "text": "It finds the right note, on your device."
     },
     {
-      "at": 12.05,
+      "at": 11.67,
       "text": "Get OfflineMate free on Google Play."
     }
   ],
   "clips": [
     {
       "src": "raw/uc/note-recall.mp4",
-      "from": 2.8,
-      "to": 6.4,
+      "from": 1.92,
+      "to": 6.05,
       "hold": 2.4
     },
     {
       "src": "raw/uc/note-recall.mp4",
-      "from": 6.4,
-      "to": 8.1
+      "from": 6.0,
+      "to": 7.7
     },
     {
       "src": "raw/uc/note-recall.mp4",
-      "from": 8.1,
-      "to": 12.0
+      "from": 21.3,
+      "to": 24.2,
+      "holdEnd": 0.09
     }
   ],
   "music": {

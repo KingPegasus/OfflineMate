@@ -44,10 +44,27 @@ export function isRagAnswerGroundedInSnippets(answer: string, snippets: string[]
   return false;
 }
 
-/** User-visible fallback when the model ignored retrieved text. */
+/**
+ * A stored passage as the user wrote it. Notes indexed before 0.14.0 are "title content" run together,
+ * so a note titled "Dentist" reading "Dentist appointment is Friday" came back as "Dentist Dentist
+ * appointment is Friday": drop a title that the note's text repeats.
+ */
+export function tidySnippet(snippet: string): string {
+  const text = snippet.replace(/\s+/g, " ").trim();
+  const words = text.split(" ");
+  for (let n = Math.min(6, Math.floor(words.length / 2)); n >= 1; n -= 1) {
+    const title = words.slice(0, n).join(" ").replace(/[:.]$/, "").toLowerCase();
+    if (words.slice(n, 2 * n).join(" ").toLowerCase() === title) return words.slice(n).join(" ");
+  }
+  return text;
+}
+
+/** User-visible fallback when the model ignored retrieved text: the notes themselves, one per line. */
 export function verbatimRagFallback(snippets: string[]): string {
-  const text = snippets.map((s) => s.trim()).filter(Boolean).join("\n\n");
-  return `Here is what I found in your indexed notes:\n\n${text}`;
+  const lines = snippets.map(tidySnippet).filter(Boolean);
+  // Plain words: this used to say "Here is what I found in your indexed notes:".
+  if (lines.length === 1) return `Here's what your note says:\n\n${lines[0]}`;
+  return `Here's what your notes say:\n\n${lines.map((l) => `- ${l}`).join("\n")}`;
 }
 
 export function ragAnswerOrFallback(answer: string, snippets: string[]): string {

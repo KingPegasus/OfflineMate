@@ -3,7 +3,7 @@
 usage: python uc_screen.py <timeline.json>
 Reads timeline["clips"]: [{"src": "raw/uc/alarm.mp4", "from": 1.2, "to": 9.8, "hold": 2.5, "holdEnd": 0}],
 in playback order. "hold" freezes the clip's first frame for that many seconds before it plays (used under the
-hook line); "holdEnd" freezes the last frame. Clips play at real speed. Writes timeline["screen"] as all-intra
+hook line); "holdEnd" freezes the last frame. Clips play at real speed unless "speed" is set. Writes timeline["screen"] as all-intra
 H.264 so the page can seek any frame exactly. Env: FFMPEG.
 """
 import json, os, pathlib, subprocess, sys
@@ -27,7 +27,8 @@ def main(tl_path):
     inputs, parts = [], []
     for i, c in enumerate(tl["clips"]):
         inputs += ["-i", str(cfr(c["src"]))]
-        f = f"[{i}:v]trim={c['from']}:{c['to']},setpts=PTS-STARTPTS"
+        # "speed" (optional, default 1) plays the clip faster, e.g. 2 for typing in a fast reel.
+        f = f"[{i}:v]trim={c['from']}:{c['to']},setpts=(PTS-STARTPTS)/{c.get('speed', 1)}"
         if c.get("hold"):
             f += f",tpad=start_mode=clone:start_duration={c['hold']}"
         if c.get("holdEnd"):

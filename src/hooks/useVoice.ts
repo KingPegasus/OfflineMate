@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { downloadTierVoiceModel } from "@/ai/model-manager";
 import { startListeningSession, transcribeFromMicrophone } from "@/voice/stt-engine";
+import { sessionForPress } from "@/voice/stt-session";
 import { speak } from "@/voice/tts-engine";
 import { useSettingsStore } from "@/stores/settings-store";
 
@@ -32,10 +33,10 @@ export function useVoice() {
 
   const startListening = useCallback(() => {
     console.log("[OfflineMate] Voice: startListening (press and hold)");
-    if (!sessionRef.current) {
-      sessionRef.current = startListeningSession(sttModel);
-    }
-    const sessionPromise = sessionRef.current;
+    // Replaces a pre-warmed "model missing" stub if the voice model was downloaded since (onboarding
+    // or Settings can download it while Chat is open), instead of wrongly offering the download.
+    const sessionPromise = sessionForPress(sessionRef.current, () => startListeningSession(sttModel));
+    sessionRef.current = sessionPromise;
     sessionPromise
       .then((handle) => handle.start())
       .then(() => {

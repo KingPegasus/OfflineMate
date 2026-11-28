@@ -64,8 +64,8 @@ describe("alarm tool on iOS 26+ (AlarmKit)", () => {
 
     const result = await setAlarmTool.execute({ text: "set an alarm for 7am to go running" });
     expect(result.ok).toBe(true);
-    // A one-time alarm for tomorrow, so no "Recurring not yet supported" note.
-    expect(result.message).toMatch(/^Alarm set for tomorrow at 7:00\s?AM: go running$/);
+    // A one-time alarm for tomorrow, so no "repeating alarms" note.
+    expect(result.message).toMatch(/^Alarm set for tomorrow at 7:00\s?AM: go running\.$/);
     expect(iosAlarms.scheduleIosAlarm).toHaveBeenCalledWith(new Date(2026, 10, 11, 7, 0, 0), "go running");
     expect(expoAlarmLoaded.count).toBe(0);
   });
@@ -77,7 +77,7 @@ describe("alarm tool on iOS 26+ (AlarmKit)", () => {
 
     const result = await setAlarmTool.execute({ text: "set an alarm in 5 minutes to stretch" });
     expect(result.ok).toBe(true);
-    expect(result.message).toBe("Alarm set to ring in 5 minutes: stretch");
+    expect(result.message).toBe("Alarm set to ring in 5 minutes: stretch.");
     expect(iosAlarms.scheduleIosAlarm).toHaveBeenCalledWith(new Date(2026, 10, 10, 16, 55, 0), "stretch");
   });
 
@@ -90,7 +90,7 @@ describe("alarm tool on iOS 26+ (AlarmKit)", () => {
     // The planner's guessed hour/minutes don't override the relative time in the text.
     const result = await setAlarmTool.execute({ text: "Set an alarm for 2min to stretch", hour: "0", minutes: "14" });
     expect(result.ok).toBe(true);
-    expect(result.message).toBe("Alarm set to ring in 2 minutes: stretch");
+    expect(result.message).toBe("Alarm set to ring in 2 minutes: stretch.");
     expect(iosAlarms.scheduleIosAlarm).toHaveBeenCalledWith(new Date(2026, 10, 12, 0, 14, 51), "stretch");
   });
 
@@ -156,7 +156,7 @@ describe("alarm tool on iOS 26+: dates", () => {
     const { setAlarmTool } = await import("@/tools/alarm-tool");
     const result = await setAlarmTool.execute({ text: "set an alarm every weekday at 9" });
     expect(result.ok).toBe(true);
-    expect(result.message).toMatch(/Recurring not yet supported/);
+    expect(result.message).toMatch(/repeating alarms aren.t available yet/);
     expect(iosAlarms.scheduleIosAlarm).toHaveBeenCalledWith(new Date(2026, 10, 16, 9, 0, 0), "Alarm");
   });
 
@@ -193,7 +193,8 @@ describe("alarm tool on Android", () => {
 
     const result = await setAlarmTool.execute({ text: "set an alarm for 7am" });
     expect(result.ok).toBe(true);
-    expect(result.message).toBe("Alarm set for 07:00: Alarm");
+    // Like the phone's clock, and no ": Alarm" for the default label.
+    expect(result.message).toMatch(/^Alarm set for 7:00\sAM\.$/);
     expect(setAlarm).toHaveBeenCalledWith(expect.objectContaining({ hour: 7, minutes: 0 }));
     expect(expoAlarmLoaded.count).toBe(1);
     expect(iosAlarms.scheduleIosAlarm).not.toHaveBeenCalled();
@@ -205,7 +206,7 @@ describe("alarm tool on Android", () => {
     const { setAlarmTool } = await import("@/tools/alarm-tool");
 
     const result = await setAlarmTool.execute({ text: "Set an alarm for 2min to stretch" });
-    expect(result.message).toBe("Alarm set for 00:15: stretch");
+    expect(result.message).toMatch(/^Alarm set for 12:15\sAM: stretch\.$/);
     expect(setAlarm).toHaveBeenCalledWith(expect.objectContaining({ hour: 0, minutes: 15 }));
   });
 });

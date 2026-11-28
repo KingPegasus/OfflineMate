@@ -1,4 +1,4 @@
-import { createRateTracker, describeDownload, formatBytes, formatTimeLeft } from "@/utils/download-format";
+import { createRateTracker, describeDownload, downloadFailureMessage, formatBytes, formatTimeLeft } from "@/utils/download-format";
 
 const MB = 1024 * 1024;
 
@@ -27,5 +27,20 @@ describe("download progress text", () => {
     expect(rate.update(5 * MB, 500)).toBe(0);
     expect(rate.update(10 * MB, 2000)).toBe(5 * MB);
     expect(rate.update(26 * MB, 4000)).toBe(6.5 * MB);
+  });
+});
+
+describe("downloadFailureMessage", () => {
+  it("never shows the raw error or network jargon", () => {
+    for (const raw of ["timeout", "Unable to resolve host huggingface.co", "ENOTFOUND", "HTTP 503"]) {
+      const { title, message } = downloadFailureMessage(raw);
+      expect(title).toBe("Download didn't finish");
+      expect(message).toContain("try again");
+      expect(`${title} ${message}`).not.toMatch(/timeout|resolve|ENOTFOUND|503|DNS|server|HTTP/i);
+    }
+  });
+
+  it("explains a full phone in everyday words", () => {
+    expect(downloadFailureMessage("ENOSPC: no space left on device").title).toBe("Your phone is full");
   });
 });

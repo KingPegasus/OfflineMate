@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import * as SecureStore from "expo-secure-store";
-import type { ChatConversation, ChatMessage, ModelTier } from "@/types/assistant";
+import type { ChatConversation, ChatMessage, ModelSetupKind, ModelTier } from "@/types/assistant";
 import { useSettingsStore } from "@/stores/settings-store";
 import { deleteChatImages, pruneUnreferencedChatImages } from "@/utils/chat-images";
 
@@ -27,6 +27,8 @@ interface ChatState {
   error: string | null;
   /** Tier whose model must be downloaded/fixed in Settings to clear `error`, if any. */
   errorTier: ModelTier | null;
+  /** What kind of setup problem `error` is, so Chat can word and style it (see ModelSetupKind). */
+  errorKind: ModelSetupKind | null;
   createConversation: (seedTitle?: string) => string;
   selectConversation: (conversationId: string) => void;
   deleteConversation: (conversationId: string) => void;
@@ -40,7 +42,7 @@ interface ChatState {
   setStreamingHasThinkTag: (value: boolean) => void;
   setStreamingThinkClosed: (value: boolean) => void;
   setLoading: (value: boolean) => void;
-  setError: (error: string | null, errorTier?: ModelTier | null) => void;
+  setError: (error: string | null, errorTier?: ModelTier | null, errorKind?: ModelSetupKind | null) => void;
 }
 
 const secureStorage = {
@@ -62,6 +64,7 @@ export const useChatStore = create<ChatState>()(
       isLoading: false,
       error: null,
       errorTier: null,
+      errorKind: null,
       createConversation: (seedTitle) => {
         const now = Date.now();
         const id = `conv-${now}-${Math.random().toString(36).slice(2, 8)}`;
@@ -75,6 +78,7 @@ export const useChatStore = create<ChatState>()(
           streamingThinkClosed: false,
           error: null,
           errorTier: null,
+          errorKind: null,
         }));
         return id;
       },
@@ -89,6 +93,7 @@ export const useChatStore = create<ChatState>()(
             streamingThinkClosed: false,
             error: null,
             errorTier: null,
+            errorKind: null,
           };
         });
       },
@@ -113,6 +118,7 @@ export const useChatStore = create<ChatState>()(
             streamingThinkClosed: false,
             error: null,
             errorTier: null,
+            errorKind: null,
           };
         });
       },
@@ -198,6 +204,7 @@ export const useChatStore = create<ChatState>()(
             streamingThinkClosed: false,
             error: null,
             errorTier: null,
+            errorKind: null,
           };
         }),
       clearAllConversations: () => {
@@ -213,6 +220,7 @@ export const useChatStore = create<ChatState>()(
           streamingThinkClosed: false,
           error: null,
           errorTier: null,
+          errorKind: null,
         });
       },
       setStreamingResponse: (streamingResponse) => set({ streamingResponse }),
@@ -220,7 +228,7 @@ export const useChatStore = create<ChatState>()(
       setStreamingHasThinkTag: (streamingHasThinkTag) => set({ streamingHasThinkTag }),
       setStreamingThinkClosed: (streamingThinkClosed) => set({ streamingThinkClosed }),
       setLoading: (isLoading) => set({ isLoading }),
-      setError: (error, errorTier = null) => set({ error, errorTier }),
+      setError: (error, errorTier = null, errorKind = null) => set({ error, errorTier, errorKind }),
     }),
     {
       name: "offlinemate-chat",
